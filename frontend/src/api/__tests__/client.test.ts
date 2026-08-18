@@ -69,3 +69,39 @@ describe('api.groups', () => {
     );
   });
 });
+
+describe('api.shiftTemplates', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('creates a shift template', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 'template-1' }) });
+    await api.shiftTemplates.create({ name: 'Morning', startTime: '06:00', endTime: '14:00' });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/shift-templates'),
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+});
+
+describe('api.rosters', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('creates a roster', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 'roster-1' }) });
+    await api.rosters.create({
+      name: 'Week 34',
+      dateRangeStart: '2026-08-17',
+      dateRangeEnd: '2026-08-23',
+      groupId: 'group-1',
+      shifts: [],
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters'),
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+});

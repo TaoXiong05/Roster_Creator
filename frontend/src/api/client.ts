@@ -51,6 +51,49 @@ export interface StaffGroup {
   memberCount: number;
 }
 
+export interface ShiftTemplate {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface RosterShiftInput {
+  shiftTemplateId: string;
+  dates: string[];
+  headcount: number;
+  requiredSkills: string[];
+}
+
+export interface RosterListItem {
+  id: string;
+  name: string;
+  dateRangeStart: string;
+  dateRangeEnd: string;
+  groupId: string;
+  groupName: string;
+  status: string;
+  shiftCount: number;
+}
+
+export interface RosterShift {
+  id: string;
+  date: string;
+  headcount: number;
+  requiredSkills: string[];
+  shiftTemplate: ShiftTemplate;
+}
+
+export interface RosterDetail {
+  id: string;
+  name: string;
+  dateRangeStart: string;
+  dateRangeEnd: string;
+  groupId: string;
+  status: string;
+  rosterShifts: RosterShift[];
+}
+
 export interface PreferenceInput {
   preferredShiftTemplateIds: string[];
   unavailableDateRanges: { start: string; end: string }[];
@@ -92,5 +135,24 @@ export const api = {
       apiRequest<void>(`/groups/${id}/members`, { method: 'POST', body: JSON.stringify({ staffId }) }),
     removeMember: (id: string, staffId: string) =>
       apiRequest<void>(`/groups/${id}/members/${staffId}`, { method: 'DELETE' }),
+  },
+  shiftTemplates: {
+    list: () => apiRequest<ShiftTemplate[]>('/shift-templates'),
+    create: (data: { name: string; startTime: string; endTime: string }) =>
+      apiRequest<ShiftTemplate>('/shift-templates', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: { name: string; startTime: string; endTime: string }) =>
+      apiRequest<ShiftTemplate>(`/shift-templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id: string) => apiRequest<void>(`/shift-templates/${id}`, { method: 'DELETE' }),
+  },
+  rosters: {
+    list: () => apiRequest<RosterListItem[]>('/rosters'),
+    get: (id: string) => apiRequest<RosterDetail>(`/rosters/${id}`),
+    create: (data: {
+      name: string;
+      dateRangeStart: string;
+      dateRangeEnd: string;
+      groupId: string;
+      shifts: RosterShiftInput[];
+    }) => apiRequest<RosterDetail>('/rosters', { method: 'POST', body: JSON.stringify(data) }),
   },
 };

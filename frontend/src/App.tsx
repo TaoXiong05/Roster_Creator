@@ -11,6 +11,10 @@ import { StaffListPage } from './pages/StaffListPage';
 import { StaffEditPage } from './pages/StaffEditPage';
 import { GroupListPage } from './pages/GroupListPage';
 import { GroupDetailPage } from './pages/GroupDetailPage';
+import { ShiftTemplateListPage } from './pages/ShiftTemplateListPage';
+import { RosterCreatePage } from './pages/RosterCreatePage';
+import { RosterListPage } from './pages/RosterListPage';
+import { RosterDetailPage } from './pages/RosterDetailPage';
 
 export default function App() {
   return (
@@ -57,6 +61,38 @@ export default function App() {
           element={
             <ProtectedRoute>
               <GroupDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/shift-templates"
+          element={
+            <ProtectedRoute>
+              <ShiftTemplateListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rosters"
+          element={
+            <ProtectedRoute>
+              <RosterListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rosters/new"
+          element={
+            <ProtectedRoute>
+              <RosterCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rosters/:id"
+          element={
+            <ProtectedRoute>
+              <RosterDetailPage />
             </ProtectedRoute>
           }
         />

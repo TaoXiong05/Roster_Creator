@@ -14,6 +14,12 @@ export function DashboardPage() {
         <Link to="/groups" className="underline">
           小组管理
         </Link>
+        <Link to="/shift-templates" className="underline">
+          班次模板
+        </Link>
+        <Link to="/rosters" className="underline">
+          排班表
+        </Link>
       </nav>
       <button onClick={() => logout()} className="border rounded px-3 py-2">
         登出
