@@ -106,3 +106,12 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
 
   res.status(201).json(roster);
 });
+
+rosterRouter.put('/:id/publish', async (req: AuthedRequest, res) => {
+  const existing = await prisma.roster.findUnique({ where: { id: req.params.id } });
+  if (!existing || existing.userId !== req.userId) {
+    return res.status(404).json({ error: 'Roster not found' });
+  }
+  const roster = await prisma.roster.update({ where: { id: req.params.id }, data: { status: 'published' } });
+  res.json(roster);
+});

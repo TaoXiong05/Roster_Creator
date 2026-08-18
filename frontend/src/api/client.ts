@@ -170,5 +170,15 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify({ assignments }),
       }),
+    publish: (id: string) => apiRequest<{ id: string; status: string }>(`/rosters/${id}/publish`, { method: 'PUT' }),
+    sendEmails: (id: string, staffIds?: string[]) =>
+      apiRequest<{ sentTo: string[] }>(`/rosters/${id}/send-emails`, {
+        method: 'POST',
+        body: JSON.stringify({ staffIds }),
+      }),
+    exportUrl: (id: string, format: 'ics' | 'csv' | 'pdf', staffId?: string): string => {
+      const base = `${API_BASE}/rosters/${id}/export/${format}`;
+      return staffId ? `${base}?staffId=${staffId}` : base;
+    },
   },
 };

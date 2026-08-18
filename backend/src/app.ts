@@ -11,6 +11,8 @@ import { groupMembershipRouter } from './groups/membershipRoutes';
 import { shiftTemplateRouter } from './shiftTemplates/routes';
 import { rosterRouter } from './rosters/routes';
 import { assignmentRouter } from './rosters/assignmentRoutes';
+import { exportRouter } from './rosters/exportRoutes';
+import { emailRouter } from './rosters/emailRoutes';
 
 export function createApp() {
   const app = express();
@@ -29,6 +31,8 @@ export function createApp() {
   app.use('/shift-templates', shiftTemplateRouter);
   app.use('/rosters', rosterRouter);
   app.use('/rosters', assignmentRouter);
+  app.use('/rosters', exportRouter);
+  app.use('/rosters', emailRouter);
 
   return app;
 }

@@ -129,3 +129,38 @@ describe('api.rosters assignment methods', () => {
     );
   });
 });
+
+describe('api.rosters publish/export/email', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('publishes a roster', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 'roster-1', status: 'published' }) });
+    await api.rosters.publish('roster-1');
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters/roster-1/publish'),
+      expect.objectContaining({ method: 'PUT' })
+    );
+  });
+
+  it('sends emails with the given staffIds', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ sentTo: [] }) });
+    await api.rosters.sendEmails('roster-1', ['staff-1']);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters/roster-1/send-emails'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ staffIds: ['staff-1'] }) })
+    );
+  });
+
+  it('builds an export url scoped to a staff member', () => {
+    const url = api.rosters.exportUrl('roster-1', 'ics', 'staff-1');
+    expect(url).toContain('/rosters/roster-1/export/ics');
+    expect(url).toContain('staffId=staff-1');
+  });
+
+  it('builds a whole-roster export url without a staffId', () => {
+    const url = api.rosters.exportUrl('roster-1', 'csv');
+    expect(url).toBe(`${url.split('/rosters')[0]}/rosters/roster-1/export/csv`);
+  });
+});

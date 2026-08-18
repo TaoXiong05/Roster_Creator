@@ -12,6 +12,7 @@ export function RosterDetailPage() {
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
 
   const loadRoster = async () => {
     if (!id) return;
@@ -72,6 +73,26 @@ export function RosterDetailPage() {
     }
   };
 
+  const handlePublish = async () => {
+    if (!id) return;
+    const updated = await api.rosters.publish(id);
+    setRoster((prev) => (prev ? { ...prev, status: updated.status } : prev));
+  };
+
+  const handleSendAll = async () => {
+    if (!id) return;
+    setEmailStatus(null);
+    const result = await api.rosters.sendEmails(id);
+    setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+  };
+
+  const handleSendOne = async (staffId: string) => {
+    if (!id) return;
+    setEmailStatus(null);
+    const result = await api.rosters.sendEmails(id, [staffId]);
+    setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+  };
+
   if (!roster) return <div className="p-4">加载中...</div>;
 
   return (
@@ -83,7 +104,7 @@ export function RosterDetailPage() {
             {roster.dateRangeStart.slice(0, 10)} ~ {roster.dateRangeEnd.slice(0, 10)} · 状态：{roster.status}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={handleGenerate}
             disabled={generating}
@@ -98,6 +119,16 @@ export function RosterDetailPage() {
           >
             保存
           </button>
+          <button
+            onClick={handlePublish}
+            disabled={roster.status === 'published'}
+            className="border rounded px-3 py-2 text-sm disabled:opacity-50"
+          >
+            发布
+          </button>
+          <button onClick={handleSendAll} className="border rounded px-3 py-2 text-sm">
+            发送邮件给全体
+          </button>
         </div>
       </div>
       {error && (
@@ -105,6 +136,18 @@ export function RosterDetailPage() {
           {error}
         </p>
       )}
+      {emailStatus && <p className="text-sm text-green-600">{emailStatus}</p>}
+      <div className="flex gap-3 text-sm">
+        <a href={api.rosters.exportUrl(roster.id, 'ics')} className="underline">
+          导出 ICS
+        </a>
+        <a href={api.rosters.exportUrl(roster.id, 'csv')} className="underline">
+          导出 CSV
+        </a>
+        <a href={api.rosters.exportUrl(roster.id, 'pdf')} className="underline">
+          导出 PDF
+        </a>
+      </div>
       <ul className="divide-y">
         {roster.rosterShifts.map((rs) => {
           const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
@@ -152,6 +195,16 @@ export function RosterDetailPage() {
                           onChange={(e) => updateAssignment(row.id, { unfilledTag: e.target.value || null })}
                           className="border rounded px-2 py-1 text-xs w-28"
                         />
+                      </div>
+                    )}
+                    {row.staffId && (
+                      <div className="flex gap-2 text-xs">
+                        <button type="button" onClick={() => handleSendOne(row.staffId!)} className="underline">
+                          发送给TA
+                        </button>
+                        <a href={api.rosters.exportUrl(roster.id, 'ics', row.staffId)} className="underline">
+                          个人ICS
+                        </a>
                       </div>
                     )}
                   </div>

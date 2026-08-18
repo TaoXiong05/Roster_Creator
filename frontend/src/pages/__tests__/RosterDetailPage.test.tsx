@@ -7,7 +7,16 @@ import { api } from '../../api/client';
 
 vi.mock('../../api/client', () => ({
   api: {
-    rosters: { get: vi.fn(), generateAssignments: vi.fn(), saveAssignments: vi.fn() },
+    rosters: {
+      get: vi.fn(),
+      generateAssignments: vi.fn(),
+      saveAssignments: vi.fn(),
+      publish: vi.fn(),
+      sendEmails: vi.fn(),
+      exportUrl: vi.fn((id: string, format: string, staffId?: string) =>
+        `/api/rosters/${id}/export/${format}${staffId ? `?staffId=${staffId}` : ''}`
+      ),
+    },
     groups: { listMembers: vi.fn() },
   },
 }));
@@ -94,5 +103,46 @@ describe('RosterDetailPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'AGENT' }));
 
     expect(screen.getByRole('button', { name: '保存' })).toBeEnabled();
+  });
+});
+
+describe('RosterDetailPage publish and email actions', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const renderPage = () =>
+    render(
+      <MemoryRouter initialEntries={['/rosters/roster-1']}>
+        <Routes>
+          <Route path="/rosters/:id" element={<RosterDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+  it('publishes the roster', async () => {
+    (api.rosters.get as any).mockResolvedValue(baseRoster);
+    (api.groups.listMembers as any).mockResolvedValue([]);
+    (api.rosters.publish as any).mockResolvedValue({ id: 'roster-1', status: 'published' });
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '发布' }));
+
+    await waitFor(() => expect(api.rosters.publish).toHaveBeenCalledWith('roster-1'));
+    await waitFor(() => expect(screen.getByText(/published/)).toBeInTheDocument());
+  });
+
+  it('sends emails to everyone assigned', async () => {
+    (api.rosters.get as any).mockResolvedValue(baseRoster);
+    (api.groups.listMembers as any).mockResolvedValue([]);
+    (api.rosters.sendEmails as any).mockResolvedValue({ sentTo: ['a@b.com'] });
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '发送邮件给全体' }));
+
+    await waitFor(() => expect(api.rosters.sendEmails).toHaveBeenCalledWith('roster-1'));
+    await waitFor(() => expect(screen.getByText(/已发送给 1 位员工/)).toBeInTheDocument());
   });
 });

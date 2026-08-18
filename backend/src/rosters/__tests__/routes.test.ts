@@ -3,7 +3,7 @@ import request from 'supertest';
 
 vi.mock('../../db', () => ({
   prisma: {
-    roster: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
+    roster: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
     staffGroup: { findUnique: vi.fn() },
     shiftTemplate: { findUnique: vi.fn() },
   },
@@ -12,6 +12,7 @@ vi.mock('../../db', () => ({
 import { prisma } from '../../db';
 import { createApp } from '../../app';
 import { signToken } from '../../auth/jwt';
+
 
 const app = createApp();
 const authCookie = `token=${signToken({ userId: 'user-1' })}`;
@@ -158,5 +159,28 @@ describe('POST /rosters', () => {
       headcount: 3,
       requiredSkills: ['cashier'],
     });
+  });
+});
+
+describe("PUT /rosters/:id/publish", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns 404 for another user's roster", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'someone-else' });
+
+    const res = await request(app).put('/rosters/roster-1/publish').set('Cookie', authCookie);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('marks the roster as published', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1' });
+    (prisma.roster.update as any).mockResolvedValue({ id: 'roster-1', status: 'published' });
+
+    const res = await request(app).put('/rosters/roster-1/publish').set('Cookie', authCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('published');
+    expect(prisma.roster.update).toHaveBeenCalledWith({ where: { id: 'roster-1' }, data: { status: 'published' } });
   });
 });
