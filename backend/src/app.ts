@@ -2,6 +2,8 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { authRouter } from './auth/routes';
+import { googleAuthRouter } from './auth/googleRoutes';
+import { passwordResetRouter } from './auth/passwordReset';
 
 export function createApp() {
   const app = express();
@@ -11,6 +13,8 @@ export function createApp() {
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
   app.use('/auth', authRouter);
+  app.use('/auth', googleAuthRouter);
+  app.use('/auth', passwordResetRouter);
 
   return app;
 }
