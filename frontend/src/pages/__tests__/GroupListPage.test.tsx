@@ -1,0 +1,44 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { GroupListPage } from '../GroupListPage';
+import { api } from '../../api/client';
+
+vi.mock('../../api/client', () => ({
+  api: { groups: { list: vi.fn(), create: vi.fn(), rename: vi.fn(), remove: vi.fn() } },
+}));
+
+describe('GroupListPage', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('lists existing groups with member counts', async () => {
+    (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
+
+    render(
+      <MemoryRouter>
+        <GroupListPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText('Kitchen')).toBeInTheDocument());
+    expect(screen.getByText('2 名成员')).toBeInTheDocument();
+  });
+
+  it('creates a group from the form', async () => {
+    (api.groups.list as any).mockResolvedValue([]);
+    (api.groups.create as any).mockResolvedValue({ id: 'group-1', name: 'Front', memberCount: 0 });
+
+    render(
+      <MemoryRouter>
+        <GroupListPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(api.groups.list).toHaveBeenCalled());
+    await userEvent.type(screen.getByPlaceholderText('小组名称'), 'Front');
+    await userEvent.click(screen.getByRole('button', { name: '创建小组' }));
+
+    await waitFor(() => expect(api.groups.create).toHaveBeenCalledWith('Front'));
+  });
+});

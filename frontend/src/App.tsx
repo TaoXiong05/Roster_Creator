@@ -7,6 +7,10 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { StaffListPage } from './pages/StaffListPage';
+import { StaffEditPage } from './pages/StaffEditPage';
+import { GroupListPage } from './pages/GroupListPage';
+import { GroupDetailPage } from './pages/GroupDetailPage';
 
 export default function App() {
   return (
@@ -21,6 +25,38 @@ export default function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute>
+              <StaffListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/:id"
+          element={
+            <ProtectedRoute>
+              <StaffEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/groups"
+          element={
+            <ProtectedRoute>
+              <GroupListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/groups/:id"
+          element={
+            <ProtectedRoute>
+              <GroupDetailPage />
             </ProtectedRoute>
           }
         />

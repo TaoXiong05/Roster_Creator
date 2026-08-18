@@ -33,3 +33,39 @@ describe('api.login', () => {
     await expect(api.login('a@b.com', 'wrong')).rejects.toThrow('Invalid credentials');
   });
 });
+
+describe('api.staff', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('lists staff', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+    await api.staff.list();
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/staff'), expect.objectContaining({ credentials: 'include' }));
+  });
+
+  it('creates staff', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 'staff-1' }) });
+    await api.staff.create({ name: 'Alice', email: 'a@b.com', skills: [] });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/staff'),
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+});
+
+describe('api.groups', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('adds a member', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 204, json: async () => ({}) });
+    await api.groups.addMember('group-1', 'staff-1');
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/groups/group-1/members'),
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+});

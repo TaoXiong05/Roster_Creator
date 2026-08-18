@@ -1,6 +1,7 @@
 // frontend/src/pages/__tests__/DashboardPage.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from '../DashboardPage';
 import * as AuthContextModule from '../../auth/AuthContext';
 
@@ -14,7 +15,11 @@ describe('DashboardPage', () => {
       logout: vi.fn(),
     });
 
-    render(<DashboardPage />);
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText(/a@b.com/)).toBeInTheDocument();
   });
