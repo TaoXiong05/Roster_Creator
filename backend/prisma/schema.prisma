@@ -1,0 +1,125 @@
+// backend/prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?
+  googleId     String?  @unique
+  createdAt    DateTime @default(now())
+
+  staff               Staff[]
+  staffGroups         StaffGroup[]
+  shiftTemplates      ShiftTemplate[]
+  rosters             Roster[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model Staff {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  skills    String[]
+  createdAt DateTime @default(now())
+
+  preference   Preference?
+  groupMembers GroupMember[]
+  assignments  Assignment[]
+}
+
+model Preference {
+  id                        String   @id @default(uuid())
+  staffId                   String   @unique
+  staff                     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  preferredShiftTemplateIds String[]
+  unavailableDateRanges     Json
+  minHoursPerWeek           Float
+  maxHoursPerWeek           Float
+  preferredWeekdays         Int[]
+}
+
+model StaffGroup {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+
+  members GroupMember[]
+  rosters Roster[]
+}
+
+model GroupMember {
+  groupId String
+  staffId String
+  group   StaffGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  staff   Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, staffId])
+}
+
+model ShiftTemplate {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+
+  rosterShifts RosterShift[]
+}
+
+model Roster {
+  id             String     @id @default(uuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  dateRangeStart DateTime
+  dateRangeEnd   DateTime
+  groupId        String
+  group          StaffGroup @relation(fields: [groupId], references: [id])
+  status         String     @default("draft")
+  createdAt      DateTime   @default(now())
+
+  rosterShifts RosterShift[]
+}
+
+model RosterShift {
+  id              String        @id @default(uuid())
+  rosterId        String
+  roster          Roster        @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+  shiftTemplateId String
+  shiftTemplate   ShiftTemplate @relation(fields: [shiftTemplateId], references: [id])
+  date            DateTime
+  headcount       Int
+  requiredSkills  String[]
+
+  assignments Assignment[]
+}
+
+model Assignment {
+  id            String      @id @default(uuid())
+  rosterShiftId String
+  rosterShift   RosterShift @relation(fields: [rosterShiftId], references: [id], onDelete: Cascade)
+  staffId       String?
+  staff         Staff?      @relation(fields: [staffId], references: [id])
+  unfilledTag   String?
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+}
