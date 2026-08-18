@@ -76,12 +76,21 @@ export interface RosterListItem {
   shiftCount: number;
 }
 
+export interface AssignmentEntry {
+  id: string;
+  rosterShiftId: string;
+  staffId: string | null;
+  unfilledTag: string | null;
+  staff: { id: string; name: string; email: string } | null;
+}
+
 export interface RosterShift {
   id: string;
   date: string;
   headcount: number;
   requiredSkills: string[];
   shiftTemplate: ShiftTemplate;
+  assignments: AssignmentEntry[];
 }
 
 export interface RosterDetail {
@@ -154,5 +163,12 @@ export const api = {
       groupId: string;
       shifts: RosterShiftInput[];
     }) => apiRequest<RosterDetail>('/rosters', { method: 'POST', body: JSON.stringify(data) }),
+    generateAssignments: (id: string) =>
+      apiRequest<{ assignments: AssignmentEntry[] }>(`/rosters/${id}/generate-assignments`, { method: 'POST' }),
+    saveAssignments: (id: string, assignments: { id: string; staffId: string | null; unfilledTag: string | null }[]) =>
+      apiRequest<{ assignments: AssignmentEntry[] }>(`/rosters/${id}/assignments`, {
+        method: 'PUT',
+        body: JSON.stringify({ assignments }),
+      }),
   },
 };

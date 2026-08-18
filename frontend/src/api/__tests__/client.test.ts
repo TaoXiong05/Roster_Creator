@@ -105,3 +105,27 @@ describe('api.rosters', () => {
     );
   });
 });
+
+describe('api.rosters assignment methods', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('generates assignments', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ assignments: [] }) });
+    await api.rosters.generateAssignments('roster-1');
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters/roster-1/generate-assignments'),
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('saves assignments', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ assignments: [] }) });
+    await api.rosters.saveAssignments('roster-1', [{ id: 'a-1', staffId: null, unfilledTag: 'AGENT' }]);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters/roster-1/assignments'),
+      expect.objectContaining({ method: 'PUT' })
+    );
+  });
+});

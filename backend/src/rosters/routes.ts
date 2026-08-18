@@ -36,7 +36,10 @@ rosterRouter.get('/:id', async (req: AuthedRequest, res) => {
   const roster = await prisma.roster.findUnique({
     where: { id: req.params.id },
     include: {
-      rosterShifts: { include: { shiftTemplate: true }, orderBy: { date: 'asc' } },
+      rosterShifts: {
+        include: { shiftTemplate: true, assignments: { include: { staff: true } } },
+        orderBy: { date: 'asc' },
+      },
       group: true,
     },
   });
