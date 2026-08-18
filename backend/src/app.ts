@@ -4,6 +4,10 @@ import cors from 'cors';
 import { authRouter } from './auth/routes';
 import { googleAuthRouter } from './auth/googleRoutes';
 import { passwordResetRouter } from './auth/passwordReset';
+import { staffRouter } from './staff/routes';
+import { preferenceRouter } from './staff/preferenceRoutes';
+import { groupsRouter } from './groups/routes';
+import { groupMembershipRouter } from './groups/membershipRoutes';
 
 export function createApp() {
   const app = express();
@@ -15,6 +19,10 @@ export function createApp() {
   app.use('/auth', authRouter);
   app.use('/auth', googleAuthRouter);
   app.use('/auth', passwordResetRouter);
+  app.use('/staff', staffRouter);
+  app.use('/staff', preferenceRouter);
+  app.use('/groups', groupsRouter);
+  app.use('/groups', groupMembershipRouter);
 
   return app;
 }
