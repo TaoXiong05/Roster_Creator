@@ -4,8 +4,10 @@ import request from 'supertest';
 vi.mock('../../db', () => ({
   prisma: {
     roster: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    rosterShift: { deleteMany: vi.fn(), create: vi.fn() },
     staffGroup: { findUnique: vi.fn() },
     shiftTemplate: { findUnique: vi.fn() },
+    $transaction: vi.fn(async (fn: (tx: any) => Promise<unknown>) => fn(prisma)),
   },
 }));
 
@@ -277,6 +279,82 @@ describe('POST /rosters', () => {
 
     expect(res.status).toBe(400);
     expect(prisma.roster.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT /rosters/:id", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns 404 for another user's roster", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'someone-else' });
+
+    const res = await request(app).put('/rosters/roster-1').set('Cookie', authCookie).send({
+      name: 'Week 35',
+      dateRangeStart: '2026-08-24',
+      dateRangeEnd: '2026-08-30',
+      groupId: 'group-1',
+      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], headcount: 2, requiredSkills: [] }],
+    });
+
+    expect(res.status).toBe(404);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the group does not belong to the current user", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1' });
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'someone-else' });
+
+    const res = await request(app).put('/rosters/roster-1').set('Cookie', authCookie).send({
+      name: 'Week 35',
+      dateRangeStart: '2026-08-24',
+      dateRangeEnd: '2026-08-30',
+      groupId: 'group-1',
+      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], headcount: 2, requiredSkills: [] }],
+    });
+
+    expect(res.status).toBe(404);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("updates roster fields and rebuilds its shifts", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', hoursPerShift: 8 });
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+    (prisma.roster.update as any).mockResolvedValue({ id: 'roster-1', name: 'Week 35' });
+    (prisma.rosterShift.deleteMany as any).mockResolvedValue({ count: 0 });
+    (prisma.rosterShift.create as any).mockResolvedValue({ id: 'rs-new' });
+
+    const res = await request(app).put('/rosters/roster-1').set('Cookie', authCookie).send({
+      name: 'Week 35',
+      dateRangeStart: '2026-08-24',
+      dateRangeEnd: '2026-08-24',
+      groupId: 'group-1',
+      hoursPerShift: 6,
+      shifts: [
+        { shiftTemplateId: 'template-1', dates: ['2026-08-24'], headcount: 2, requiredSkills: [] },
+      ],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: 'roster-1', name: 'Week 35' });
+    expect(prisma.roster.update).toHaveBeenCalledWith({
+      where: { id: 'roster-1' },
+      data: expect.objectContaining({
+        name: 'Week 35',
+        groupId: 'group-1',
+        hoursPerShift: 6,
+      }),
+    });
+    expect(prisma.rosterShift.deleteMany).toHaveBeenCalledWith({ where: { rosterId: 'roster-1' } });
+    expect(prisma.rosterShift.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          rosterId: 'roster-1',
+          shiftTemplateId: 'template-1',
+          headcount: 2,
+        }),
+      })
+    );
   });
 });
 

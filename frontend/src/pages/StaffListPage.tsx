@@ -1,106 +1,32 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTemplate, Staff } from '../api/client';
+import { api, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
-import { PreferenceFields } from '../components/PreferenceFields';
-import { Spinner } from '../components/Spinner';
-import { useTransitionPresence } from '../hooks/useTransitionPresence';
-import {
-  btnPrimary,
-  btnDanger,
-  btnPillActive,
-  btnPillInactive,
-  btnSecondary,
-  cardBase,
-  errorText,
-  inputBase,
-  labelBase,
-  listRow,
-} from '../styles/ui';
+import { KangarooMascot } from '../components/KangarooMascot';
+import { PageSkeleton } from '../components/Skeleton';
+import { btnPrimary, btnDanger, btnSecondary } from '../styles/ui';
 
 export function StaffListPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
-  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [responsibilityIds, setResponsibilityIds] = useState<string[]>([]);
-  const [showPreferences, setShowPreferences] = useState(true);
-  const { mounted: prefMounted, visible: prefVisible } = useTransitionPresence(showPreferences, 300);
-  const [minHours, setMinHours] = useState(0);
-  const [maxHours, setMaxHours] = useState(40);
-  const [hoursPeriod, setHoursPeriod] = useState<HoursPeriod>('weekly');
-  const [hoursUnit, setHoursUnit] = useState<HoursUnit>('hours');
-  const [preferredShifts, setPreferredShifts] = useState<PreferredShift[]>([]);
-  const [activeWeekday, setActiveWeekday] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = async () => setStaff(await api.staff.list());
+  const load = async () => {
+    setLoading(true);
+    try {
+      setStaff(await api.staff.list());
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     load();
-    api.shiftTemplates.list().then(setTemplates);
-    api.responsibilities.list().then(setResponsibilities);
   }, []);
-
-  const resetForm = () => {
-    setName('');
-    setEmail('');
-    setResponsibilityIds([]);
-    setShowPreferences(true);
-    setMinHours(0);
-    setMaxHours(40);
-    setHoursPeriod('weekly');
-    setHoursUnit('hours');
-    setPreferredShifts([]);
-    setActiveWeekday(null);
-  };
-
-  const toggleResponsibility = (id: string) => {
-    setResponsibilityIds((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]));
-  };
-
-  const toggleShift = (day: number, shiftTemplateId: string) => {
-    setPreferredShifts((prev) =>
-      prev.some((p) => p.weekday === day && p.shiftTemplateId === shiftTemplateId)
-        ? prev.filter((p) => !(p.weekday === day && p.shiftTemplateId === shiftTemplateId))
-        : [...prev, { weekday: day, shiftTemplateId }]
-    );
-  };
-
-  const handleCreate = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (responsibilityIds.length === 0) {
-      setError('请至少选择一个职责');
-      return;
-    }
-    setCreating(true);
-    try {
-      const created = await api.staff.create({ name, email, responsibilityIds });
-      if (showPreferences) {
-        await api.staff.updatePreference(created.id, {
-          preferredShifts,
-          unavailableDateRanges: [],
-          minHours,
-          maxHours,
-          hoursPeriod,
-          hoursUnit,
-        });
-      }
-      resetForm();
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create staff');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleConfirmDelete = async () => {
     if (!confirmTarget) return;
@@ -115,132 +41,61 @@ export function StaffListPage() {
   };
 
   return (
-    <AppShell>
+    <AppShell width="wide">
       <div className="space-y-6">
-        <PageHeader title="员工管理" description="记录姓名、邮箱、职责和可安排时间" />
+        <PageHeader
+          title="员工管理"
+          description="查看、编辑和删除员工信息"
+          action={
+            <Link to="/staff/new" className={btnPrimary}>
+              + 创建员工
+            </Link>
+          }
+        />
 
-        {error && (
-          <p role="alert" className={errorText}>
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleCreate} className={`${cardBase} space-y-4`}>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="sm:flex-1">
-              <label htmlFor="staff-name" className={labelBase}>
-                姓名
-              </label>
-              <input
-                id="staff-name"
-                placeholder="姓名"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputBase}
-                required
-              />
-            </div>
-            <div className="sm:flex-1">
-              <label htmlFor="staff-email" className={labelBase}>
-                邮箱
-              </label>
-              <input
-                id="staff-email"
-                type="email"
-                placeholder="邮箱"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputBase}
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label className={labelBase}>职责</label>
-            {responsibilities.length === 0 ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
-                <span>还没有设置职责模板，先去创建一个吧</span>
-                <Link to="/responsibilities" className="font-medium text-coral-deep hover:underline">
-                  去设置 →
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {responsibilities.map((r) => (
-                  <button
-                    type="button"
-                    key={r.id}
-                    onClick={() => toggleResponsibility(r.id)}
-                    className={responsibilityIds.includes(r.id) ? btnPillActive : btnPillInactive}
-                  >
-                    {r.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {prefMounted ? (
-            <div
-              className={`space-y-4 border-t border-tan/15 pt-4 transition-all duration-300 ease-in-out ${
-                prefVisible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <p className="font-display text-sm font-semibold text-ink">排班偏好</p>
-                <button type="button" onClick={() => setShowPreferences(false)} className="text-xs font-medium text-ink-soft hover:text-coral-deep">
-                  收起
-                </button>
-              </div>
-              <PreferenceFields
-                templates={templates}
-                minHours={minHours}
-                maxHours={maxHours}
-                onMinHoursChange={setMinHours}
-                onMaxHoursChange={setMaxHours}
-                hoursPeriod={hoursPeriod}
-                onHoursPeriodChange={setHoursPeriod}
-                hoursUnit={hoursUnit}
-                onHoursUnitChange={setHoursUnit}
-                preferredShifts={preferredShifts}
-                activeWeekday={activeWeekday}
-                onSelectWeekday={setActiveWeekday}
-                onToggleShift={toggleShift}
-              />
-            </div>
-          ) : (
-            <button type="button" onClick={() => setShowPreferences(true)} className="text-sm font-medium text-coral-deep hover:underline">
-              + 填写排班偏好（可选）
-            </button>
-          )}
-
-          <button type="submit" disabled={creating} className={`gap-2 ${btnPrimary}`}>
-            {creating && <Spinner className="h-4 w-4" />}
-            添加员工
-          </button>
-        </form>
-
-        {staff.length === 0 ? (
-          <p className="text-sm text-ink-soft">还没有员工，先在上面添加一位吧。</p>
+        {loading ? (
+          <PageSkeleton />
+        ) : staff.length === 0 ? (
+          <EmptyState
+            icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
+            title="还没有员工"
+            description="创建第一位员工，开始安排你的团队。"
+            action={
+              <Link to="/staff/new" className={btnPrimary}>
+                + 创建员工
+              </Link>
+            }
+          />
         ) : (
-          <ul className="space-y-3">
-            {staff.map((s) => (
-              <li key={s.id} className={listRow}>
-                <div>
-                  <p className="font-medium text-ink">{s.name}</p>
-                  <p className="text-sm text-ink-soft">{s.email}</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Link to={`/staff/${s.id}`} className={btnSecondary}>
-                    编辑
-                  </Link>
-                  <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
-                    删除
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                  <th className="px-5 py-3">姓名</th>
+                  <th className="hidden px-5 py-3 sm:table-cell">邮箱</th>
+                  <th className="px-5 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-tan/10">
+                {staff.map((s) => (
+                  <tr key={s.id} className="transition-colors hover:bg-sand/70">
+                    <td className="px-5 py-3 font-medium text-ink">{s.name}</td>
+                    <td className="hidden px-5 py-3 text-ink-soft sm:table-cell">{s.email}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Link to={`/staff/${s.id}`} className={btnSecondary}>
+                          编辑
+                        </Link>
+                        <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

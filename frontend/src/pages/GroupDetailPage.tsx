@@ -54,26 +54,32 @@ export function GroupDetailPage() {
   };
 
   return (
-    <AppShell>
-      <div className="space-y-4">
+    <AppShell width="wide">
+      <div className="space-y-6">
         <BackLink to="/groups" label="返回小组管理" />
-        <PageHeader title="小组成员" />
+        <PageHeader title="小组成员" description="把员工加进这个小组，排班时就能一起分配" />
 
         <div className={`${cardBase} space-y-3`}>
           <h2 className="font-display text-base font-semibold text-ink">组内成员</h2>
           {members.length === 0 ? (
             <p className="text-sm text-ink-soft">这个小组还没有成员。</p>
           ) : (
-            <ul className="divide-y divide-tan/15">
-              {members.map((m) => (
-                <li key={m.id} className="flex items-center justify-between py-2.5">
-                  <span className="text-sm text-ink">{m.name}</span>
-                  <button onClick={() => setConfirmTarget(m)} className={btnDanger}>
-                    移出
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-hidden rounded-2xl border border-tan/15">
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-tan/10">
+                  {members.map((m) => (
+                    <tr key={m.id} className="transition-colors hover:bg-sand/60">
+                      <td className="px-4 py-2.5 text-ink">{m.name}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button onClick={() => setConfirmTarget(m)} className={btnDanger}>
+                          移出
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -82,17 +88,23 @@ export function GroupDetailPage() {
           {available.length === 0 ? (
             <p className="text-sm text-ink-soft">没有可添加的员工了。</p>
           ) : (
-            <ul className="divide-y divide-tan/15">
-              {available.map((s) => (
-                <li key={s.id} className="flex items-center justify-between py-2.5">
-                  <span className="text-sm text-ink">{s.name}</span>
-                  <button onClick={() => handleAdd(s.id)} disabled={pendingId === s.id} className={`gap-2 ${btnSecondary}`}>
-                    {pendingId === s.id && <Spinner className="h-4 w-4" />}
-                    加入
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-hidden rounded-2xl border border-tan/15">
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-tan/10">
+                  {available.map((s) => (
+                    <tr key={s.id} className="transition-colors hover:bg-sand/60">
+                      <td className="px-4 py-2.5 text-ink">{s.name}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button onClick={() => handleAdd(s.id)} disabled={pendingId === s.id} className={`gap-2 ${btnSecondary}`}>
+                          {pendingId === s.id && <Spinner className="h-4 w-4" />}
+                          加入
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

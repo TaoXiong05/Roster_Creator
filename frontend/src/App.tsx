@@ -9,6 +9,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { StaffListPage } from './pages/StaffListPage';
+import { StaffCreatePage } from './pages/StaffCreatePage';
 import { StaffEditPage } from './pages/StaffEditPage';
 import { GroupListPage } from './pages/GroupListPage';
 import { GroupDetailPage } from './pages/GroupDetailPage';
@@ -72,6 +73,14 @@ export default function App() {
           }
         />
         <Route
+          path="/staff/new"
+          element={
+            <ProtectedRoute>
+              <StaffCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/staff/:id"
           element={
             <ProtectedRoute>
@@ -121,6 +130,14 @@ export default function App() {
         />
         <Route
           path="/rosters/new"
+          element={
+            <ProtectedRoute>
+              <RosterCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rosters/:id/edit"
           element={
             <ProtectedRoute>
               <RosterCreatePage />

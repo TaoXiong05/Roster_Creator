@@ -22,33 +22,46 @@ function GumLeaf({ className, style }: { className: string; style: CSSProperties
  * Fixed, non-interactive backdrop layer: slow outback-toned light drifting
  * behind the app, and a handful of gum leaves gently falling. Purely
  * atmospheric — respects prefers-reduced-motion via motion-safe:.
+ *
+ * `subtle` is for the working app shell: it drops the falling leaves and the
+ * drifting animation, and dims the colour blobs, so the background stays calm
+ * while users work. The full animated treatment is reserved for auth/landing.
  */
-export function AmbientBackground() {
+export function AmbientBackground({ subtle = false }: { subtle?: boolean }) {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className="motion-safe:animate-blob-drift absolute -left-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-coral/15 blur-3xl" />
       <div
-        className="motion-safe:animate-blob-drift-slow absolute -right-32 top-1/4 h-[30rem] w-[30rem] rounded-full bg-eucalyptus/15 blur-3xl"
-        style={{ animationDelay: '2s' }}
+        className={`absolute -left-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-coral/15 blur-3xl ${
+          subtle ? 'opacity-40' : 'motion-safe:animate-blob-drift'
+        }`}
       />
       <div
-        className="motion-safe:animate-blob-drift absolute -bottom-40 left-1/3 h-[24rem] w-[24rem] rounded-full bg-tan/15 blur-3xl"
-        style={{ animationDelay: '6s' }}
+        className={`absolute -right-32 top-1/4 h-[30rem] w-[30rem] rounded-full bg-eucalyptus/15 blur-3xl ${
+          subtle ? 'opacity-40' : 'motion-safe:animate-blob-drift-slow'
+        }`}
+        style={subtle ? undefined : { animationDelay: '2s' }}
+      />
+      <div
+        className={`absolute -bottom-40 left-1/3 h-[24rem] w-[24rem] rounded-full bg-tan/15 blur-3xl ${
+          subtle ? 'opacity-40' : 'motion-safe:animate-blob-drift'
+        }`}
+        style={subtle ? undefined : { animationDelay: '6s' }}
       />
 
-      {LEAVES.map((leaf, i) => (
-        <GumLeaf
-          key={i}
-          className={`motion-safe:animate-leaf-fall absolute top-0 ${leaf.tone}`}
-          style={{
-            left: leaf.left,
-            width: leaf.size,
-            height: leaf.size,
-            animationDelay: leaf.delay,
-            animationDuration: leaf.duration,
-          }}
-        />
-      ))}
+      {!subtle &&
+        LEAVES.map((leaf, i) => (
+          <GumLeaf
+            key={i}
+            className={`motion-safe:animate-leaf-fall absolute top-0 ${leaf.tone}`}
+            style={{
+              left: leaf.left,
+              width: leaf.size,
+              height: leaf.size,
+              animationDelay: leaf.delay,
+              animationDuration: leaf.duration,
+            }}
+          />
+        ))}
     </div>
   );
 }
