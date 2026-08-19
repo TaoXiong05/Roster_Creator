@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { KangarooMascot } from '../components/KangarooMascot';
 import { AppShell } from '../components/AppShell';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const iconProps = {
   width: 22,
@@ -17,8 +18,7 @@ const iconProps = {
 const cards = [
   {
     to: '/staff',
-    title: '员工管理',
-    description: '记录姓名、邮箱、职责和可安排时间',
+    cardKey: 'staff',
     accentBg: 'bg-coral/15',
     accentText: 'text-coral-deep',
     accentLine: 'via-coral/50',
@@ -32,8 +32,7 @@ const cards = [
   },
   {
     to: '/groups',
-    title: '小组管理',
-    description: '把员工分组，一次性排进同一份班表',
+    cardKey: 'groups',
     accentBg: 'bg-eucalyptus/15',
     accentText: 'text-eucalyptus-dark',
     accentLine: 'via-eucalyptus/50',
@@ -49,8 +48,7 @@ const cards = [
   },
   {
     to: '/shift-templates',
-    title: '班次模板',
-    description: '设定好上下班时间，随时复用',
+    cardKey: 'shiftTemplates',
     accentBg: 'bg-tan/20',
     accentText: 'text-tan',
     accentLine: 'via-tan/50',
@@ -64,8 +62,7 @@ const cards = [
   },
   {
     to: '/rosters',
-    title: '排班表',
-    description: '创建、AI 自动分配、发布并发送',
+    cardKey: 'rosters',
     accentBg: 'bg-dusk/15',
     accentText: 'text-dusk',
     accentLine: 'via-dusk/50',
@@ -83,6 +80,7 @@ const cards = [
 
 export function DashboardPage() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const name = user?.email ? user.email.split('@')[0] : '';
 
   return (
@@ -98,8 +96,8 @@ export function DashboardPage() {
             />
           </div>
           <div className="motion-safe:animate-rise-in" style={{ animationDelay: '220ms' }}>
-            <h1 className="font-display text-xl font-semibold text-ink md:text-2xl">你好呀，{name}</h1>
-            <p className="mt-0.5 text-sm text-ink-soft">今天也要把团队安排得妥妥的</p>
+            <h1 className="font-display text-xl font-semibold text-ink md:text-2xl">{t('dashboard.greeting', { name })}</h1>
+            <p className="mt-0.5 text-sm text-ink-soft">{t('dashboard.subtitle')}</p>
           </div>
         </div>
         <button
@@ -107,7 +105,7 @@ export function DashboardPage() {
           className="motion-safe:animate-rise-in flex min-h-[44px] shrink-0 items-center rounded-full border border-tan/30 px-4 text-sm font-medium text-ink-soft transition hover:border-coral-deep/40 hover:text-coral-deep"
           style={{ animationDelay: '320ms' }}
         >
-          登出
+          {t('dashboard.logout')}
         </button>
       </header>
 
@@ -126,8 +124,8 @@ export function DashboardPage() {
               {card.icon}
             </span>
             <div>
-              <h2 className="font-display text-lg font-semibold text-ink">{card.title}</h2>
-              <p className="mt-1 text-sm text-ink-soft">{card.description}</p>
+              <h2 className="font-display text-lg font-semibold text-ink">{t(`dashboard.cards.${card.cardKey}.title`)}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{t(`dashboard.cards.${card.cardKey}.description`)}</p>
             </div>
           </Link>
         ))}

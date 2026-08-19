@@ -23,9 +23,9 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    await userEvent.type(screen.getByLabelText('邮箱'), 'a@b.com');
-    await userEvent.type(screen.getByLabelText('密码'), 'wrongpass');
-    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+    await userEvent.type(screen.getByLabelText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'wrongpass');
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
 
     expect(login).toHaveBeenCalledWith('a@b.com', 'wrongpass');
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Invalid credentials'));

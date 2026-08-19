@@ -5,9 +5,11 @@ import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
 import { LockIcon } from '../components/AuthIcons';
 import { Spinner } from '../components/Spinner';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnPrimary, errorText, inputBase, labelBase, successText } from '../styles/ui';
 
 export function ResetPasswordPage() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
   const [password, setPassword] = useState('');
@@ -30,16 +32,16 @@ export function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      headline="马上就能拿到新钥匙啦"
-      tagline="设置一个新密码，就能回到工作台"
-      formEyebrow="重置密码"
-      formTitle="设置新密码"
+      headline={t('auth.resetPassword.headline')}
+      tagline={t('auth.resetPassword.tagline')}
+      formEyebrow={t('auth.resetPassword.formEyebrow')}
+      formTitle={t('auth.resetPassword.formTitle')}
     >
       {done ? (
         <div className="space-y-4">
-          <p className={successText}>密码已重置，请用新密码登录。</p>
+          <p className={successText}>{t('auth.resetPassword.doneMessage')}</p>
           <Link to="/login" className="text-sm text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            返回登录
+            {t('auth.resetPassword.backToLogin')}
           </Link>
         </div>
       ) : (
@@ -51,7 +53,7 @@ export function ResetPasswordPage() {
           )}
           <div>
             <label htmlFor="password" className={labelBase}>
-              新密码
+              {t('auth.resetPassword.newPasswordLabel')}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
@@ -60,7 +62,7 @@ export function ResetPasswordPage() {
               <input
                 id="password"
                 type="password"
-                placeholder="新密码（至少6位）"
+                placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={6}
@@ -71,7 +73,7 @@ export function ResetPasswordPage() {
           </div>
           <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
             {loading && <Spinner className="h-4 w-4" />}
-            重置密码
+            {t('auth.resetPassword.submit')}
           </button>
         </form>
       )}

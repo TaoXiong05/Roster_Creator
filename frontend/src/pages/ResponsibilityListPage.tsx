@@ -7,9 +7,11 @@ import { KangarooMascot } from '../components/KangarooMascot';
 import { PageHeader } from '../components/PageHeader';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase } from '../styles/ui';
 
 export function ResponsibilityListPage() {
+  const { t } = useLanguage();
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -75,16 +77,16 @@ export function ResponsibilityListPage() {
   return (
     <AppShell width="wide">
       <div className="space-y-6">
-        <PageHeader title="职责模板" description="定义员工可以承担的职责，员工管理里可以多选" />
+        <PageHeader title={t('responsibilities.title')} description={t('responsibilities.description')} />
 
         <form onSubmit={handleCreate} className={`${cardBase} flex flex-col gap-3 sm:flex-row sm:items-end`}>
           <div className="sm:flex-1">
             <label htmlFor="responsibility-name" className={labelBase}>
-              职责名称
+              {t('responsibilities.nameLabel')}
             </label>
             <input
               id="responsibility-name"
-              placeholder="名称（如：收银）"
+              placeholder={t('responsibilities.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputBase}
@@ -93,7 +95,7 @@ export function ResponsibilityListPage() {
           </div>
           <button type="submit" disabled={creating} className={`shrink-0 gap-2 ${btnPrimary}`}>
             {creating && <Spinner className="h-4 w-4" />}
-            添加职责
+            {t('responsibilities.addButton')}
           </button>
         </form>
 
@@ -102,16 +104,16 @@ export function ResponsibilityListPage() {
         ) : responsibilities.length === 0 ? (
           <EmptyState
             icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
-            title="还没有职责模板"
-            description="在上方添加一个职责，员工管理里就可以多选了。"
+            title={t('responsibilities.emptyTitle')}
+            description={t('responsibilities.emptyDescription')}
           />
         ) : (
           <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">职责名称</th>
-                  <th className="px-5 py-3 text-right">操作</th>
+                  <th className="px-5 py-3">{t('responsibilities.nameHeader')}</th>
+                  <th className="px-5 py-3 text-right">{t('responsibilities.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
@@ -122,7 +124,7 @@ export function ResponsibilityListPage() {
                         <form onSubmit={handleSaveEdit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                           <div className="sm:flex-1">
                             <label htmlFor={`edit-responsibility-${r.id}`} className={labelBase}>
-                              职责名称
+                              {t('responsibilities.nameLabel')}
                             </label>
                             <input
                               id={`edit-responsibility-${r.id}`}
@@ -135,10 +137,10 @@ export function ResponsibilityListPage() {
                           <div className="flex shrink-0 gap-2">
                             <button type="submit" disabled={savingEdit} className={`gap-2 ${btnPrimary}`}>
                               {savingEdit && <Spinner className="h-4 w-4" />}
-                              保存
+                              {t('common.save')}
                             </button>
                             <button type="button" onClick={() => setEditingId(null)} className={btnSecondary}>
-                              取消
+                              {t('common.cancel')}
                             </button>
                           </div>
                         </form>
@@ -150,10 +152,10 @@ export function ResponsibilityListPage() {
                       <td className="px-5 py-3">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => startEdit(r)} className={btnSecondary}>
-                            编辑
+                            {t('common.edit')}
                           </button>
                           <button onClick={() => setConfirmTarget(r)} className={btnDanger}>
-                            删除
+                            {t('common.delete')}
                           </button>
                         </div>
                       </td>
@@ -168,8 +170,8 @@ export function ResponsibilityListPage() {
 
       <ConfirmDialog
         open={!!confirmTarget}
-        title="删除职责"
-        message={`确定要删除「${confirmTarget?.name ?? ''}」吗？已经勾选这个职责的员工不受影响，但之后无法再选用它。`}
+        title={t('responsibilities.deleteTitle')}
+        message={t('responsibilities.deleteMessage', { name: confirmTarget?.name ?? '' })}
         loading={deleting}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}

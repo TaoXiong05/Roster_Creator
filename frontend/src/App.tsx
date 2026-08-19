@@ -1,6 +1,7 @@
 // frontend/src/App.tsx
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { GuestRoute } from './auth/GuestRoute';
 import { LoginPage } from './pages/LoginPage';
@@ -22,8 +23,9 @@ import { HelpPage } from './pages/HelpPage';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Routes>
+    <LanguageProvider>
+      <AuthProvider>
+        <Routes>
         <Route
           path="/login"
           element={
@@ -169,6 +171,7 @@ export default function App() {
           }
         />
       </Routes>
-    </AuthProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

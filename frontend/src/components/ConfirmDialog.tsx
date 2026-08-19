@@ -1,4 +1,5 @@
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnDanger, btnSecondary } from '../styles/ui';
 import { Spinner } from './Spinner';
 
@@ -17,13 +18,14 @@ export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = '确认删除',
-  cancelLabel = '取消',
+  confirmLabel,
+  cancelLabel,
   loading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   const { mounted, visible } = useTransitionPresence(open, 300);
+  const { t } = useLanguage();
   if (!mounted) return null;
 
   return (
@@ -49,11 +51,11 @@ export function ConfirmDialog({
         <p className="mt-2 text-sm font-medium text-red-600">{message}</p>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onCancel} disabled={loading} className={btnSecondary}>
-            {cancelLabel}
+            {cancelLabel ?? t('common.cancel')}
           </button>
           <button type="button" onClick={onConfirm} disabled={loading} className={`gap-2 ${btnDanger}`}>
             {loading && <Spinner className="h-4 w-4" />}
-            {confirmLabel}
+            {confirmLabel ?? t('common.confirmDelete')}
           </button>
         </div>
       </div>

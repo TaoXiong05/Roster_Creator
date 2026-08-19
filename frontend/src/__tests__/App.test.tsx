@@ -21,7 +21,7 @@ describe('App routing', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: '登录' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
   it('redirects unauthenticated users away from /dashboard', () => {
@@ -39,7 +39,7 @@ describe('App routing', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: '登录' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
   it('redirects authenticated users away from /login to /dashboard', () => {
@@ -57,7 +57,7 @@ describe('App routing', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /你好呀/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Hi there/ })).toBeInTheDocument();
   });
 
   it('redirects authenticated users away from /register to /dashboard', () => {
@@ -75,6 +75,6 @@ describe('App routing', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /你好呀/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Hi there/ })).toBeInTheDocument();
   });
 });

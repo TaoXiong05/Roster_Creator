@@ -23,9 +23,9 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     );
 
-    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('密码（至少6位）'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: '注册' }));
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
+    await userEvent.type(screen.getByPlaceholderText('Password (at least 6 characters)'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Sign up' }));
 
     await waitFor(() => expect(register).toHaveBeenCalledWith('a@b.com', 'password123'));
   });

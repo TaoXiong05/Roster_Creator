@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, RosterListItem } from '../api/client';
+import { formatDate } from '../utils/date';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
@@ -8,9 +9,11 @@ import { KangarooMascot } from '../components/KangarooMascot';
 import { PageHeader } from '../components/PageHeader';
 import { PageSkeleton } from '../components/Skeleton';
 import { StatusPill } from '../components/StatusPill';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnDanger, btnPrimary, btnSecondary } from '../styles/ui';
 
 export function RosterListPage() {
+  const { t } = useLanguage();
   const [rosters, setRosters] = useState<RosterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmTarget, setConfirmTarget] = useState<RosterListItem | null>(null);
@@ -42,11 +45,11 @@ export function RosterListPage() {
     <AppShell width="wide">
       <div className="space-y-6">
         <PageHeader
-          title="排班表"
-          description="创建、AI 自动分配、发布并发送"
+          title={t('rosters.listTitle')}
+          description={t('rosters.listDescription')}
           action={
             <Link to="/rosters/new" className={btnPrimary}>
-              创建排班
+              {t('rosters.createRosterButton')}
             </Link>
           }
         />
@@ -56,11 +59,11 @@ export function RosterListPage() {
         ) : rosters.length === 0 ? (
           <EmptyState
             icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
-            title="还没有排班表"
-            description="创建一份排班，让 AI 帮你把班次分配到员工手上。"
+            title={t('rosters.emptyTitle')}
+            description={t('rosters.emptyDescription')}
             action={
               <Link to="/rosters/new" className={btnPrimary}>
-                创建排班
+                {t('rosters.createRosterButton')}
               </Link>
             }
           />
@@ -69,11 +72,11 @@ export function RosterListPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">排班名称</th>
-                  <th className="hidden px-5 py-3 sm:table-cell">小组</th>
-                  <th className="hidden px-5 py-3 md:table-cell">日期范围</th>
-                  <th className="hidden px-5 py-3 lg:table-cell">班次</th>
-                  <th className="px-5 py-3 text-right">操作</th>
+                  <th className="px-5 py-3">{t('rosters.nameHeader')}</th>
+                  <th className="hidden px-5 py-3 sm:table-cell">{t('rosters.groupHeader')}</th>
+                  <th className="hidden px-5 py-3 md:table-cell">{t('rosters.dateRangeHeader')}</th>
+                  <th className="hidden px-5 py-3 lg:table-cell">{t('rosters.shiftsHeader')}</th>
+                  <th className="px-5 py-3 text-right">{t('rosters.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
@@ -92,19 +95,19 @@ export function RosterListPage() {
                     </td>
                     <td className="hidden px-5 py-3 text-ink-soft sm:table-cell">{r.groupName}</td>
                     <td className="hidden px-5 py-3 font-mono text-xs text-ink-soft md:table-cell">
-                      {r.dateRangeStart.slice(0, 10)} ~ {r.dateRangeEnd.slice(0, 10)}
+                      {formatDate(r.dateRangeStart)} ~ {formatDate(r.dateRangeEnd)}
                     </td>
-                    <td className="hidden px-5 py-3 text-ink-soft lg:table-cell">{r.shiftCount} 个班次</td>
+                    <td className="hidden px-5 py-3 text-ink-soft lg:table-cell">{r.shiftCount} {t('rosters.shiftCountSuffix')}</td>
                     <td className="px-5 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Link to={`/rosters/${r.id}/edit`} className={btnSecondary}>
-                          编辑时间和偏好
+                          {t('rosters.editTimePrefs')}
                         </Link>
                         <Link to={`/rosters/${r.id}`} className={btnPrimary}>
-                          准备发布
+                          {t('rosters.prepareToPublish')}
                         </Link>
                         <button onClick={() => setConfirmTarget(r)} className={btnDanger}>
-                          删除
+                          {t('common.delete')}
                         </button>
                       </div>
                     </td>
@@ -118,8 +121,8 @@ export function RosterListPage() {
 
       <ConfirmDialog
         open={!!confirmTarget}
-        title="删除排班表"
-        message={`确定要删除「${confirmTarget?.name ?? ''}」吗？此操作不可撤销。`}
+        title={t('rosters.deleteTitle')}
+        message={t('rosters.deleteMessage', { name: confirmTarget?.name ?? '' })}
         loading={deleting}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}

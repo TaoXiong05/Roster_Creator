@@ -5,11 +5,13 @@ import { useAuth } from '../auth/AuthContext';
 import { AuthLayout } from '../components/AuthLayout';
 import { MailIcon, LockIcon } from '../components/AuthIcons';
 import { Spinner } from '../components/Spinner';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnPrimary, errorText, fieldErrorText, inputBase, inputError, labelBase } from '../styles/ui';
 
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +35,10 @@ export function RegisterPage() {
 
   return (
     <AuthLayout
-      headline="让我陪你把整个团队安排好"
-      tagline="创建一个账号，开始记录员工、班次和排班表"
-      formEyebrow="第一次来呀"
-      formTitle="注册"
+      headline={t('auth.register.headline')}
+      tagline={t('auth.register.tagline')}
+      formEyebrow={t('auth.register.formEyebrow')}
+      formTitle={t('auth.register.formTitle')}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {bannerError && (
@@ -47,7 +49,7 @@ export function RegisterPage() {
 
         <div>
           <label htmlFor="email" className={labelBase}>
-            邮箱
+            {t('auth.register.emailLabel')}
           </label>
           <div className="relative">
             <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
@@ -56,7 +58,7 @@ export function RegisterPage() {
             <input
               id="email"
               type="email"
-              placeholder="邮箱"
+              placeholder={t('auth.register.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={`${emailFieldError ? inputError : inputBase} pl-11`}
@@ -72,7 +74,7 @@ export function RegisterPage() {
 
         <div>
           <label htmlFor="password" className={labelBase}>
-            密码
+            {t('auth.register.passwordLabel')}
           </label>
           <div className="relative">
             <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
@@ -81,7 +83,7 @@ export function RegisterPage() {
             <input
               id="password"
               type="password"
-              placeholder="密码（至少6位）"
+              placeholder={t('auth.register.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
@@ -93,12 +95,12 @@ export function RegisterPage() {
 
         <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
           {loading && <Spinner className="h-4 w-4" />}
-          注册
+          {t('auth.register.submit')}
         </button>
 
         <p className="text-sm text-ink-soft">
           <Link to="/login" className="underline-offset-4 hover:text-coral-deep hover:underline">
-            已有账号？登录
+            {t('auth.register.haveAccount')}
           </Link>
         </p>
       </form>

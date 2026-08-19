@@ -1,16 +1,16 @@
 import { Link } from 'react-router-dom';
 import { HoursPeriod, HoursUnit, PreferredShift, ShiftTemplate } from '../api/client';
+import { getDictionary, useLanguage } from '../i18n/LanguageContext';
 import { btnPillActive, btnPillDanger, btnPillInactive, inputBase, labelBase } from '../styles/ui';
 
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-const HOURS_PERIODS: { value: HoursPeriod; label: string }[] = [
-  { value: 'weekly', label: '每周' },
-  { value: 'fortnightly', label: '每两周' },
-  { value: 'monthly', label: '每月' },
+const HOURS_PERIODS: { value: HoursPeriod; labelKey: string }[] = [
+  { value: 'weekly', labelKey: 'preferenceFields.periodWeekly' },
+  { value: 'fortnightly', labelKey: 'preferenceFields.periodFortnightly' },
+  { value: 'monthly', labelKey: 'preferenceFields.periodMonthly' },
 ];
-const HOURS_UNITS: { value: HoursUnit; label: string }[] = [
-  { value: 'hours', label: '小时数' },
-  { value: 'shifts', label: '班次数' },
+const HOURS_UNITS: { value: HoursUnit; labelKey: string }[] = [
+  { value: 'hours', labelKey: 'preferenceFields.unitHoursOption' },
+  { value: 'shifts', labelKey: 'preferenceFields.unitShiftsOption' },
 ];
 
 interface WeekdayShiftSectionProps {
@@ -24,6 +24,9 @@ interface WeekdayShiftSectionProps {
   emptyHint: string;
   summaryHeading: string;
   activePillClass: string;
+  weekdays: string[];
+  noTemplatesHint: string;
+  goSetUp: string;
   weekdayAriaLabel?: (day: number) => string;
   shiftAriaLabel?: (name: string) => string;
 }
@@ -39,9 +42,13 @@ function WeekdayShiftSection({
   emptyHint,
   summaryHeading,
   activePillClass,
+  weekdays,
+  noTemplatesHint,
+  goSetUp,
   weekdayAriaLabel,
   shiftAriaLabel,
 }: WeekdayShiftSectionProps) {
+  const { t } = useLanguage();
   const activeShiftIds =
     activeWeekday === null ? [] : entries.filter((p) => p.weekday === activeWeekday).map((p) => p.shiftTemplateId);
 
@@ -61,7 +68,7 @@ function WeekdayShiftSection({
       <div>
         <p className={labelBase}>{heading}</p>
         <div className="flex flex-wrap gap-2">
-          {WEEKDAYS.map((label, day) => {
+          {weekdays.map((label, day) => {
             const configured = entries.some((p) => p.weekday === day);
             return (
               <button
@@ -87,9 +94,9 @@ function WeekdayShiftSection({
         <p className={labelBase}>{activeLabel(activeWeekday)}</p>
         {templates.length === 0 ? (
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
-            <span>还没有设置班次模板，先去创建一个吧</span>
+            <span>{noTemplatesHint}</span>
             <Link to="/shift-templates" className="font-medium text-coral-deep hover:underline">
-              去设置 →
+              {goSetUp}
             </Link>
           </div>
         ) : activeWeekday === null ? (
@@ -119,7 +126,7 @@ function WeekdayShiftSection({
           <ul className="space-y-1 rounded-2xl border border-tan/15 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
             {summary.map(({ day, shiftNames }) => (
               <li key={day}>
-                <span className="font-medium text-ink">{WEEKDAYS[day]}</span>：{shiftNames.join('、')}
+                <span className="font-medium text-ink">{weekdays[day]}</span>{t('common.colon')}{shiftNames.join(t('common.listSeparator'))}
               </li>
             ))}
           </ul>
@@ -168,14 +175,16 @@ export function PreferenceFields({
   onSelectUnavailableWeekday,
   onToggleUnavailableShift,
 }: PreferenceFieldsProps) {
-  const minMaxLabel = hoursUnit === 'shifts' ? '班次数' : '工时';
+  const { t, language } = useLanguage();
+  const days = getDictionary(language).weekdaysShort;
+  const minMaxLabel = hoursUnit === 'shifts' ? t('preferenceFields.unitShifts') : t('preferenceFields.unitHours');
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="hours-period" className={labelBase}>
-            工时周期
+            {t('preferenceFields.hoursPeriodLabel')}
           </label>
           <select
             id="hours-period"
@@ -185,14 +194,14 @@ export function PreferenceFields({
           >
             {HOURS_PERIODS.map((period) => (
               <option key={period.value} value={period.value}>
-                {period.label}
+                {t(period.labelKey)}
               </option>
             ))}
           </select>
         </div>
         <div>
           <label htmlFor="hours-unit" className={labelBase}>
-            计算方式
+            {t('preferenceFields.hoursUnitLabel')}
           </label>
           <select
             id="hours-unit"
@@ -202,7 +211,7 @@ export function PreferenceFields({
           >
             {HOURS_UNITS.map((unit) => (
               <option key={unit.value} value={unit.value}>
-                {unit.label}
+                {t(unit.labelKey)}
               </option>
             ))}
           </select>
@@ -211,7 +220,7 @@ export function PreferenceFields({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelBase}>最小{minMaxLabel}</label>
+          <label className={labelBase}>{t('preferenceFields.minLabel', { unit: minMaxLabel })}</label>
           <input
             type="number"
             value={minHours}
@@ -220,7 +229,7 @@ export function PreferenceFields({
           />
         </div>
         <div>
-          <label className={labelBase}>最大{minMaxLabel}</label>
+          <label className={labelBase}>{t('preferenceFields.maxLabel', { unit: minMaxLabel })}</label>
           <input
             type="number"
             value={maxHours}
@@ -231,32 +240,46 @@ export function PreferenceFields({
       </div>
 
       <WeekdayShiftSection
-        heading="偏好上班的星期几"
+        heading={t('preferenceFields.preferredHeading')}
         templates={templates}
         entries={preferredShifts}
         activeWeekday={activeWeekday}
         onSelectWeekday={onSelectWeekday}
         onToggleShift={onToggleShift}
-        activeLabel={(day) => (day === null ? '想上的班次' : `${WEEKDAYS[day]}想上的班次`)}
-        emptyHint="先选择上面偏好上班的星期几"
-        summaryHeading="偏好总结"
+        activeLabel={(day) =>
+          day === null
+            ? t('preferenceFields.preferredActiveLabelNull')
+            : t('preferenceFields.preferredActiveLabel', { day: days[day] })
+        }
+        emptyHint={t('preferenceFields.selectDayFirst')}
+        summaryHeading={t('preferenceFields.summaryHeading')}
         activePillClass={btnPillActive}
+        weekdays={days}
+        noTemplatesHint={t('common.noShiftTemplatesHint')}
+        goSetUp={t('common.goSetUp')}
       />
 
       <div className="border-t border-tan/15 pt-4">
         <WeekdayShiftSection
-          heading="不可工作的星期几"
+          heading={t('preferenceFields.unavailableHeading')}
           templates={templates}
           entries={unavailableShifts}
           activeWeekday={unavailableActiveWeekday}
           onSelectWeekday={onSelectUnavailableWeekday}
           onToggleShift={onToggleUnavailableShift}
-          activeLabel={(day) => (day === null ? '不能上的班次' : `${WEEKDAYS[day]}不能上的班次`)}
-          emptyHint="先选择上面不可工作的星期几"
-          summaryHeading="不可用总结"
+          activeLabel={(day) =>
+            day === null
+              ? t('preferenceFields.unavailableActiveLabelNull')
+              : t('preferenceFields.unavailableActiveLabel', { day: days[day] })
+          }
+          emptyHint={t('preferenceFields.selectUnavailableDayFirst')}
+          summaryHeading={t('preferenceFields.unavailableSummaryHeading')}
           activePillClass={btnPillDanger}
-          weekdayAriaLabel={(day) => `不可用 ${WEEKDAYS[day]}`}
-          shiftAriaLabel={(name) => `不可用 ${name}`}
+          weekdays={days}
+          noTemplatesHint={t('common.noShiftTemplatesHint')}
+          goSetUp={t('common.goSetUp')}
+          weekdayAriaLabel={(day) => t('preferenceFields.unavailableWeekdayAria', { day: days[day] })}
+          shiftAriaLabel={(name) => t('preferenceFields.unavailableShiftAria', { name })}
         />
       </div>
     </div>

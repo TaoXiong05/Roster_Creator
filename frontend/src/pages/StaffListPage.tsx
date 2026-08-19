@@ -7,9 +7,11 @@ import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
 import { KangarooMascot } from '../components/KangarooMascot';
 import { PageSkeleton } from '../components/Skeleton';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnPrimary, btnDanger, btnSecondary } from '../styles/ui';
 
 export function StaffListPage() {
+  const { t } = useLanguage();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
@@ -44,11 +46,11 @@ export function StaffListPage() {
     <AppShell width="wide">
       <div className="space-y-6">
         <PageHeader
-          title="员工管理"
-          description="查看、编辑和删除员工信息"
+          title={t('staff.listTitle')}
+          description={t('staff.listDescription')}
           action={
             <Link to="/staff/new" className={btnPrimary}>
-              + 创建员工
+              {t('staff.createButton')}
             </Link>
           }
         />
@@ -58,11 +60,11 @@ export function StaffListPage() {
         ) : staff.length === 0 ? (
           <EmptyState
             icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
-            title="还没有员工"
-            description="创建第一位员工，开始安排你的团队。"
+            title={t('staff.emptyTitle')}
+            description={t('staff.emptyDescription')}
             action={
               <Link to="/staff/new" className={btnPrimary}>
-                + 创建员工
+                {t('staff.createButton')}
               </Link>
             }
           />
@@ -71,9 +73,9 @@ export function StaffListPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">姓名</th>
-                  <th className="hidden px-5 py-3 sm:table-cell">邮箱</th>
-                  <th className="px-5 py-3 text-right">操作</th>
+                  <th className="px-5 py-3">{t('staff.nameHeader')}</th>
+                  <th className="hidden px-5 py-3 sm:table-cell">{t('staff.emailHeader')}</th>
+                  <th className="px-5 py-3 text-right">{t('staff.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
@@ -84,10 +86,10 @@ export function StaffListPage() {
                     <td className="px-5 py-3">
                       <div className="flex justify-end gap-2">
                         <Link to={`/staff/${s.id}`} className={btnSecondary}>
-                          编辑
+                          {t('common.edit')}
                         </Link>
                         <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
-                          删除
+                          {t('common.delete')}
                         </button>
                       </div>
                     </td>
@@ -101,8 +103,8 @@ export function StaffListPage() {
 
       <ConfirmDialog
         open={!!confirmTarget}
-        title="删除员工"
-        message={`确定要删除「${confirmTarget?.name ?? ''}」吗？此操作不可撤销，TA 在排班表中的分配记录也会一并移除。`}
+        title={t('staff.deleteTitle')}
+        message={t('staff.deleteMessage', { name: confirmTarget?.name ?? '' })}
         loading={deleting}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}

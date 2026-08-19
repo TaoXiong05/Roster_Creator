@@ -51,7 +51,7 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
       expect(api.staff.update).toHaveBeenCalledWith('staff-1', {
@@ -98,13 +98,13 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: '周日' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sun' }));
     await userEvent.click(screen.getByRole('button', { name: 'Morning' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '周一' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
     await userEvent.click(screen.getByRole('button', { name: 'Evening' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
       expect(api.staff.updatePreference).toHaveBeenCalledWith(
@@ -147,7 +147,7 @@ describe('StaffEditPage', () => {
     expect(screen.getByRole('button', { name: 'Cleaning' })).not.toHaveClass('bg-coral-deep');
 
     await userEvent.click(screen.getByRole('button', { name: 'Cleaning' }));
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
       expect(api.staff.update).toHaveBeenCalledWith(
@@ -177,9 +177,9 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('请至少选择一个职责');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one responsibility');
     expect(api.staff.update).not.toHaveBeenCalled();
   });
 
@@ -207,13 +207,13 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole('button', { name: '周一' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
     await userEvent.click(screen.getByRole('button', { name: 'Morning' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '不可用 周五' }));
-    await userEvent.click(screen.getByRole('button', { name: '不可用 Morning' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Fri' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Morning' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
       expect(api.staff.updatePreference).toHaveBeenCalledWith(

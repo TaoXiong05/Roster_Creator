@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Responsibility, ShiftTemplate } from '../api/client';
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { getDictionary, useLanguage } from '../i18n/LanguageContext';
+import { formatDate } from '../utils/date';
 import { btnPillInactive, btnSecondary, labelBase } from '../styles/ui';
 
-const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
-
-function weekdayLabel(date: string): string {
-  return WEEKDAY_LABELS[new Date(`${date}T00:00:00Z`).getUTCDay()];
+function weekdayLabel(date: string, weekdays: string[]): string {
+  return weekdays[new Date(`${date}T00:00:00Z`).getUTCDay()];
 }
 
 export interface DayShiftRequirement {
@@ -47,6 +47,8 @@ export function DayShiftDialog({
   onClose,
 }: DayShiftDialogProps) {
   const { mounted, visible } = useTransitionPresence(open, 300);
+  const { t, language } = useLanguage();
+  const weekdays = getDictionary(language).weekdaysShort;
   if (!mounted || !date) return null;
 
   const addedIds = new Set(rows.map((r) => r.shiftTemplateId));
@@ -70,25 +72,25 @@ export function DayShiftDialog({
         }`}
       >
         <h2 id="day-shift-dialog-title" className="font-display text-lg font-semibold text-ink">
-          {date.slice(5)}（周{weekdayLabel(date)}）
+          {formatDate(date)}（{weekdayLabel(date, weekdays)}）
         </h2>
-        <p className="mt-0.5 text-sm text-ink-soft">设置这一天需要的班次、职责和人数</p>
+        <p className="mt-0.5 text-sm text-ink-soft">{t('dayShiftDialog.subtitle')}</p>
 
         {responsibilities.length === 0 ? (
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
-            <span>还没有设置职责模板，需要先创建至少一个职责才能设置人数</span>
+            <span>{t('common.noResponsibilityTemplatesHint')}</span>
             <Link to="/responsibilities" className="font-medium text-coral-deep hover:underline">
-              去设置 →
+              {t('common.goSetUp')}
             </Link>
           </div>
         ) : (
           <>
             <div className="mt-4 space-y-3">
               {rows.length === 0 ? (
-                <p className="text-sm text-ink-soft">还没有添加班次。</p>
+                <p className="text-sm text-ink-soft">{t('dayShiftDialog.noRows')}</p>
               ) : (
                 rows.map((row, rowIndex) => {
-                  const t = templates.find((tpl) => tpl.id === row.shiftTemplateId);
+                  const tpl = templates.find((t) => t.id === row.shiftTemplateId);
                   return (
                     <div
                       key={row.shiftTemplateId}
@@ -96,17 +98,17 @@ export function DayShiftDialog({
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-ink">{t?.name ?? '未知班次'}</p>
-                          {t && (
+                          <p className="text-sm font-medium text-ink">{tpl?.name ?? '?'}</p>
+                          {tpl && (
                             <p className="text-xs text-ink-soft">
-                              {t.startTime}-{t.endTime}
+                              {tpl.startTime}-{tpl.endTime}
                             </p>
                           )}
                         </div>
                         <button
                           type="button"
                           onClick={() => onRemoveRow(rowIndex)}
-                          aria-label={`移除${t?.name ?? ''}`}
+                          aria-label={t('dayShiftDialog.removeShiftAria', { name: tpl?.name ?? '' })}
                           className="shrink-0 text-ink-soft transition hover:text-red-600"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -117,16 +119,18 @@ export function DayShiftDialog({
 
                       <div className="space-y-2">
                         {row.requirements.map((req, reqIndex) => {
-                          const respName = responsibilities.find((r) => r.id === req.responsibilityId)?.name ?? '职责';
+                          const respName =
+                            responsibilities.find((r) => r.id === req.responsibilityId)?.name ??
+                            t('dayShiftDialog.defaultResponsibilityLabel');
                           return (
                             <div key={reqIndex} className="flex items-center gap-2">
                               <select
                                 value={req.responsibilityId}
                                 onChange={(e) => onRequirementChange(rowIndex, reqIndex, { responsibilityId: e.target.value })}
-                                aria-label={`${t?.name ?? ''} 职责 ${reqIndex + 1}`}
+                                aria-label={t('dayShiftDialog.responsibilityFieldAria', { shift: tpl?.name ?? '', index: reqIndex + 1 })}
                                 className="flex-1 rounded-lg border border-tan/30 bg-white/70 px-2 py-1 text-sm text-ink outline-none transition focus:border-coral focus:ring-1 focus:ring-coral/30"
                               >
-                                <option value="">选择职责</option>
+                                <option value="">{t('dayShiftDialog.selectResponsibility')}</option>
                                 {responsibilities.map((r) => (
                                   <option key={r.id} value={r.id}>
                                     {r.name}
@@ -140,13 +144,13 @@ export function DayShiftDialog({
                                 onChange={(e) =>
                                   onRequirementChange(rowIndex, reqIndex, { headcount: Math.max(0, Number(e.target.value)) })
                                 }
-                                aria-label={`${t?.name ?? ''} ${respName} 所需人数`}
+                                aria-label={t('dayShiftDialog.headcountAria', { shift: tpl?.name ?? '', responsibility: respName })}
                                 className="w-16 rounded-lg border border-tan/30 bg-white/70 px-2 py-1 text-center text-sm text-ink outline-none transition focus:border-coral focus:ring-1 focus:ring-coral/30"
                               />
                               <button
                                 type="button"
                                 onClick={() => onRemoveRequirement(rowIndex, reqIndex)}
-                                aria-label={`移除${t?.name ?? ''}的${respName}需求`}
+                                aria-label={t('dayShiftDialog.removeRequirementAria', { shift: tpl?.name ?? '', responsibility: respName })}
                                 className="shrink-0 text-ink-soft transition hover:text-red-600"
                               >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -163,7 +167,7 @@ export function DayShiftDialog({
                         onClick={() => onAddRequirement(rowIndex)}
                         className="text-xs font-medium text-coral-deep hover:underline"
                       >
-                        + 添加更多职责需求
+                        {t('dayShiftDialog.addMoreRequirement')}
                       </button>
                     </div>
                   );
@@ -172,16 +176,16 @@ export function DayShiftDialog({
             </div>
 
             <div className="mt-4">
-              <p className={labelBase}>添加班次</p>
+              <p className={labelBase}>{t('dayShiftDialog.addShiftHeading')}</p>
               {templates.length === 0 ? (
                 <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
-                  <span>还没有设置班次模板，先去创建一个吧</span>
+                  <span>{t('common.noShiftTemplatesHint')}</span>
                   <Link to="/shift-templates" className="font-medium text-coral-deep hover:underline">
-                    去设置 →
+                    {t('common.goSetUp')}
                   </Link>
                 </div>
               ) : availableTemplates.length === 0 ? (
-                <p className="text-sm text-ink-soft">已经把所有班次都加上了。</p>
+                <p className="text-sm text-ink-soft">{t('dayShiftDialog.allAdded')}</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {availableTemplates.map((t) => (
@@ -197,7 +201,7 @@ export function DayShiftDialog({
 
         <div className="mt-6 flex justify-end">
           <button type="button" onClick={onClose} className={btnSecondary}>
-            完成
+            {t('common.done')}
           </button>
         </div>
       </div>

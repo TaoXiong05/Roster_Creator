@@ -5,9 +5,11 @@ import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
 import { MailIcon } from '../components/AuthIcons';
 import { Spinner } from '../components/Spinner';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnPrimary, errorText, inputBase, labelBase, successText } from '../styles/ui';
 
 export function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,16 +31,16 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthLayout
-      headline="钥匙丢了没关系，我来帮你找"
-      tagline="留下邮箱，重置链接马上就送到"
-      formEyebrow="找回密码"
-      formTitle="忘记密码"
+      headline={t('auth.forgotPassword.headline')}
+      tagline={t('auth.forgotPassword.tagline')}
+      formEyebrow={t('auth.forgotPassword.formEyebrow')}
+      formTitle={t('auth.forgotPassword.formTitle')}
     >
       {sent ? (
         <div className="space-y-4">
-          <p className={successText}>如果该邮箱存在，我们已经发送了重置链接，请查收邮件。</p>
+          <p className={successText}>{t('auth.forgotPassword.sentMessage')}</p>
           <Link to="/login" className="text-sm text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            返回登录
+            {t('auth.forgotPassword.backToLogin')}
           </Link>
         </div>
       ) : (
@@ -50,7 +52,7 @@ export function ForgotPasswordPage() {
           )}
           <div>
             <label htmlFor="email" className={labelBase}>
-              邮箱
+              {t('auth.forgotPassword.emailLabel')}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
@@ -59,7 +61,7 @@ export function ForgotPasswordPage() {
               <input
                 id="email"
                 type="email"
-                placeholder="邮箱"
+                placeholder={t('auth.forgotPassword.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={`${inputBase} pl-11`}
@@ -69,11 +71,11 @@ export function ForgotPasswordPage() {
           </div>
           <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
             {loading && <Spinner className="h-4 w-4" />}
-            发送重置链接
+            {t('auth.forgotPassword.submit')}
           </button>
           <p className="text-sm text-ink-soft">
             <Link to="/login" className="underline-offset-4 hover:text-coral-deep hover:underline">
-              返回登录
+              {t('auth.forgotPassword.backToLogin')}
             </Link>
           </p>
         </form>

@@ -1,3 +1,5 @@
+import { useLanguage } from '../i18n/LanguageContext';
+
 /**
  * Lightweight skeleton block for loading placeholders. Uses a soft pulse that
  * is disabled under prefers-reduced-motion.
@@ -13,8 +15,9 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 /** A ready-made loading layout for data pages: header + stacked card placeholders. */
 export function PageSkeleton({ rows = 4 }: { rows?: number }) {
+  const { t } = useLanguage();
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="加载中">
+    <div className="space-y-6" aria-busy="true" aria-label={t('common.loadingAria')}>
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
           <Skeleton className="h-7 w-40" />

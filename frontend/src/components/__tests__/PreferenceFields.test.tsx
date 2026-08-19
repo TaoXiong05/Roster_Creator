@@ -38,7 +38,7 @@ describe('PreferenceFields', () => {
     );
 
     // One reminder for the preferred-shifts picker, one for the unavailable-shifts picker.
-    expect(screen.getAllByText(/还没有设置班次模板/)).toHaveLength(2);
+    expect(screen.getAllByText(/No shift templates yet/)).toHaveLength(2);
     expect(screen.queryByText('Morning')).not.toBeInTheDocument();
   });
 
@@ -49,7 +49,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/先选择上面偏好上班的星期几/)).toBeInTheDocument();
+    expect(screen.getByText(/Select a preferred day above first/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Morning' })).not.toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('周一想上的班次')).toBeInTheDocument();
+    expect(screen.getByText('Shifts wanted on Mon')).toBeInTheDocument();
     // Only one picker is rendered (not one per configured day)
     expect(screen.getAllByRole('button', { name: 'Morning' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Morning' })).toHaveClass('bg-coral-deep');
@@ -79,10 +79,10 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('button', { name: '周日' })).toHaveClass('bg-coral-deep');
-    expect(screen.getByRole('button', { name: '周一' })).not.toHaveClass('bg-coral-deep');
+    expect(screen.getByRole('button', { name: 'Sun' })).toHaveClass('bg-coral-deep');
+    expect(screen.getByRole('button', { name: 'Mon' })).not.toHaveClass('bg-coral-deep');
 
-    await userEvent.click(screen.getByRole('button', { name: '周一' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
     expect(onSelectWeekday).toHaveBeenCalledWith(1);
   });
 
@@ -112,9 +112,9 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    const summary = screen.getByText('偏好总结').closest('div')!;
-    expect(summary).toHaveTextContent('周日：Morning');
-    expect(summary).toHaveTextContent('周一：Evening');
+    const summary = screen.getByText('Preference Summary').closest('div')!;
+    expect(summary).toHaveTextContent('Sun: Morning');
+    expect(summary).toHaveTextContent('Mon: Evening');
   });
 
   it('has no summary section when nothing is configured yet', () => {
@@ -124,7 +124,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    expect(screen.queryByText('偏好总结')).not.toBeInTheDocument();
+    expect(screen.queryByText('Preference Summary')).not.toBeInTheDocument();
   });
 
   it('marks configured weekdays with a checkmark, even when not the active one', () => {
@@ -138,8 +138,8 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('button', { name: '周日' }).querySelector('svg')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '周一' }).querySelector('svg')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sun' }).querySelector('svg')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mon' }).querySelector('svg')).not.toBeInTheDocument();
   });
 
   it('lets the user pick a weekly, fortnightly, or monthly hours period from a dropdown', async () => {
@@ -150,7 +150,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    const select = screen.getByLabelText('工时周期') as HTMLSelectElement;
+    const select = screen.getByLabelText('Hours Period') as HTMLSelectElement;
     expect(select.value).toBe('weekly');
 
     await userEvent.selectOptions(select, 'fortnightly');
@@ -165,7 +165,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    const select = screen.getByLabelText('计算方式') as HTMLSelectElement;
+    const select = screen.getByLabelText('Unit') as HTMLSelectElement;
     expect(select.value).toBe('hours');
 
     await userEvent.selectOptions(select, 'shifts');
@@ -178,14 +178,14 @@ describe('PreferenceFields', () => {
         <PreferenceFields {...baseProps} hoursUnit="hours" />
       </MemoryRouter>
     );
-    expect(screen.getByText('最小工时')).toBeInTheDocument();
+    expect(screen.getByText('Min Hours')).toBeInTheDocument();
 
     rerender(
       <MemoryRouter>
         <PreferenceFields {...baseProps} hoursUnit="shifts" />
       </MemoryRouter>
     );
-    expect(screen.getByText('最小班次数')).toBeInTheDocument();
+    expect(screen.getByText('Min Shifts')).toBeInTheDocument();
   });
 
   it('mirrors the preferred-shifts picker for unavailable shifts, scoped to its own active weekday', () => {
@@ -200,9 +200,9 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('周二不能上的班次')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '不可用 Morning' })).toHaveClass('bg-red-500');
-    expect(screen.getByRole('button', { name: '不可用 Evening' })).not.toHaveClass('bg-red-500');
+    expect(screen.getByText('Unavailable shifts on Tue')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Unavailable Morning' })).toHaveClass('bg-red-500');
+    expect(screen.getByRole('button', { name: 'Unavailable Evening' })).not.toHaveClass('bg-red-500');
     // The preferred-shifts picker is unaffected and still has its own bare "Morning" button.
     expect(screen.getByRole('button', { name: 'Morning' })).toBeInTheDocument();
   });
@@ -220,11 +220,11 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    await userEvent.click(screen.getByRole('button', { name: '不可用 周三' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Wed' }));
     expect(onSelectUnavailableWeekday).toHaveBeenCalledWith(3);
     expect(onSelectWeekday).not.toHaveBeenCalled();
 
-    await userEvent.click(screen.getByRole('button', { name: '周三' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Wed' }));
     expect(onSelectWeekday).toHaveBeenCalledWith(3);
   });
 
@@ -240,7 +240,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    await userEvent.click(screen.getByRole('button', { name: '不可用 Morning' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Morning' }));
     expect(onToggleUnavailableShift).toHaveBeenCalledWith(1, 'template-1');
   });
 
@@ -258,12 +258,12 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    const summary = screen.getByText('不可用总结').closest('div')!;
-    expect(summary).toHaveTextContent('周日：Morning');
-    expect(summary).toHaveTextContent('周二：Evening');
-    expect(screen.getByRole('button', { name: '不可用 周日' }).querySelector('svg')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '不可用 周一' }).querySelector('svg')).not.toBeInTheDocument();
+    const summary = screen.getByText('Unavailable Summary').closest('div')!;
+    expect(summary).toHaveTextContent('Sun: Morning');
+    expect(summary).toHaveTextContent('Tue: Evening');
+    expect(screen.getByRole('button', { name: 'Unavailable Sun' }).querySelector('svg')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Unavailable Mon' }).querySelector('svg')).not.toBeInTheDocument();
     // The preferred-shifts summary is unaffected and still absent when nothing is configured there.
-    expect(screen.queryByText('偏好总结')).not.toBeInTheDocument();
+    expect(screen.queryByText('Preference Summary')).not.toBeInTheDocument();
   });
 });

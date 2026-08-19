@@ -39,34 +39,34 @@ describe('RosterCreatePage', () => {
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
 
-    await userEvent.type(screen.getByPlaceholderText('排班名称'), 'Week 34');
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-08-17' } });
-    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-08-18' } });
-    await userEvent.selectOptions(screen.getByLabelText('员工小组'), 'group-1');
+    await userEvent.type(screen.getByPlaceholderText('Roster name'), 'Week 34');
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2026-08-17' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2026-08-18' } });
+    await userEvent.selectOptions(screen.getByLabelText('Staff Group'), 'group-1');
 
-    const hoursPerShift = screen.getByLabelText('每个班次等于多少小时');
+    const hoursPerShift = screen.getByLabelText('Hours per shift');
     await userEvent.clear(hoursPerShift);
     await userEvent.type(hoursPerShift, '6');
 
     // Day 1: open the dialog, add Morning, choose a responsibility, set headcount to 3, close.
-    await userEvent.click(screen.getByRole('button', { name: /08-17/ }));
+    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    await userEvent.selectOptions(screen.getByLabelText('Morning 职责 1'), 'resp-1');
-    const morningHeadcount = screen.getByLabelText('Morning Cashier 所需人数');
+    await userEvent.selectOptions(screen.getByLabelText('Morning responsibility 1'), 'resp-1');
+    const morningHeadcount = screen.getByLabelText('Morning Cashier headcount');
     await userEvent.clear(morningHeadcount);
     await userEvent.type(morningHeadcount, '3');
-    await userEvent.click(screen.getByRole('button', { name: '完成' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
     // Day 2: same flow with Evening, a different responsibility, headcount 4.
-    await userEvent.click(screen.getByRole('button', { name: /08-18/ }));
+    await userEvent.click(screen.getByRole('button', { name: /18\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Evening' }));
-    await userEvent.selectOptions(screen.getByLabelText('Evening 职责 1'), 'resp-2');
-    const eveningHeadcount = screen.getByLabelText('Evening Cleaning 所需人数');
+    await userEvent.selectOptions(screen.getByLabelText('Evening responsibility 1'), 'resp-2');
+    const eveningHeadcount = screen.getByLabelText('Evening Cleaning headcount');
     await userEvent.clear(eveningHeadcount);
     await userEvent.type(eveningHeadcount, '4');
-    await userEvent.click(screen.getByRole('button', { name: '完成' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '创建排班' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create Roster' }));
 
     await waitFor(() =>
       expect(api.rosters.create).toHaveBeenCalledWith(
@@ -107,26 +107,26 @@ describe('RosterCreatePage', () => {
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('排班名称'), 'Week 34');
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-08-17' } });
-    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-08-17' } });
-    await userEvent.selectOptions(screen.getByLabelText('员工小组'), 'group-1');
+    await userEvent.type(screen.getByPlaceholderText('Roster name'), 'Week 34');
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2026-08-17' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2026-08-17' } });
+    await userEvent.selectOptions(screen.getByLabelText('Staff Group'), 'group-1');
 
-    await userEvent.click(screen.getByRole('button', { name: /08-17/ }));
+    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    await userEvent.selectOptions(screen.getByLabelText('Morning 职责 1'), 'resp-1');
-    const firstHeadcount = screen.getByLabelText('Morning Cashier 所需人数');
+    await userEvent.selectOptions(screen.getByLabelText('Morning responsibility 1'), 'resp-1');
+    const firstHeadcount = screen.getByLabelText('Morning Cashier headcount');
     await userEvent.clear(firstHeadcount);
     await userEvent.type(firstHeadcount, '2');
 
-    await userEvent.click(screen.getByRole('button', { name: '+ 添加更多职责需求' }));
-    await userEvent.selectOptions(screen.getByLabelText('Morning 职责 2'), 'resp-2');
-    const secondHeadcount = screen.getByLabelText('Morning Cleaning 所需人数');
+    await userEvent.click(screen.getByRole('button', { name: '+ Add another requirement' }));
+    await userEvent.selectOptions(screen.getByLabelText('Morning responsibility 2'), 'resp-2');
+    const secondHeadcount = screen.getByLabelText('Morning Cleaning headcount');
     await userEvent.clear(secondHeadcount);
     await userEvent.type(secondHeadcount, '1');
 
-    await userEvent.click(screen.getByRole('button', { name: '完成' }));
-    await userEvent.click(screen.getByRole('button', { name: '创建排班' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create Roster' }));
 
     await waitFor(() =>
       expect(api.rosters.create).toHaveBeenCalledWith(
@@ -159,18 +159,18 @@ describe('RosterCreatePage', () => {
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('排班名称'), 'Week 34');
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-08-17' } });
-    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-08-17' } });
-    await userEvent.selectOptions(screen.getByLabelText('员工小组'), 'group-1');
+    await userEvent.type(screen.getByPlaceholderText('Roster name'), 'Week 34');
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2026-08-17' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2026-08-17' } });
+    await userEvent.selectOptions(screen.getByLabelText('Staff Group'), 'group-1');
 
-    await userEvent.click(screen.getByRole('button', { name: /08-17/ }));
+    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    await userEvent.click(screen.getByRole('button', { name: '完成' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '创建排班' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create Roster' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('请为每个班次的人数需求选择职责');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please choose a responsibility for every headcount requirement');
     expect(api.rosters.create).not.toHaveBeenCalled();
   });
 
@@ -188,14 +188,14 @@ describe('RosterCreatePage', () => {
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
 
-    await userEvent.type(screen.getByPlaceholderText('排班名称'), 'Week 34');
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-08-17' } });
-    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-08-18' } });
-    await userEvent.selectOptions(screen.getByLabelText('员工小组'), 'group-1');
+    await userEvent.type(screen.getByPlaceholderText('Roster name'), 'Week 34');
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2026-08-17' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2026-08-18' } });
+    await userEvent.selectOptions(screen.getByLabelText('Staff Group'), 'group-1');
 
-    await userEvent.click(screen.getByRole('button', { name: '创建排班' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create Roster' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('至少需要为一天设置一个班次的人数');
+    expect(await screen.findByRole('alert')).toHaveTextContent("You need to set at least one shift’s headcount on at least one day");
     expect(api.rosters.create).not.toHaveBeenCalled();
   });
 
@@ -212,15 +212,15 @@ describe('RosterCreatePage', () => {
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-08-17' } });
-    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-08-17' } });
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2026-08-17' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2026-08-17' } });
 
-    await userEvent.click(screen.getByRole('button', { name: /08-17/ }));
+    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    expect(screen.getByLabelText('Morning 职责 所需人数')).toBeInTheDocument();
+    expect(screen.getByLabelText('Morning responsibility headcount')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: '移除Morning' }));
-    expect(screen.queryByLabelText('Morning 职责 所需人数')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove Morning' }));
+    expect(screen.queryByLabelText('Morning responsibility headcount')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '+ Morning' })).toBeInTheDocument();
   });
 
@@ -237,17 +237,17 @@ describe('RosterCreatePage', () => {
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText('开始日期'), { target: { value: '2026-08-01' } });
-    fireEvent.change(screen.getByLabelText('结束日期'), { target: { value: '2026-08-10' } });
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2026-08-01' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2026-08-10' } });
 
-    expect(screen.getByRole('button', { name: /08-01/ })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /08-08/ })).not.toBeInTheDocument();
-    expect(screen.getByText('第 1 / 2 页')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /01\/08\/2026/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /08\/08\/2026/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 / 2')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: '下一周 →' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next Week →' }));
 
-    expect(screen.queryByRole('button', { name: /08-01/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /08-08/ })).toBeInTheDocument();
-    expect(screen.getByText('第 2 / 2 页')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /01\/08\/2026/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /08\/08\/2026/ })).toBeInTheDocument();
+    expect(screen.getByText('Page 2 / 2')).toBeInTheDocument();
   });
 });

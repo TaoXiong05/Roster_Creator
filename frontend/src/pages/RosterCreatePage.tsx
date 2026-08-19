@@ -1,14 +1,15 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { api, Responsibility, RosterShiftInput, ShiftTemplate, StaffGroup } from '../api/client';
+import { formatDate } from '../utils/date';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { DayShiftDialog, DayShiftRow } from '../components/DayShiftDialog';
 import { PageHeader } from '../components/PageHeader';
 import { Spinner } from '../components/Spinner';
+import { getDictionary, useLanguage } from '../i18n/LanguageContext';
 import { btnPrimary, btnSecondary, cardBase, errorText, fieldErrorText, inputBase, inputError, labelBase } from '../styles/ui';
 
-const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
 const DAYS_PER_PAGE = 7;
 
 function datesBetween(start: string, end: string): string[] {
@@ -23,12 +24,14 @@ function datesBetween(start: string, end: string): string[] {
   return dates;
 }
 
-function weekdayLabel(date: string): string {
-  return WEEKDAY_LABELS[new Date(`${date}T00:00:00Z`).getUTCDay()];
+function weekdayLabel(date: string, weekdays: string[]): string {
+  return weekdays[new Date(`${date}T00:00:00Z`).getUTCDay()];
 }
 
 export function RosterCreatePage() {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
+  const weekdays = getDictionary(language).weekdaysShort;
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
@@ -80,7 +83,7 @@ export function RosterCreatePage() {
         }
         setDayShifts(byDate);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load roster'));
+      .catch((err) => setError(err instanceof Error ? err.message : t('rosters.loadFailedError')));
     return () => {
       cancelled = true;
     };
@@ -169,12 +172,12 @@ export function RosterCreatePage() {
       (dayShifts[date] || []).some((row) => row.requirements.some((req) => req.headcount > 0 && !req.responsibilityId))
     );
     if (hasMissingResponsibility) {
-      setError('请为每个班次的人数需求选择职责');
+      setError(t('rosters.missingResponsibilityError'));
       return;
     }
     const shifts = buildShifts();
     if (shifts.length === 0) {
-      setError('至少需要为一天设置一个班次的人数');
+      setError(t('rosters.noShiftsError'));
       return;
     }
     setCreating(true);
@@ -188,7 +191,7 @@ export function RosterCreatePage() {
         navigate(`/rosters/${roster.id}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create roster');
+      setError(err instanceof Error ? err.message : t('rosters.createFailedError'));
       setCreating(false);
     }
   };
@@ -196,8 +199,8 @@ export function RosterCreatePage() {
   return (
     <AppShell>
       <div className="max-w-3xl space-y-4">
-        <BackLink to="/rosters" label="返回排班表" />
-        <PageHeader title={isEdit ? '编辑排班' : '创建排班'} />
+        <BackLink to="/rosters" label={t('rosters.backToRosters')} />
+        <PageHeader title={isEdit ? t('rosters.createPageTitleEdit') : t('rosters.createPageTitleCreate')} />
         <form onSubmit={handleSubmit} className="space-y-6">
           {bannerError && (
             <p role="alert" className={errorText}>
@@ -207,9 +210,9 @@ export function RosterCreatePage() {
 
           <div className={`${cardBase} space-y-4`}>
             <div>
-              <label className={labelBase}>排班名称</label>
+              <label className={labelBase}>{t('rosters.nameLabel')}</label>
               <input
-                placeholder="排班名称"
+                placeholder={t('rosters.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={inputBase}
@@ -218,23 +221,23 @@ export function RosterCreatePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelBase}>开始日期</label>
+                <label className={labelBase}>{t('rosters.startDateLabel')}</label>
                 <input
                   type="date"
                   value={dateRangeStart}
                   onChange={(e) => setDateRangeStart(e.target.value)}
-                  aria-label="开始日期"
+                  aria-label={t('rosters.startDateLabel')}
                   className={dateFieldError ? inputError : inputBase}
                   required
                 />
               </div>
               <div>
-                <label className={labelBase}>结束日期</label>
+                <label className={labelBase}>{t('rosters.endDateLabel')}</label>
                 <input
                   type="date"
                   value={dateRangeEnd}
                   onChange={(e) => setDateRangeEnd(e.target.value)}
-                  aria-label="结束日期"
+                  aria-label={t('rosters.endDateLabel')}
                   className={dateFieldError ? inputError : inputBase}
                   required
                 />
@@ -247,15 +250,15 @@ export function RosterCreatePage() {
             )}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelBase}>员工小组</label>
+                <label className={labelBase}>{t('rosters.groupLabel')}</label>
                 <select
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
-                  aria-label="员工小组"
+                  aria-label={t('rosters.groupLabel')}
                   className={groupFieldError ? inputError : inputBase}
                   required
                 >
-                  <option value="">选择员工小组</option>
+                  <option value="">{t('rosters.selectGroupPlaceholder')}</option>
                   {groups.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
@@ -269,14 +272,14 @@ export function RosterCreatePage() {
                 )}
               </div>
               <div>
-                <label className={labelBase}>每个班次等于多少小时</label>
+                <label className={labelBase}>{t('rosters.hoursPerShiftLabel')}</label>
                 <input
                   type="number"
                   min={0}
                   step={0.5}
                   value={hoursPerShift}
                   onChange={(e) => setHoursPerShift(Number(e.target.value))}
-                  aria-label="每个班次等于多少小时"
+                  aria-label={t('rosters.hoursPerShiftLabel')}
                   className={inputBase}
                   required
                 />
@@ -286,26 +289,26 @@ export function RosterCreatePage() {
 
           <div className="space-y-3">
             <div>
-              <h2 className="font-display text-base font-semibold text-ink">班次安排</h2>
-              <p className="mt-0.5 text-sm text-ink-soft">点击某一天，设置当天需要哪些班次、各需要几人。</p>
+              <h2 className="font-display text-base font-semibold text-ink">{t('rosters.shiftSchedulingHeading')}</h2>
+              <p className="mt-0.5 text-sm text-ink-soft">{t('rosters.shiftSchedulingHint')}</p>
             </div>
 
             {templates.length === 0 ? (
               <div className={`${cardBase} flex flex-wrap items-center gap-2`}>
-                <p className="text-sm text-ink-soft">还没有设置班次模板，需要先创建至少一个才能安排排班。</p>
+                <p className="text-sm text-ink-soft">{t('rosters.noTemplatesMessage')}</p>
                 <Link to="/shift-templates" className={btnSecondary}>
-                  去设置班次模板
+                  {t('rosters.goSetUpTemplates')}
                 </Link>
               </div>
             ) : responsibilities.length === 0 ? (
               <div className={`${cardBase} flex flex-wrap items-center gap-2`}>
-                <p className="text-sm text-ink-soft">还没有设置职责模板，需要先创建至少一个职责才能安排排班。</p>
+                <p className="text-sm text-ink-soft">{t('rosters.noResponsibilitiesMessage')}</p>
                 <Link to="/responsibilities" className={btnSecondary}>
-                  去设置职责模板
+                  {t('rosters.goSetUpResponsibilities')}
                 </Link>
               </div>
             ) : availableDates.length === 0 ? (
-              <p className={`${cardBase} text-sm text-ink-soft`}>请先选择开始和结束日期。</p>
+              <p className={`${cardBase} text-sm text-ink-soft`}>{t('rosters.selectDatesMessage')}</p>
             ) : (
               <div className={`${cardBase} space-y-3`}>
                 <div className="flex items-center justify-between">
@@ -315,10 +318,10 @@ export function RosterCreatePage() {
                     disabled={clampedPageIndex === 0}
                     className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    ← 上一周
+                    {t('rosters.prevWeek')}
                   </button>
                   <span className="text-sm text-ink-soft">
-                    第 {clampedPageIndex + 1} / {totalPages} 页
+                    {t('rosters.pageIndicator', { current: clampedPageIndex + 1, total: totalPages })}
                   </span>
                   <button
                     type="button"
@@ -326,12 +329,12 @@ export function RosterCreatePage() {
                     disabled={clampedPageIndex >= totalPages - 1}
                     className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    下一周 →
+                    {t('rosters.nextWeek')}
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <div className="grid grid-cols-7 gap-2" style={{ minWidth: '42rem' }}>
+                  <div className="grid grid-cols-7 gap-2" style={{ minWidth: '56rem' }}>
                     {pageDates.map((date) => {
                       const rows = dayShifts[date] || [];
                       return (
@@ -342,24 +345,24 @@ export function RosterCreatePage() {
                           className="min-h-[6.5rem] rounded-2xl border border-tan/15 bg-white/60 p-3 text-left transition hover:border-coral/40 hover:bg-white"
                         >
                           <p className="text-xs font-medium text-ink-soft">
-                            {date.slice(5)} 周{weekdayLabel(date)}
+                            {formatDate(date)} {weekdayLabel(date, weekdays)}
                           </p>
                           {rows.length === 0 ? (
-                            <p className="mt-2 text-xs text-ink-soft/60">点击设置班次</p>
+                            <p className="mt-2 text-xs text-ink-soft/60">{t('rosters.clickToSet')}</p>
                           ) : (
                             <ul className="mt-2 space-y-1">
                               {rows.map((row) => {
-                                const t = templates.find((tpl) => tpl.id === row.shiftTemplateId);
+                                const tpl = templates.find((t) => t.id === row.shiftTemplateId);
                                 const summary = row.requirements
                                   .filter((req) => req.headcount > 0)
                                   .map((req) => {
                                     const r = responsibilities.find((resp) => resp.id === req.responsibilityId);
-                                    return `${r?.name ?? '未选职责'} × ${req.headcount}`;
+                                    return `${r?.name ?? t('rosters.unselectedResponsibility')} × ${req.headcount}`;
                                   })
-                                  .join('、');
+                                  .join(t('common.listSeparator'));
                                 return (
                                   <li key={row.shiftTemplateId} className="text-xs text-ink">
-                                    {t?.name ?? '?'}：{summary || '未设置人数'}
+                                    {tpl?.name ?? '?'}{t('common.colon')}{summary || t('rosters.notSetHeadcount')}
                                   </li>
                                 );
                               })}
@@ -376,7 +379,7 @@ export function RosterCreatePage() {
 
           <button type="submit" disabled={creating} className={`gap-2 ${btnPrimary}`}>
             {creating && <Spinner className="h-4 w-4" />}
-            {isEdit ? '保存修改' : '创建排班'}
+            {isEdit ? t('rosters.saveSubmit') : t('rosters.createSubmit')}
           </button>
         </form>
       </div>

@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { AmbientBackground } from './AmbientBackground';
 import { KangarooMascot } from './KangarooMascot';
+import { LanguageToggle } from './LanguageToggle';
 
 interface AuthLayoutProps {
   headline: string;
@@ -12,8 +13,11 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ headline, tagline, formEyebrow, formTitle, children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-sand">
+    <div className="relative min-h-screen flex flex-col lg:flex-row bg-sand">
       <AmbientBackground />
+      <div className="absolute right-4 top-4 z-10">
+        <LanguageToggle />
+      </div>
 
       {/* brand / mascot panel */}
       <div className="relative overflow-hidden bg-gradient-to-b from-dusk-dark via-dusk to-coral-deep px-6 py-12 lg:w-1/2 lg:py-0 flex flex-col items-center justify-center text-center">

@@ -38,7 +38,7 @@ describe('StaffListPage', () => {
       </MemoryRouter>
     );
 
-    const links = await screen.findAllByRole('link', { name: /创建员工/ });
+    const links = await screen.findAllByRole('link', { name: /Add Staff/ });
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
       expect(link).toHaveAttribute('href', '/staff/new');

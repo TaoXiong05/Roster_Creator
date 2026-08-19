@@ -37,11 +37,11 @@ describe('StaffCreatePage', () => {
     renderPage();
 
     await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('姓名'), 'Bob');
-    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'bob@b.com');
-    await userEvent.click(screen.getByRole('button', { name: '添加员工' }));
+    await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Add Staff' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('请至少选择一个职责');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one responsibility');
     expect(api.staff.create).not.toHaveBeenCalled();
   });
 
@@ -56,10 +56,10 @@ describe('StaffCreatePage', () => {
     renderPage();
 
     await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('姓名'), 'Bob');
-    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'bob@b.com');
+    await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
-    await userEvent.click(screen.getByRole('button', { name: '添加员工' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add Staff' }));
 
     await waitFor(() =>
       expect(api.staff.create).toHaveBeenCalledWith({
@@ -85,14 +85,14 @@ describe('StaffCreatePage', () => {
     renderPage();
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('姓名'), 'Bob');
-    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'bob@b.com');
+    await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '不可用 周一' }));
-    await userEvent.click(screen.getByRole('button', { name: '不可用 Morning' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Mon' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Morning' }));
 
-    await userEvent.click(screen.getByRole('button', { name: '添加员工' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add Staff' }));
 
     await waitFor(() =>
       expect(api.staff.updatePreference).toHaveBeenCalledWith(

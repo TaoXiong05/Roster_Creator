@@ -18,10 +18,10 @@ describe('ForgotPasswordPage', () => {
       </MemoryRouter>
     );
 
-    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'a@b.com');
-    await userEvent.click(screen.getByRole('button', { name: '发送重置链接' }));
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'a@b.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 
     expect(api.requestPasswordReset).toHaveBeenCalledWith('a@b.com');
-    await waitFor(() => expect(screen.getByText(/如果该邮箱存在/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/If that email exists/)).toBeInTheDocument());
   });
 });

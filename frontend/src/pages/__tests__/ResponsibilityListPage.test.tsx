@@ -35,8 +35,8 @@ describe('ResponsibilityListPage', () => {
     );
 
     await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('名称（如：收银）'), 'Cashier');
-    await userEvent.click(screen.getByRole('button', { name: '添加职责' }));
+    await userEvent.type(screen.getByPlaceholderText('Name (e.g. Cashier)'), 'Cashier');
+    await userEvent.click(screen.getByRole('button', { name: 'Add Responsibility' }));
 
     await waitFor(() => expect(api.responsibilities.create).toHaveBeenCalledWith('Cashier'));
   });
@@ -52,12 +52,12 @@ describe('ResponsibilityListPage', () => {
     );
 
     await waitFor(() => expect(screen.getByText('Cashier')).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: '编辑' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
-    const nameInput = screen.getAllByLabelText('职责名称')[1];
+    const nameInput = screen.getAllByLabelText('Responsibility Name')[1];
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Head Cashier');
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(api.responsibilities.update).toHaveBeenCalledWith('resp-1', 'Head Cashier'));
   });
@@ -73,8 +73,8 @@ describe('ResponsibilityListPage', () => {
     );
 
     await waitFor(() => expect(screen.getByText('Cashier')).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: '删除' }));
-    await userEvent.click(await screen.findByRole('button', { name: '确认删除' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm Delete' }));
 
     await waitFor(() => expect(api.responsibilities.remove).toHaveBeenCalledWith('resp-1'));
   });

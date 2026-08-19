@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, Staff } from '../api/client';
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { useLanguage } from '../i18n/LanguageContext';
+import { formatDate } from '../utils/date';
 import { Spinner } from './Spinner';
 import { btnPrimary, btnSecondary, errorText, inputBase, labelBase } from '../styles/ui';
 
@@ -13,6 +15,7 @@ interface UnavailableDatesDialogProps {
 
 export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: UnavailableDatesDialogProps) {
   const { mounted, visible } = useTransitionPresence(open, 300);
+  const { t } = useLanguage();
   const [ranges, setRanges] = useState<{ start: string; end: string }[]>([]);
   const [newStart, setNewStart] = useState('');
   const [newEnd, setNewEnd] = useState('');
@@ -32,11 +35,11 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
 
   const addRange = () => {
     if (!newStart || !newEnd) {
-      setError('请选择开始和结束日期');
+      setError(t('unavailableDatesDialog.missingDatesError'));
       return;
     }
     if (newStart > newEnd) {
-      setError('开始日期不能晚于结束日期');
+      setError(t('unavailableDatesDialog.invalidRangeError'));
       return;
     }
     setError(null);
@@ -66,7 +69,7 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
       onSaved({ ...staff, preference: updated });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存失败，请重试');
+      setError(err instanceof Error ? err.message : t('unavailableDatesDialog.saveFailedError'));
     } finally {
       setSaving(false);
     }
@@ -90,9 +93,9 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
         }`}
       >
         <h2 id="unavailable-dates-dialog-title" className="font-display text-lg font-semibold text-ink">
-          {staff.name} 的不可用日期
+          {t('unavailableDatesDialog.title', { name: staff.name })}
         </h2>
-        <p className="mt-0.5 text-sm text-ink-soft">病假、年假等原因导致的不可安排时段</p>
+        <p className="mt-0.5 text-sm text-ink-soft">{t('unavailableDatesDialog.subtitle')}</p>
 
         {error && (
           <p role="alert" className={`mt-3 ${errorText}`}>
@@ -102,7 +105,7 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
 
         <div className="mt-4 space-y-2">
           {ranges.length === 0 ? (
-            <p className="text-sm text-ink-soft">还没有设置不可用日期。</p>
+            <p className="text-sm text-ink-soft">{t('unavailableDatesDialog.noRanges')}</p>
           ) : (
             ranges.map((r, index) => (
               <div
@@ -110,12 +113,12 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
                 className="flex items-center justify-between gap-3 rounded-2xl border border-tan/15 bg-white/60 px-3 py-2"
               >
                 <span className="text-sm text-ink">
-                  {r.start} ~ {r.end}
+                  {formatDate(r.start)} ~ {formatDate(r.end)}
                 </span>
                 <button
                   type="button"
                   onClick={() => removeRange(index)}
-                  aria-label={`移除 ${r.start} 至 ${r.end}`}
+                  aria-label={t('unavailableDatesDialog.removeRangeAria', { start: r.start, end: r.end })}
                   className="shrink-0 text-ink-soft transition hover:text-red-600"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -128,11 +131,11 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
         </div>
 
         <div className="mt-4">
-          <p className={labelBase}>添加不可用日期段</p>
+          <p className={labelBase}>{t('unavailableDatesDialog.addSectionHeading')}</p>
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <label htmlFor="unavailable-range-start" className={labelBase}>
-                开始日期
+                {t('unavailableDatesDialog.startDateLabel')}
               </label>
               <input
                 id="unavailable-range-start"
@@ -144,7 +147,7 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
             </div>
             <div className="flex-1">
               <label htmlFor="unavailable-range-end" className={labelBase}>
-                结束日期
+                {t('unavailableDatesDialog.endDateLabel')}
               </label>
               <input
                 id="unavailable-range-end"
@@ -155,18 +158,18 @@ export function UnavailableDatesDialog({ open, staff, onClose, onSaved }: Unavai
               />
             </div>
             <button type="button" onClick={addRange} className={btnSecondary}>
-              添加
+              {t('unavailableDatesDialog.addButton')}
             </button>
           </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onClose} className={btnSecondary}>
-            取消
+            {t('common.cancel')}
           </button>
           <button type="button" onClick={handleSave} disabled={saving} className={`gap-2 ${btnPrimary}`}>
             {saving && <Spinner className="h-4 w-4" />}
-            保存
+            {t('common.save')}
           </button>
         </div>
       </div>

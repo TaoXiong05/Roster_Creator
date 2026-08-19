@@ -8,6 +8,11 @@ import { buildPdf } from './pdf';
 export const exportRouter = Router();
 exportRouter.use(requireAuth);
 
+function toDisplayDate(isoDate: string): string {
+  const [year, month, day] = isoDate.slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+}
+
 async function loadExportableRoster(rosterId: string, userId: string, staffId?: string) {
   const roster = await prisma.roster.findUnique({
     where: { id: rosterId },
@@ -60,7 +65,7 @@ exportRouter.get('/:id/export/csv', async (req: AuthedRequest, res) => {
   const data = await loadExportableRoster(req.params.id, req.userId!, staffId);
   if (!data) return res.status(404).json({ error: 'Roster not found' });
 
-  const csv = buildCsv(data.rows);
+  const csv = buildCsv(data.rows.map((row) => ({ ...row, date: toDisplayDate(row.date) })));
 
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${data.roster.name}.csv"`);
@@ -72,7 +77,7 @@ exportRouter.get('/:id/export/pdf', async (req: AuthedRequest, res) => {
   const data = await loadExportableRoster(req.params.id, req.userId!, staffId);
   if (!data) return res.status(404).json({ error: 'Roster not found' });
 
-  const pdf = await buildPdf(data.roster.name, data.rows);
+  const pdf = await buildPdf(data.roster.name, data.rows.map((row) => ({ ...row, date: toDisplayDate(row.date) })));
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${data.roster.name}.pdf"`);

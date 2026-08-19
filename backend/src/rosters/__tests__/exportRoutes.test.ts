@@ -47,6 +47,8 @@ describe('GET /rosters/:id/export/ics', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/calendar');
     expect(res.text).toContain('SUMMARY:Morning (Alice)');
+    // DTSTART must stay in iCalendar's compact numeric format, not the DD/MM/YYYY display format used elsewhere.
+    expect(res.text).toContain('DTSTART:20260817T060000');
   });
 
   it('filters to a single staff member when staffId is given', async () => {
@@ -81,6 +83,7 @@ describe('GET /rosters/:id/export/csv', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/csv');
     expect(res.text).toContain('Alice');
+    expect(res.text).toContain('17/08/2026');
   });
 });
 

@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface KangarooMascotProps {
   variant?: 'hero' | 'badge';
@@ -13,6 +14,7 @@ interface KangarooMascotProps {
  * one image.
  */
 export function KangarooMascot({ variant = 'hero', className = '', animated = true }: KangarooMascotProps) {
+  const { t } = useLanguage();
   const uid = useId().replace(/:/g, '');
 
   const bodyGradId = `${uid}-body`;
@@ -58,7 +60,7 @@ export function KangarooMascot({ variant = 'hero', className = '', animated = tr
         viewBox="0 0 200 200"
         className={className}
         role="img"
-        aria-label="小袋鼠 Roo"
+        aria-label={t('mascot.badgeAria')}
       >
         {gradients}
         <circle cx="100" cy="100" r="98" fill="#FCE8CE" />
@@ -90,7 +92,7 @@ export function KangarooMascot({ variant = 'hero', className = '', animated = tr
       viewBox="0 0 400 440"
       className={className}
       role="img"
-      aria-label="小袋鼠 Roo，育儿袋里装着排班表"
+      aria-label={t('mascot.heroAria')}
     >
       {gradients}
       {/* ground shadow */}

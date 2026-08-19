@@ -8,9 +8,11 @@ import { KangarooMascot } from '../components/KangarooMascot';
 import { PageHeader } from '../components/PageHeader';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase } from '../styles/ui';
 
 export function GroupListPage() {
+  const { t } = useLanguage();
   const [groups, setGroups] = useState<StaffGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -41,7 +43,7 @@ export function GroupListPage() {
   };
 
   const handleRename = async (id: string, currentName: string) => {
-    const next = window.prompt('新的小组名称', currentName);
+    const next = window.prompt(t('groups.renamePrompt'), currentName);
     if (!next) return;
     await api.groups.rename(id, next);
     await load();
@@ -62,16 +64,16 @@ export function GroupListPage() {
   return (
     <AppShell width="wide">
       <div className="space-y-6">
-        <PageHeader title="小组管理" description="把员工分组，一次性排进同一份班表" />
+        <PageHeader title={t('groups.listTitle')} description={t('groups.listDescription')} />
 
         <form onSubmit={handleCreate} className={`${cardBase} flex flex-col gap-3 sm:flex-row sm:items-end`}>
           <div className="sm:flex-1">
             <label htmlFor="group-name" className={labelBase}>
-              小组名称
+              {t('groups.groupNameLabel')}
             </label>
             <input
               id="group-name"
-              placeholder="小组名称"
+              placeholder={t('groups.groupNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputBase}
@@ -80,7 +82,7 @@ export function GroupListPage() {
           </div>
           <button type="submit" disabled={creating} className={`shrink-0 gap-2 ${btnPrimary}`}>
             {creating && <Spinner className="h-4 w-4" />}
-            创建小组
+            {t('groups.createGroupButton')}
           </button>
         </form>
 
@@ -89,17 +91,17 @@ export function GroupListPage() {
         ) : groups.length === 0 ? (
           <EmptyState
             icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
-            title="还没有小组"
-            description="在上方输入名称，创建第一个小组来归拢员工。"
+            title={t('groups.emptyTitle')}
+            description={t('groups.emptyDescription')}
           />
         ) : (
           <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">小组名称</th>
-                  <th className="px-5 py-3">成员数</th>
-                  <th className="px-5 py-3 text-right">操作</th>
+                  <th className="px-5 py-3">{t('groups.groupNameHeader')}</th>
+                  <th className="px-5 py-3">{t('groups.memberCountHeader')}</th>
+                  <th className="px-5 py-3 text-right">{t('groups.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
@@ -107,18 +109,18 @@ export function GroupListPage() {
                   <tr key={g.id} className="transition-colors hover:bg-sand/70">
                     <td className="px-5 py-3 font-medium text-ink">{g.name}</td>
                     <td className="px-5 py-3 text-ink-soft">
-                      {g.memberCount} 名成员
+                      {g.memberCount} {t('groups.memberCountSuffix')}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
                         <Link to={`/groups/${g.id}`} className={btnSecondary}>
-                          管理成员
+                          {t('groups.manageMembers')}
                         </Link>
                         <button onClick={() => handleRename(g.id, g.name)} className={btnSecondary}>
-                          重命名
+                          {t('groups.rename')}
                         </button>
                         <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
-                          删除
+                          {t('groups.delete')}
                         </button>
                       </div>
                     </td>
@@ -132,8 +134,8 @@ export function GroupListPage() {
 
       <ConfirmDialog
         open={!!confirmTarget}
-        title="删除小组"
-        message={`确定要删除「${confirmTarget?.name ?? ''}」吗？此操作不可撤销。`}
+        title={t('groups.deleteTitle')}
+        message={t('groups.deleteMessage', { name: confirmTarget?.name ?? '' })}
         loading={deleting}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}

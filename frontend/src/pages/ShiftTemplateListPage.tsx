@@ -7,9 +7,12 @@ import { KangarooMascot } from '../components/KangarooMascot';
 import { PageHeader } from '../components/PageHeader';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
+import { TimeInput } from '../components/TimeInput';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase } from '../styles/ui';
 
 export function ShiftTemplateListPage() {
+  const { t } = useLanguage();
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -81,16 +84,16 @@ export function ShiftTemplateListPage() {
   return (
     <AppShell width="wide">
       <div className="space-y-6">
-        <PageHeader title="班次模板" description="设定好上下班时间，随时复用" />
+        <PageHeader title={t('shiftTemplates.title')} description={t('shiftTemplates.description')} />
 
         <form onSubmit={handleCreate} className={`${cardBase} space-y-3`}>
           <div>
             <label htmlFor="template-name" className={labelBase}>
-              模板名称
+              {t('shiftTemplates.templateNameLabel')}
             </label>
             <input
               id="template-name"
-              placeholder="名称（如：早班）"
+              placeholder={t('shiftTemplates.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputBase}
@@ -100,35 +103,22 @@ export function ShiftTemplateListPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="sm:w-40">
               <label htmlFor="template-start" className={labelBase}>
-                开始时间
+                {t('shiftTemplates.startTimeLabel')}
               </label>
-              <input
-                id="template-start"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className={inputBase}
-                required
-              />
+              <TimeInput id="template-start" value={startTime} onChange={setStartTime} placeholder={t('shiftTemplates.timeExample')} required />
             </div>
             <div className="sm:w-40">
               <label htmlFor="template-end" className={labelBase}>
-                结束时间
+                {t('shiftTemplates.endTimeLabel')}
               </label>
-              <input
-                id="template-end"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className={inputBase}
-                required
-              />
+              <TimeInput id="template-end" value={endTime} onChange={setEndTime} placeholder={t('shiftTemplates.timeExampleEnd')} required />
             </div>
             <button type="submit" disabled={creating} className={`shrink-0 gap-2 ${btnPrimary}`}>
               {creating && <Spinner className="h-4 w-4" />}
-              添加模板
+              {t('shiftTemplates.addButton')}
             </button>
           </div>
+          <p className="text-xs text-ink-soft">{t('shiftTemplates.hint')}</p>
         </form>
 
         {loading ? (
@@ -136,32 +126,32 @@ export function ShiftTemplateListPage() {
         ) : templates.length === 0 ? (
           <EmptyState
             icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
-            title="还没有班次模板"
-            description="在上方设定一个上下班时间，创建第一份班次模板。"
+            title={t('shiftTemplates.emptyTitle')}
+            description={t('shiftTemplates.emptyDescription')}
           />
         ) : (
           <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">模板名称</th>
-                  <th className="px-5 py-3">开始时间</th>
-                  <th className="px-5 py-3">结束时间</th>
-                  <th className="px-5 py-3 text-right">操作</th>
+                  <th className="px-5 py-3">{t('shiftTemplates.nameHeader')}</th>
+                  <th className="px-5 py-3">{t('shiftTemplates.startHeader')}</th>
+                  <th className="px-5 py-3">{t('shiftTemplates.endHeader')}</th>
+                  <th className="px-5 py-3 text-right">{t('shiftTemplates.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
-                {templates.map((t) =>
-                  editingId === t.id ? (
-                    <tr key={t.id} className="bg-sand/60">
+                {templates.map((tpl) =>
+                  editingId === tpl.id ? (
+                    <tr key={tpl.id} className="bg-sand/60">
                       <td colSpan={4} className="px-5 py-4">
                         <form onSubmit={handleSaveEdit} className="space-y-3">
                           <div>
-                            <label htmlFor={`edit-name-${t.id}`} className={labelBase}>
-                              模板名称
+                            <label htmlFor={`edit-name-${tpl.id}`} className={labelBase}>
+                              {t('shiftTemplates.templateNameLabel')}
                             </label>
                             <input
-                              id={`edit-name-${t.id}`}
+                              id={`edit-name-${tpl.id}`}
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
                               className={inputBase}
@@ -170,38 +160,24 @@ export function ShiftTemplateListPage() {
                           </div>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                             <div className="sm:w-40">
-                              <label htmlFor={`edit-start-${t.id}`} className={labelBase}>
-                                开始时间
+                              <label htmlFor={`edit-start-${tpl.id}`} className={labelBase}>
+                                {t('shiftTemplates.startTimeLabel')}
                               </label>
-                              <input
-                                id={`edit-start-${t.id}`}
-                                type="time"
-                                value={editStart}
-                                onChange={(e) => setEditStart(e.target.value)}
-                                className={inputBase}
-                                required
-                              />
+                              <TimeInput id={`edit-start-${tpl.id}`} value={editStart} onChange={setEditStart} placeholder={t('shiftTemplates.timeExample')} required />
                             </div>
                             <div className="sm:w-40">
-                              <label htmlFor={`edit-end-${t.id}`} className={labelBase}>
-                                结束时间
+                              <label htmlFor={`edit-end-${tpl.id}`} className={labelBase}>
+                                {t('shiftTemplates.endTimeLabel')}
                               </label>
-                              <input
-                                id={`edit-end-${t.id}`}
-                                type="time"
-                                value={editEnd}
-                                onChange={(e) => setEditEnd(e.target.value)}
-                                className={inputBase}
-                                required
-                              />
+                              <TimeInput id={`edit-end-${tpl.id}`} value={editEnd} onChange={setEditEnd} placeholder={t('shiftTemplates.timeExampleEnd')} required />
                             </div>
                             <div className="flex shrink-0 gap-2">
                               <button type="submit" disabled={savingEdit} className={`gap-2 ${btnPrimary}`}>
                                 {savingEdit && <Spinner className="h-4 w-4" />}
-                                保存
+                                {t('common.save')}
                               </button>
                               <button type="button" onClick={() => setEditingId(null)} className={btnSecondary}>
-                                取消
+                                {t('common.cancel')}
                               </button>
                             </div>
                           </div>
@@ -209,17 +185,17 @@ export function ShiftTemplateListPage() {
                       </td>
                     </tr>
                   ) : (
-                    <tr key={t.id} className="transition-colors hover:bg-sand/70">
-                      <td className="px-5 py-3 font-medium text-ink">{t.name}</td>
-                      <td className="px-5 py-3 font-mono text-ink-soft">{t.startTime}</td>
-                      <td className="px-5 py-3 font-mono text-ink-soft">{t.endTime}</td>
+                    <tr key={tpl.id} className="transition-colors hover:bg-sand/70">
+                      <td className="px-5 py-3 font-medium text-ink">{tpl.name}</td>
+                      <td className="px-5 py-3 font-mono text-ink-soft">{tpl.startTime}</td>
+                      <td className="px-5 py-3 font-mono text-ink-soft">{tpl.endTime}</td>
                       <td className="px-5 py-3">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => startEdit(t)} className={btnSecondary}>
-                            编辑
+                          <button onClick={() => startEdit(tpl)} className={btnSecondary}>
+                            {t('common.edit')}
                           </button>
-                          <button onClick={() => setConfirmTarget(t)} className={btnDanger}>
-                            删除
+                          <button onClick={() => setConfirmTarget(tpl)} className={btnDanger}>
+                            {t('common.delete')}
                           </button>
                         </div>
                       </td>
@@ -234,8 +210,8 @@ export function ShiftTemplateListPage() {
 
       <ConfirmDialog
         open={!!confirmTarget}
-        title="删除班次模板"
-        message={`确定要删除「${confirmTarget?.name ?? ''}」吗？正在使用这个模板的排班表不受影响，但之后无法再选用它。`}
+        title={t('shiftTemplates.deleteTitle')}
+        message={t('shiftTemplates.deleteMessage', { name: confirmTarget?.name ?? '' })}
         loading={deleting}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}

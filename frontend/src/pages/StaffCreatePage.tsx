@@ -7,6 +7,7 @@ import { PageHeader } from '../components/PageHeader';
 import { PreferenceFields } from '../components/PreferenceFields';
 import { Spinner } from '../components/Spinner';
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { useLanguage } from '../i18n/LanguageContext';
 import {
   btnPrimary,
   btnPillActive,
@@ -19,6 +20,7 @@ import {
 
 export function StaffCreatePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [name, setName] = useState('');
@@ -66,7 +68,7 @@ export function StaffCreatePage() {
     e.preventDefault();
     setError(null);
     if (responsibilityIds.length === 0) {
-      setError('请至少选择一个职责');
+      setError(t('staff.responsibilityRequiredError'));
       return;
     }
     setCreating(true);
@@ -94,8 +96,8 @@ export function StaffCreatePage() {
   return (
     <AppShell>
       <div className="max-w-lg space-y-4">
-        <BackLink to="/staff" label="返回员工管理" />
-        <PageHeader title="创建员工" description="记录姓名、邮箱、职责和可安排时间" />
+        <BackLink to="/staff" label={t('staff.backToStaff')} />
+        <PageHeader title={t('staff.createPageTitle')} description={t('staff.createPageDescription')} />
 
         {error && (
           <p role="alert" className={errorText}>
@@ -107,11 +109,11 @@ export function StaffCreatePage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="sm:flex-1">
               <label htmlFor="staff-name" className={labelBase}>
-                姓名
+                {t('staff.nameLabel')}
               </label>
               <input
                 id="staff-name"
-                placeholder="姓名"
+                placeholder={t('staff.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={inputBase}
@@ -120,12 +122,12 @@ export function StaffCreatePage() {
             </div>
             <div className="sm:flex-1">
               <label htmlFor="staff-email" className={labelBase}>
-                邮箱
+                {t('staff.emailLabel')}
               </label>
               <input
                 id="staff-email"
                 type="email"
-                placeholder="邮箱"
+                placeholder={t('staff.emailLabel')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputBase}
@@ -134,12 +136,12 @@ export function StaffCreatePage() {
             </div>
           </div>
           <div>
-            <label className={labelBase}>职责</label>
+            <label className={labelBase}>{t('staff.responsibilityLabel')}</label>
             {responsibilities.length === 0 ? (
               <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
-                <span>还没有设置职责模板，先去创建一个吧</span>
+                <span>{t('common.noResponsibilityTemplatesHint')}</span>
                 <Link to="/responsibilities" className="font-medium text-coral-deep hover:underline">
-                  去设置 →
+                  {t('common.goSetUp')}
                 </Link>
               </div>
             ) : (
@@ -165,9 +167,9 @@ export function StaffCreatePage() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <p className="font-display text-sm font-semibold text-ink">排班偏好</p>
+                <p className="font-display text-sm font-semibold text-ink">{t('staff.preferencesHeading')}</p>
                 <button type="button" onClick={() => setShowPreferences(false)} className="text-xs font-medium text-ink-soft hover:text-coral-deep">
-                  收起
+                  {t('staff.collapse')}
                 </button>
               </div>
               <PreferenceFields
@@ -192,13 +194,13 @@ export function StaffCreatePage() {
             </div>
           ) : (
             <button type="button" onClick={() => setShowPreferences(true)} className="text-sm font-medium text-coral-deep hover:underline">
-              + 填写排班偏好（可选）
+              {t('staff.expandPreferences')}
             </button>
           )}
 
           <button type="submit" disabled={creating} className={`gap-2 ${btnPrimary}`}>
             {creating && <Spinner className="h-4 w-4" />}
-            添加员工
+            {t('staff.addStaffButton')}
           </button>
         </form>
       </div>

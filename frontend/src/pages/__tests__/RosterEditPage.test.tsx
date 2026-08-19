@@ -61,15 +61,15 @@ describe('RosterCreatePage (edit mode)', () => {
     renderEdit();
 
     await waitFor(() => expect(screen.getByDisplayValue('Week 34')).toBeInTheDocument());
-    expect(screen.getByLabelText('开始日期')).toHaveValue('2026-08-17');
-    expect(screen.getByLabelText('结束日期')).toHaveValue('2026-08-18');
-    expect(screen.getByLabelText('员工小组')).toHaveValue('group-1');
-    expect(screen.getByRole('heading', { name: '编辑排班' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Start Date')).toHaveValue('2026-08-17');
+    expect(screen.getByLabelText('End Date')).toHaveValue('2026-08-18');
+    expect(screen.getByLabelText('Staff Group')).toHaveValue('group-1');
+    expect(screen.getByRole('heading', { name: 'Edit Roster' })).toBeInTheDocument();
 
     // Existing shift day is shown in the calendar.
-    expect(screen.getByRole('button', { name: /08-17/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /17\/08\/2026/ })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: '保存修改' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
 
     await waitFor(() =>
       expect(api.rosters.update).toHaveBeenCalledWith(

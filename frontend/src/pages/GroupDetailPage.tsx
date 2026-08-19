@@ -7,10 +7,13 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PageHeader } from '../components/PageHeader';
 import { Spinner } from '../components/Spinner';
 import { UnavailableDatesDialog } from '../components/UnavailableDatesDialog';
+import { useLanguage } from '../i18n/LanguageContext';
+import { formatDate } from '../utils/date';
 import { btnDanger, btnSecondary, cardBase } from '../styles/ui';
 
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useLanguage();
   const [members, setMembers] = useState<Staff[]>([]);
   const [allStaff, setAllStaff] = useState<Staff[]>([]);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -58,32 +61,42 @@ export function GroupDetailPage() {
   return (
     <AppShell width="wide">
       <div className="space-y-6">
-        <BackLink to="/groups" label="返回小组管理" />
-        <PageHeader title="小组成员" description="把员工加进这个小组，排班时就能一起分配" />
+        <BackLink to="/groups" label={t('groups.backToGroups')} />
+        <PageHeader title={t('groups.detailTitle')} description={t('groups.detailDescription')} />
 
         <div className={`${cardBase} space-y-3`}>
-          <h2 className="font-display text-base font-semibold text-ink">组内成员</h2>
+          <h2 className="font-display text-base font-semibold text-ink">{t('groups.membersHeading')}</h2>
           {members.length === 0 ? (
-            <p className="text-sm text-ink-soft">这个小组还没有成员。</p>
+            <p className="text-sm text-ink-soft">{t('groups.noMembers')}</p>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-tan/15">
               <table className="w-full text-sm">
                 <tbody className="divide-y divide-tan/10">
-                  {members.map((m) => (
-                    <tr key={m.id} className="transition-colors hover:bg-sand/60">
-                      <td className="px-4 py-2.5 text-ink">{m.name}</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setUnavailabilityTarget(m)} className={btnSecondary}>
-                            设置不可用日期
-                          </button>
-                          <button onClick={() => setConfirmTarget(m)} className={btnDanger}>
-                            移出
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {members.map((m) => {
+                    const unavailableRanges = m.preference?.unavailableDateRanges ?? [];
+                    return (
+                      <tr key={m.id} className="transition-colors hover:bg-sand/60">
+                        <td className="px-4 py-2.5 text-ink">
+                          <p>{m.name}</p>
+                          {unavailableRanges.length > 0 && (
+                            <p className="mt-0.5 text-xs text-ink-soft">
+                              {t('groups.unavailablePrefix')}{unavailableRanges.map((r) => `${formatDate(r.start)}~${formatDate(r.end)}`).join(t('common.listSeparator'))}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setUnavailabilityTarget(m)} className={btnSecondary}>
+                              {t('groups.setUnavailableDates')}
+                            </button>
+                            <button onClick={() => setConfirmTarget(m)} className={btnDanger}>
+                              {t('groups.remove')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -91,9 +104,9 @@ export function GroupDetailPage() {
         </div>
 
         <div className={`${cardBase} space-y-3`}>
-          <h2 className="font-display text-base font-semibold text-ink">其他员工</h2>
+          <h2 className="font-display text-base font-semibold text-ink">{t('groups.otherStaffHeading')}</h2>
           {available.length === 0 ? (
-            <p className="text-sm text-ink-soft">没有可添加的员工了。</p>
+            <p className="text-sm text-ink-soft">{t('groups.noAvailableStaff')}</p>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-tan/15">
               <table className="w-full text-sm">
@@ -104,7 +117,7 @@ export function GroupDetailPage() {
                       <td className="px-4 py-2.5 text-right">
                         <button onClick={() => handleAdd(s.id)} disabled={pendingId === s.id} className={`gap-2 ${btnSecondary}`}>
                           {pendingId === s.id && <Spinner className="h-4 w-4" />}
-                          加入
+                          {t('groups.join')}
                         </button>
                       </td>
                     </tr>
@@ -118,9 +131,9 @@ export function GroupDetailPage() {
 
       <ConfirmDialog
         open={!!confirmTarget}
-        title="移出小组"
-        message={`确定要把「${confirmTarget?.name ?? ''}」移出这个小组吗？`}
-        confirmLabel="确认移出"
+        title={t('groups.removeTitle')}
+        message={t('groups.removeMessage', { name: confirmTarget?.name ?? '' })}
+        confirmLabel={t('groups.removeConfirmLabel')}
         loading={removing}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmRemove}

@@ -18,10 +18,10 @@ describe('ResetPasswordPage', () => {
       </MemoryRouter>
     );
 
-    await userEvent.type(screen.getByPlaceholderText('新密码（至少6位）'), 'newpassword123');
-    await userEvent.click(screen.getByRole('button', { name: '重置密码' }));
+    await userEvent.type(screen.getByPlaceholderText('New password (at least 6 characters)'), 'newpassword123');
+    await userEvent.click(screen.getByRole('button', { name: 'Reset password' }));
 
     await waitFor(() => expect(api.confirmPasswordReset).toHaveBeenCalledWith('abc123', 'newpassword123'));
-    expect(screen.getByText(/密码已重置/)).toBeInTheDocument();
+    expect(screen.getByText(/Your password has been reset/)).toBeInTheDocument();
   });
 });

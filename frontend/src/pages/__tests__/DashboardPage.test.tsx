@@ -21,6 +21,6 @@ describe('DashboardPage', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/你好呀，a/)).toBeInTheDocument();
+    expect(screen.getByText(/Hi there, a/)).toBeInTheDocument();
   });
 });

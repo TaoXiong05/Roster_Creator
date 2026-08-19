@@ -1,17 +1,20 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, RosterDetail, AssignmentEntry, Responsibility, Staff } from '../api/client';
+import { formatDate } from '../utils/date';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
 import { StatusPill } from '../components/StatusPill';
+import { useLanguage } from '../i18n/LanguageContext';
 import { btnPrimary, btnSecondary, errorText, inputBase, successText } from '../styles/ui';
 
 const TAG_OPTIONS = ['AGENT', 'PICKUP'];
 
 export function RosterDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useLanguage();
   const [roster, setRoster] = useState<RosterDetail | null>(null);
   const [members, setMembers] = useState<Staff[]>([]);
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
@@ -62,7 +65,7 @@ export function RosterDetailPage() {
       setAssignments(result.assignments);
       setDirty(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'AI 分配失败，请重试或手动排班');
+      setError(err instanceof Error ? err.message : t('rosters.aiFailedError'));
     } finally {
       setGenerating(false);
     }
@@ -108,7 +111,7 @@ export function RosterDetailPage() {
     setSendingAll(true);
     try {
       const result = await api.rosters.sendEmails(id);
-      setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+      setEmailStatus(t('rosters.sentToCount', { count: result.sentTo.length }));
     } finally {
       setSendingAll(false);
     }
@@ -120,7 +123,7 @@ export function RosterDetailPage() {
     setSendingStaffId(staffId);
     try {
       const result = await api.rosters.sendEmails(id, [staffId]);
-      setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+      setEmailStatus(t('rosters.sentToCount', { count: result.sentTo.length }));
     } finally {
       setSendingStaffId(null);
     }
@@ -136,7 +139,7 @@ export function RosterDetailPage() {
   return (
     <AppShell width="wide">
       <div className="space-y-6">
-        <BackLink to="/rosters" label="返回排班表" />
+        <BackLink to="/rosters" label={t('rosters.backToRosters')} />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -144,17 +147,17 @@ export function RosterDetailPage() {
               <StatusPill status={roster.status} />
             </div>
             <p className="mt-1 text-sm text-ink-soft">
-              {roster.dateRangeStart.slice(0, 10)} ~ {roster.dateRangeEnd.slice(0, 10)}
+              {formatDate(roster.dateRangeStart)} ~ {formatDate(roster.dateRangeEnd)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={handleGenerate} disabled={generating} className={`gap-2 ${btnSecondary}`}>
               {generating && <Spinner className="h-4 w-4" />}
-              {generating ? '生成中...' : '生成排班'}
+              {generating ? t('rosters.generating') : t('rosters.generateButton')}
             </button>
             <button type="button" onClick={handleSave} disabled={!dirty || saving} className={`gap-2 ${btnPrimary}`}>
               {saving && <Spinner className="h-4 w-4" />}
-              保存
+              {t('rosters.saveButton')}
             </button>
             <button
               type="button"
@@ -163,11 +166,11 @@ export function RosterDetailPage() {
               className={`gap-2 ${btnSecondary}`}
             >
               {publishing && <Spinner className="h-4 w-4" />}
-              发布
+              {t('rosters.publishButton')}
             </button>
             <button type="button" onClick={handleSendAll} disabled={sendingAll} className={`gap-2 ${btnSecondary}`}>
               {sendingAll && <Spinner className="h-4 w-4" />}
-              发送邮件给全体
+              {t('rosters.sendAllButton')}
             </button>
           </div>
         </div>
@@ -181,13 +184,13 @@ export function RosterDetailPage() {
 
         <div className="flex flex-wrap gap-4 text-sm">
           <a href={api.rosters.exportUrl(roster.id, 'ics')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            导出 ICS
+            {t('rosters.exportIcs')}
           </a>
           <a href={api.rosters.exportUrl(roster.id, 'csv')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            导出 CSV
+            {t('rosters.exportCsv')}
           </a>
           <a href={api.rosters.exportUrl(roster.id, 'pdf')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            导出 PDF
+            {t('rosters.exportPdf')}
           </a>
         </div>
 
@@ -200,18 +203,21 @@ export function RosterDetailPage() {
                   <Fragment key={rs.id}>
                     <tr className="bg-sand/60">
                       <td className="whitespace-nowrap px-5 py-3 align-top font-mono text-xs text-ink-soft">
-                        {rs.date.slice(0, 10)}
+                        {formatDate(rs.date)}
                       </td>
                       <td className="px-5 py-3">
                         <p className="font-medium text-ink">
                           {rs.shiftTemplate.name}（{rs.shiftTemplate.startTime}-{rs.shiftTemplate.endTime}）
                         </p>
                         <p className="text-xs text-ink-soft">
-                          需要 {rs.headcount} 人 · 职责: {responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? '未知职责'}
+                          {t('rosters.headcountLabel', {
+                            count: rs.headcount,
+                            responsibility: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
+                          })}
                         </p>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <span className="text-xs font-medium text-ink-soft">{rows.length} 个槽位</span>
+                        <span className="text-xs font-medium text-ink-soft">{rows.length} {t('rosters.slotsSuffix')}</span>
                       </td>
                     </tr>
                     {rows.map((row) => (
@@ -221,10 +227,10 @@ export function RosterDetailPage() {
                             <select
                               value={row.staffId ?? ''}
                               onChange={(e) => updateAssignment(row.id, { staffId: e.target.value || null, unfilledTag: null })}
-                              aria-label="分配员工"
+                              aria-label={t('rosters.assignStaffAria')}
                               className={`${inputBase} lg:w-64 lg:shrink-0`}
                             >
-                              <option value="">未分配</option>
+                              <option value="">{t('rosters.unassigned')}</option>
                               {members.map((m) => (
                                 <option key={m.id} value={m.id}>
                                   {m.name}
@@ -248,7 +254,7 @@ export function RosterDetailPage() {
                                   </button>
                                 ))}
                                 <input
-                                  placeholder="自定义标签"
+                                  placeholder={t('rosters.customTagPlaceholder')}
                                   value={row.unfilledTag && !TAG_OPTIONS.includes(row.unfilledTag) ? row.unfilledTag : ''}
                                   onChange={(e) => updateAssignment(row.id, { unfilledTag: e.target.value || null })}
                                   className="w-32 rounded-full border border-tan/30 bg-white/70 px-3 py-1 text-xs text-ink outline-none transition focus:border-coral focus:ring-2 focus:ring-coral/30"
@@ -264,10 +270,10 @@ export function RosterDetailPage() {
                                   className="inline-flex items-center gap-1.5 font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline disabled:no-underline disabled:opacity-60"
                                 >
                                   {sendingStaffId === row.staffId && <Spinner className="h-3.5 w-3.5" />}
-                                  发送给TA
+                                  {t('rosters.sendToThem')}
                                 </button>
                                 <a href={api.rosters.exportUrl(roster.id, 'ics', row.staffId)} className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-                                  个人ICS
+                                  {t('rosters.personalIcs')}
                                 </a>
                               </div>
                             )}

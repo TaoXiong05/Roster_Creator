@@ -42,8 +42,8 @@ describe('ShiftTemplateListPage', () => {
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('名称（如：早班）'), 'Evening');
-    await userEvent.click(screen.getByRole('button', { name: '添加模板' }));
+    await userEvent.type(screen.getByPlaceholderText('Name (e.g. Morning Shift)'), 'Evening');
+    await userEvent.click(screen.getByRole('button', { name: 'Add Template' }));
 
     await waitFor(() =>
       expect(api.shiftTemplates.create).toHaveBeenCalledWith(
@@ -70,12 +70,12 @@ describe('ShiftTemplateListPage', () => {
     );
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: '编辑' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
-    const nameInput = screen.getAllByLabelText('模板名称')[1];
+    const nameInput = screen.getAllByLabelText('Template Name')[1];
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Early Morning');
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
       expect(api.shiftTemplates.update).toHaveBeenCalledWith('template-1', {

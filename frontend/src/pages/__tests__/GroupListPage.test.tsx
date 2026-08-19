@@ -22,7 +22,7 @@ describe('GroupListPage', () => {
     );
 
     await waitFor(() => expect(screen.getByText('Kitchen')).toBeInTheDocument());
-    expect(screen.getByText('2 名成员')).toBeInTheDocument();
+    expect(screen.getByText('2 members')).toBeInTheDocument();
   });
 
   it('creates a group from the form', async () => {
@@ -36,8 +36,8 @@ describe('GroupListPage', () => {
     );
 
     await waitFor(() => expect(api.groups.list).toHaveBeenCalled());
-    await userEvent.type(screen.getByPlaceholderText('小组名称'), 'Front');
-    await userEvent.click(screen.getByRole('button', { name: '创建小组' }));
+    await userEvent.type(screen.getByPlaceholderText('Group name'), 'Front');
+    await userEvent.click(screen.getByRole('button', { name: 'Create Group' }));
 
     await waitFor(() => expect(api.groups.create).toHaveBeenCalledWith('Front'));
   });

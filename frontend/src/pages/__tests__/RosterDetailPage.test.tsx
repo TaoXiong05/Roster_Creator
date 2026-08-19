@@ -66,8 +66,10 @@ describe('RosterDetailPage', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
-    expect(screen.getByText(/职责: Cashier/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: '生成排班' }));
+    expect(screen.getByText(/Role: Cashier/)).toBeInTheDocument();
+    expect(screen.getByText('17/08/2026 ~ 23/08/2026')).toBeInTheDocument();
+    expect(screen.getByText('17/08/2026')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Generate Roster' }));
 
     await waitFor(() => expect(api.rosters.generateAssignments).toHaveBeenCalledWith('roster-1'));
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
@@ -83,19 +85,19 @@ describe('RosterDetailPage', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
 
-    await userEvent.selectOptions(screen.getByLabelText('分配员工'), 'staff-1');
-    expect(screen.getByRole('button', { name: '保存' })).toBeEnabled();
+    await userEvent.selectOptions(screen.getByLabelText('Assign staff'), 'staff-1');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
 
-    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
       expect(api.rosters.saveAssignments).toHaveBeenCalledWith('roster-1', [
         { id: 'a-1', staffId: 'staff-1', unfilledTag: null },
       ])
     );
-    expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
   it('lets the user tag an unfilled slot', async () => {
@@ -107,7 +109,7 @@ describe('RosterDetailPage', () => {
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'AGENT' }));
 
-    expect(screen.getByRole('button', { name: '保存' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
 });
 
@@ -134,10 +136,10 @@ describe('RosterDetailPage publish and email actions', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: '发布' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
 
     await waitFor(() => expect(api.rosters.publish).toHaveBeenCalledWith('roster-1'));
-    await waitFor(() => expect(screen.getByText('已发布')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Published')).toBeInTheDocument());
   });
 
   it('sends emails to everyone assigned', async () => {
@@ -148,9 +150,9 @@ describe('RosterDetailPage publish and email actions', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: '发送邮件给全体' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Email Everyone' }));
 
     await waitFor(() => expect(api.rosters.sendEmails).toHaveBeenCalledWith('roster-1'));
-    await waitFor(() => expect(screen.getByText(/已发送给 1 位员工/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Sent to 1 staff/)).toBeInTheDocument());
   });
 });

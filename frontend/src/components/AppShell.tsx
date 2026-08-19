@@ -1,12 +1,14 @@
 import { ReactNode, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
+import { useLanguage } from '../i18n/LanguageContext';
 import { AmbientBackground } from './AmbientBackground';
 import { KangarooMascot } from './KangarooMascot';
+import { LanguageToggle } from './LanguageToggle';
 
 interface NavItem {
   to: string;
-  label: string;
+  labelKey: string;
   end?: boolean;
   children?: NavItem[];
   separatorBefore?: boolean;
@@ -27,7 +29,7 @@ const iconProps = {
 const NAV_ITEMS: NavItem[] = [
   {
     to: '/responsibilities',
-    label: '职责模板',
+    labelKey: 'nav.responsibilities',
     icon: (
       <svg {...iconProps}>
         <path d="M9 12l2 2 4-4" />
@@ -37,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/staff',
-    label: '员工管理',
+    labelKey: 'nav.staff',
     icon: (
       <svg {...iconProps}>
         <circle cx="12" cy="8" r="4" />
@@ -45,13 +47,13 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
     children: [
-      { to: '/staff', label: '员工列表', end: true },
-      { to: '/staff/new', label: '创建员工' },
+      { to: '/staff', labelKey: 'nav.staffList', end: true },
+      { to: '/staff/new', labelKey: 'nav.staffCreate' },
     ],
   },
   {
     to: '/groups',
-    label: '小组管理',
+    labelKey: 'nav.groups',
     icon: (
       <svg {...iconProps}>
         <circle cx="9" cy="8" r="3.5" />
@@ -63,7 +65,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/shift-templates',
-    label: '班次模板',
+    labelKey: 'nav.shiftTemplates',
     icon: (
       <svg {...iconProps}>
         <circle cx="12" cy="12" r="9" />
@@ -73,7 +75,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     to: '/rosters',
-    label: '排班表',
+    labelKey: 'nav.rosters',
     icon: (
       <svg {...iconProps}>
         <rect x="3" y="5" width="18" height="16" rx="3" />
@@ -83,11 +85,11 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
     children: [
-      { to: '/rosters', label: '全部排班', end: true },
-      { to: '/rosters/new', label: '创建排班' },
+      { to: '/rosters', labelKey: 'nav.rostersAll', end: true },
+      { to: '/rosters/new', labelKey: 'nav.rosterCreate' },
     ],
   },
-  { to: '/help', label: '帮助', separatorBefore: true, icon: (
+  { to: '/help', labelKey: 'nav.help', separatorBefore: true, icon: (
     <svg {...iconProps}>
       <circle cx="12" cy="12" r="9" />
       <path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.7-.9 1.3v.4" />
@@ -109,6 +111,7 @@ function childNavLinkClass({ isActive }: { isActive: boolean }) {
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useLanguage();
   return (
     <>
       <Link to="/dashboard" onClick={onNavigate} className="flex items-center gap-2 px-2 py-1">
@@ -125,7 +128,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-coral-deep" />
                   )}
                   <span className="shrink-0 opacity-80">{item.icon}</span>
-                  {item.label}
+                  {t(item.labelKey)}
                 </>
               )}
             </NavLink>
@@ -133,7 +136,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <div className="ml-3 mt-1 space-y-0.5 border-l border-tan/25 pl-3">
                 {item.children.map((child) => (
                   <NavLink key={child.to} to={child.to} end={child.end} onClick={onNavigate} className={childNavLinkClass}>
-                    {child.label}
+                    {t(child.labelKey)}
                   </NavLink>
                 ))}
               </div>
@@ -141,6 +144,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </nav>
+      <div className="mt-6">
+        <LanguageToggle />
+      </div>
     </>
   );
 }
@@ -154,6 +160,7 @@ export function AppShell({
 }) {
   const [open, setOpen] = useState(false);
   const { mounted: drawerMounted, visible: drawerVisible } = useTransitionPresence(open, 300);
+  const { t } = useLanguage();
 
   const containerWidth =
     width === 'wide' ? 'max-w-7xl' : width === 'narrow' ? 'max-w-2xl' : 'max-w-4xl';
@@ -173,15 +180,18 @@ export function AppShell({
           <KangarooMascot variant="badge" animated={false} className="h-8 w-8" />
           <span className="font-display text-base font-semibold text-ink">Roster Creator</span>
         </Link>
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="打开导航菜单"
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-tan/30 text-ink-soft"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <button
+            onClick={() => setOpen(true)}
+            aria-label={t('nav.openMenu')}
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-tan/30 text-ink-soft"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* mobile drawer */}
@@ -201,7 +211,7 @@ export function AppShell({
             <div className="mb-4 flex justify-end">
               <button
                 onClick={() => setOpen(false)}
-                aria-label="关闭导航菜单"
+                aria-label={t('nav.closeMenu')}
                 className="flex h-11 w-11 items-center justify-center rounded-lg border border-tan/30 text-ink-soft"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
