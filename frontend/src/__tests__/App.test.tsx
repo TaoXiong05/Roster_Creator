@@ -41,4 +41,40 @@ describe('App routing', () => {
 
     expect(screen.getByRole('heading', { name: '登录' })).toBeInTheDocument();
   });
+
+  it('redirects authenticated users away from /login to /dashboard', () => {
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: { id: 'user-1', email: 'a@b.com' },
+      loading: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: /欢迎/ })).toBeInTheDocument();
+  });
+
+  it('redirects authenticated users away from /register to /dashboard', () => {
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: { id: 'user-1', email: 'a@b.com' },
+      loading: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: /欢迎/ })).toBeInTheDocument();
+  });
 });
