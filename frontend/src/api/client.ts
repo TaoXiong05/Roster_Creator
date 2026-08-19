@@ -187,6 +187,14 @@ export const api = {
       hoursPerShift: number;
       shifts: RosterShiftInput[];
     }) => apiRequest<RosterDetail>('/rosters', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: {
+      name: string;
+      dateRangeStart: string;
+      dateRangeEnd: string;
+      groupId: string;
+      hoursPerShift: number;
+      shifts: RosterShiftInput[];
+    }) => apiRequest<RosterDetail>(`/rosters/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     generateAssignments: (id: string) =>
       apiRequest<{ assignments: AssignmentEntry[] }>(`/rosters/${id}/generate-assignments`, { method: 'POST' }),
     saveAssignments: (id: string, assignments: { id: string; staffId: string | null; unfilledTag: string | null }[]) =>

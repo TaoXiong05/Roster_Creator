@@ -36,6 +36,22 @@ describe('RosterListPage', () => {
     expect(screen.getByText(/Kitchen/)).toBeInTheDocument();
   });
 
+  it('renders edit and prepare-for-publish buttons routing to their pages', async () => {
+    (api.rosters.list as any).mockResolvedValue([rosterFixture]);
+
+    render(
+      <MemoryRouter>
+        <RosterListPage />
+      </MemoryRouter>
+    );
+
+    const editLink = await screen.findByRole('link', { name: '编辑时间和偏好' });
+    expect(editLink).toHaveAttribute('href', '/rosters/roster-1/edit');
+
+    const publishLink = screen.getByRole('link', { name: '准备发布' });
+    expect(publishLink).toHaveAttribute('href', '/rosters/roster-1');
+  });
+
   it('deletes a roster after confirmation', async () => {
     (api.rosters.list as any).mockResolvedValue([rosterFixture]);
     (api.rosters.remove as any).mockResolvedValue(undefined);

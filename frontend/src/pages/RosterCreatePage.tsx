@@ -1,5 +1,5 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { api, RosterShiftInput, ShiftTemplate, StaffGroup } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
@@ -29,6 +29,8 @@ function weekdayLabel(date: string): string {
 
 export function RosterCreatePage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = Boolean(id);
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
   const [groups, setGroups] = useState<StaffGroup[]>([]);
   const [name, setName] = useState('');
@@ -50,6 +52,31 @@ export function RosterCreatePage() {
     api.shiftTemplates.list().then(setTemplates);
     api.groups.list().then(setGroups);
   }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    api.rosters
+      .get(id)
+      .then((r) => {
+        if (cancelled) return;
+        setName(r.name);
+        setDateRangeStart(r.dateRangeStart.slice(0, 10));
+        setDateRangeEnd(r.dateRangeEnd.slice(0, 10));
+        setGroupId(r.groupId);
+        setHoursPerShift(r.hoursPerShift);
+        const byDate: Record<string, DayShiftRow[]> = {};
+        for (const rs of r.rosterShifts) {
+          const date = rs.date.slice(0, 10);
+          byDate[date] = [...(byDate[date] || []), { shiftTemplateId: rs.shiftTemplate.id, headcount: rs.headcount }];
+        }
+        setDayShifts(byDate);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load roster'));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   useEffect(() => {
     setPageIndex(0);
@@ -105,8 +132,14 @@ export function RosterCreatePage() {
     }
     setCreating(true);
     try {
-      const roster = await api.rosters.create({ name, dateRangeStart, dateRangeEnd, groupId, hoursPerShift, shifts });
-      navigate(`/rosters/${roster.id}`);
+      const payload = { name, dateRangeStart, dateRangeEnd, groupId, hoursPerShift, shifts };
+      if (isEdit) {
+        await api.rosters.update(id!, payload);
+        navigate(`/rosters/${id}`);
+      } else {
+        const roster = await api.rosters.create(payload);
+        navigate(`/rosters/${roster.id}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create roster');
       setCreating(false);
@@ -117,7 +150,7 @@ export function RosterCreatePage() {
     <AppShell>
       <div className="max-w-3xl space-y-4">
         <BackLink to="/rosters" label="返回排班表" />
-        <PageHeader title="创建排班" />
+        <PageHeader title={isEdit ? '编辑排班' : '创建排班'} />
         <form onSubmit={handleSubmit} className="space-y-6">
           {bannerError && (
             <p role="alert" className={errorText}>
@@ -282,7 +315,7 @@ export function RosterCreatePage() {
 
           <button type="submit" disabled={creating} className={`gap-2 ${btnPrimary}`}>
             {creating && <Spinner className="h-4 w-4" />}
-            创建排班
+            {isEdit ? '保存修改' : '创建排班'}
           </button>
         </form>
       </div>

@@ -13,10 +13,17 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/staff', label: '员工管理' },
+  { to: '/responsibilities', label: '职责模板' },
+  {
+    to: '/staff',
+    label: '员工管理',
+    children: [
+      { to: '/staff', label: '员工列表', end: true },
+      { to: '/staff/new', label: '创建员工' },
+    ],
+  },
   { to: '/groups', label: '小组管理' },
   { to: '/shift-templates', label: '班次模板' },
-  { to: '/responsibilities', label: '职责模板' },
   {
     to: '/rosters',
     label: '排班表',

@@ -60,9 +60,12 @@ export function RosterListPage() {
                     {r.groupName} · {r.dateRangeStart.slice(0, 10)} ~ {r.dateRangeEnd.slice(0, 10)} · {r.shiftCount} 个班次
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Link to={`/rosters/${r.id}`} className={btnSecondary}>
-                    编辑
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Link to={`/rosters/${r.id}/edit`} className={btnSecondary}>
+                    编辑时间和偏好
+                  </Link>
+                  <Link to={`/rosters/${r.id}`} className={btnPrimary}>
+                    准备发布
                   </Link>
                   <button onClick={() => setConfirmTarget(r)} className={btnDanger}>
                     删除
