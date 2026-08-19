@@ -13,9 +13,11 @@ import { StaffEditPage } from './pages/StaffEditPage';
 import { GroupListPage } from './pages/GroupListPage';
 import { GroupDetailPage } from './pages/GroupDetailPage';
 import { ShiftTemplateListPage } from './pages/ShiftTemplateListPage';
+import { ResponsibilityListPage } from './pages/ResponsibilityListPage';
 import { RosterCreatePage } from './pages/RosterCreatePage';
 import { RosterListPage } from './pages/RosterListPage';
 import { RosterDetailPage } from './pages/RosterDetailPage';
+import { HelpPage } from './pages/HelpPage';
 
 export default function App() {
   return (
@@ -102,6 +104,14 @@ export default function App() {
           }
         />
         <Route
+          path="/responsibilities"
+          element={
+            <ProtectedRoute>
+              <ResponsibilityListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/rosters"
           element={
             <ProtectedRoute>
@@ -122,6 +132,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <RosterDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/help"
+          element={
+            <ProtectedRoute>
+              <HelpPage />
             </ProtectedRoute>
           }
         />

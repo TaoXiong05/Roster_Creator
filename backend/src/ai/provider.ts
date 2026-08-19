@@ -10,17 +10,18 @@ export interface AssignmentContextShift {
 export interface AssignmentContextStaff {
   staffId: string;
   name: string;
-  skills: string[];
-  minHoursPerWeek: number;
-  maxHoursPerWeek: number;
-  preferredShiftTemplateIds: string[];
-  preferredWeekdays: number[];
+  minHours: number;
+  maxHours: number;
+  hoursPeriod: string;
+  hoursUnit: string;
+  preferredShifts: { weekday: number; shiftTemplateId: string }[];
   unavailableDateRanges: { start: string; end: string }[];
 }
 
 export interface AssignmentContext {
   shifts: AssignmentContextShift[];
   staff: AssignmentContextStaff[];
+  hoursPerShift: number;
 }
 
 export interface AssignmentResultEntry {
@@ -39,14 +40,14 @@ export interface AIProvider {
 function buildPrompt(context: AssignmentContext): string {
   return [
     '你是一个排班助手。请根据以下班次需求和员工信息，把员工分配到班次。',
-    '分配优先级：1) 优先保证每位员工达到 minHoursPerWeek 的最低工时；',
-    '2) 再满足员工的 preferredShiftTemplateIds/preferredWeekdays 偏好，并避开 unavailableDateRanges；',
-    '3) 再尽量匹配 requiredSkills。',
+    '分配优先级：1) 优先保证每位员工达到 minHours 的最低量，minHours/maxHours 按 hoursPeriod 周期计算（weekly=每周、fortnightly=每两周、monthly=每月），排此次班表的这段日期占的是这个周期里的一部分，据此按比例衡量是否达标；hoursUnit 决定 minHours/maxHours 的单位——shifts 表示按班次次数计算（每次分配算 1 次）；hours 表示按工时小时数计算，此时不要用 startTime/endTime 去算时长，统一按 hoursPerShift（每个班次等于多少小时，本次排班表设定的值）× 分配到的班次数来估算工时；',
+    '2) 再满足员工的 preferredShifts 偏好（每一项是 {weekday, shiftTemplateId}，表示该员工在这一周几想上这一个班次；weekday 0=周日...6=周六），并避开 unavailableDateRanges。',
     '每个班次分配的人数不能超过 headcount，也不能把同一个员工分配到同一天的多个班次。',
     '如果员工不够，允许某个班次分配不满，不要虚构不存在的员工 id。',
     '只输出 JSON，不要输出任何解释文字，格式为：',
     '{"assignments":[{"rosterShiftId":"...","staffIds":["..."]}]}',
     '',
+    `每个班次等于多少小时（hoursPerShift）：${context.hoursPerShift}`,
     `班次列表：${JSON.stringify(context.shifts)}`,
     `员工列表：${JSON.stringify(context.staff)}`,
   ].join('\n');

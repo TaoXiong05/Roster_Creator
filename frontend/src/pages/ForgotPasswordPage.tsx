@@ -4,16 +4,27 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
 import { MailIcon } from '../components/AuthIcons';
-import { btnPrimary, inputBase, labelBase, successText } from '../styles/ui';
+import { Spinner } from '../components/Spinner';
+import { btnPrimary, errorText, inputBase, labelBase, successText } from '../styles/ui';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await api.requestPasswordReset(email);
-    setSent(true);
+    setError(null);
+    setLoading(true);
+    try {
+      await api.requestPasswordReset(email);
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send reset link');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,6 +43,11 @@ export function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <p role="alert" className={errorText}>
+              {error}
+            </p>
+          )}
           <div>
             <label htmlFor="email" className={labelBase}>
               邮箱
@@ -51,7 +67,8 @@ export function ForgotPasswordPage() {
               />
             </div>
           </div>
-          <button type="submit" className={`w-full ${btnPrimary}`}>
+          <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
+            {loading && <Spinner className="h-4 w-4" />}
             发送重置链接
           </button>
           <p className="text-sm text-ink-soft">

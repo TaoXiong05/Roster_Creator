@@ -18,7 +18,7 @@ const cards = [
   {
     to: '/staff',
     title: '员工管理',
-    description: '记录姓名、邮箱、技能和可安排时间',
+    description: '记录姓名、邮箱、职责和可安排时间',
     accentBg: 'bg-coral/15',
     accentText: 'text-coral-deep',
     accentLine: 'via-coral/50',
@@ -87,17 +87,25 @@ export function DashboardPage() {
 
   return (
     <AppShell>
-      <header className="flex items-center justify-between gap-4 motion-safe:animate-rise-in">
+      <header className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <KangarooMascot variant="badge" animated className="h-16 w-16 shrink-0 md:h-[4.5rem] md:w-[4.5rem]" />
-          <div>
+          <div className="relative shrink-0">
+            <span className="motion-safe:animate-sunburst-in pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-coral/50 via-tan/35 to-eucalyptus/35 blur-xl" />
+            <KangarooMascot
+              variant="badge"
+              animated
+              className="motion-safe:animate-hop-in h-16 w-16 md:h-[4.5rem] md:w-[4.5rem]"
+            />
+          </div>
+          <div className="motion-safe:animate-rise-in" style={{ animationDelay: '220ms' }}>
             <h1 className="font-display text-xl font-semibold text-ink md:text-2xl">你好呀，{name}</h1>
             <p className="mt-0.5 text-sm text-ink-soft">今天也要把团队安排得妥妥的</p>
           </div>
         </div>
         <button
           onClick={() => logout()}
-          className="shrink-0 rounded-full border border-tan/30 px-4 py-2 text-sm font-medium text-ink-soft transition hover:border-coral-deep/40 hover:text-coral-deep"
+          className="motion-safe:animate-rise-in flex min-h-[44px] shrink-0 items-center rounded-full border border-tan/30 px-4 text-sm font-medium text-ink-soft transition hover:border-coral-deep/40 hover:text-coral-deep"
+          style={{ animationDelay: '320ms' }}
         >
           登出
         </button>
@@ -109,7 +117,7 @@ export function DashboardPage() {
             key={card.to}
             to={card.to}
             className={`group relative flex flex-col gap-3 rounded-t-[28px] rounded-b-[18px] border ${card.border} bg-white/70 p-6 shadow-warm-sm transition-all hover:-translate-y-1 hover:shadow-warm motion-safe:animate-rise-in`}
-            style={{ animationDelay: `${120 + i * 80}ms` }}
+            style={{ animationDelay: `${480 + i * 80}ms` }}
           >
             <span className={`pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent ${card.accentLine} to-transparent`} />
             <span

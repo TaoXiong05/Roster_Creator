@@ -1,23 +1,35 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { api, Staff } from '../api/client';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTemplate, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
 import { PageHeader } from '../components/PageHeader';
+import { PreferenceFields } from '../components/PreferenceFields';
+import { Spinner } from '../components/Spinner';
 import { btnPillActive, btnPillInactive, btnPrimary, cardBase, errorText, inputBase, labelBase } from '../styles/ui';
-
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 export function StaffEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [staff, setStaff] = useState<Staff | null>(null);
+  const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
+  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [skills, setSkills] = useState('');
+  const [responsibilityIds, setResponsibilityIds] = useState<string[]>([]);
   const [minHours, setMinHours] = useState(0);
   const [maxHours, setMaxHours] = useState(40);
-  const [preferredWeekdays, setPreferredWeekdays] = useState<number[]>([]);
+  const [hoursPeriod, setHoursPeriod] = useState<HoursPeriod>('weekly');
+  const [hoursUnit, setHoursUnit] = useState<HoursUnit>('hours');
+  const [preferredShifts, setPreferredShifts] = useState<PreferredShift[]>([]);
+  const [activeWeekday, setActiveWeekday] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.shiftTemplates.list().then(setTemplates);
+    api.responsibilities.list().then(setResponsibilities);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -25,39 +37,55 @@ export function StaffEditPage() {
       setStaff(s);
       setName(s.name);
       setEmail(s.email);
-      setSkills(s.skills.join(', '));
+      setResponsibilityIds(s.responsibilityIds);
       if (s.preference) {
-        setMinHours(s.preference.minHoursPerWeek);
-        setMaxHours(s.preference.maxHoursPerWeek);
-        setPreferredWeekdays(s.preference.preferredWeekdays);
+        setMinHours(s.preference.minHours);
+        setMaxHours(s.preference.maxHours);
+        setHoursPeriod(s.preference.hoursPeriod);
+        setHoursUnit(s.preference.hoursUnit);
+        setPreferredShifts(s.preference.preferredShifts);
+        if (s.preference.preferredShifts.length > 0) {
+          setActiveWeekday(Math.min(...s.preference.preferredShifts.map((p) => p.weekday)));
+        }
       }
     });
   }, [id]);
 
-  const toggleWeekday = (day: number) => {
-    setPreferredWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
+  const toggleResponsibility = (respId: string) => {
+    setResponsibilityIds((prev) => (prev.includes(respId) ? prev.filter((r) => r !== respId) : [...prev, respId]));
+  };
+
+  const toggleShift = (day: number, shiftTemplateId: string) => {
+    setPreferredShifts((prev) =>
+      prev.some((p) => p.weekday === day && p.shiftTemplateId === shiftTemplateId)
+        ? prev.filter((p) => !(p.weekday === day && p.shiftTemplateId === shiftTemplateId))
+        : [...prev, { weekday: day, shiftTemplateId }]
+    );
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!id) return;
     setError(null);
-    const skillList = skills
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    if (responsibilityIds.length === 0) {
+      setError('请至少选择一个职责');
+      return;
+    }
+    setSaving(true);
     try {
-      await api.staff.update(id, { name, email, skills: skillList });
+      await api.staff.update(id, { name, email, responsibilityIds });
       await api.staff.updatePreference(id, {
-        preferredShiftTemplateIds: staff?.preference?.preferredShiftTemplateIds ?? [],
+        preferredShifts,
         unavailableDateRanges: staff?.preference?.unavailableDateRanges ?? [],
-        minHoursPerWeek: minHours,
-        maxHoursPerWeek: maxHours,
-        preferredWeekdays,
+        minHours,
+        maxHours,
+        hoursPeriod,
+        hoursUnit,
       });
       navigate('/staff');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save staff');
+      setSaving(false);
     }
   };
 
@@ -70,7 +98,8 @@ export function StaffEditPage() {
 
   return (
     <AppShell>
-      <div className="max-w-lg space-y-6">
+      <div className="max-w-lg space-y-4">
+        <BackLink to="/staff" label="返回员工管理" />
         <PageHeader title="编辑员工" />
         <form onSubmit={handleSubmit} className={`${cardBase} space-y-4`}>
           {error && (
@@ -94,50 +123,49 @@ export function StaffEditPage() {
             />
           </div>
           <div>
-            <label className={labelBase}>技能</label>
-            <input
-              placeholder="技能（逗号分隔）"
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              className={inputBase}
+            <label className={labelBase}>职责</label>
+            {responsibilities.length === 0 ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
+                <span>还没有设置职责模板，先去创建一个吧</span>
+                <Link to="/responsibilities" className="font-medium text-coral-deep hover:underline">
+                  去设置 →
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {responsibilities.map((r) => (
+                  <button
+                    type="button"
+                    key={r.id}
+                    onClick={() => toggleResponsibility(r.id)}
+                    className={responsibilityIds.includes(r.id) ? btnPillActive : btnPillInactive}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="border-t border-tan/15 pt-4">
+            <p className="mb-3 font-display text-sm font-semibold text-ink">排班偏好</p>
+            <PreferenceFields
+              templates={templates}
+              minHours={minHours}
+              maxHours={maxHours}
+              onMinHoursChange={setMinHours}
+              onMaxHoursChange={setMaxHours}
+              hoursPeriod={hoursPeriod}
+              onHoursPeriodChange={setHoursPeriod}
+              hoursUnit={hoursUnit}
+              onHoursUnitChange={setHoursUnit}
+              preferredShifts={preferredShifts}
+              activeWeekday={activeWeekday}
+              onSelectWeekday={setActiveWeekday}
+              onToggleShift={toggleShift}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelBase}>最小周工时</label>
-              <input
-                type="number"
-                value={minHours}
-                onChange={(e) => setMinHours(Number(e.target.value))}
-                className={inputBase}
-              />
-            </div>
-            <div>
-              <label className={labelBase}>最大周工时</label>
-              <input
-                type="number"
-                value={maxHours}
-                onChange={(e) => setMaxHours(Number(e.target.value))}
-                className={inputBase}
-              />
-            </div>
-          </div>
-          <div>
-            <p className={labelBase}>偏好上班的星期几</p>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAYS.map((label, day) => (
-                <button
-                  type="button"
-                  key={day}
-                  onClick={() => toggleWeekday(day)}
-                  className={preferredWeekdays.includes(day) ? btnPillActive : btnPillInactive}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button type="submit" className={btnPrimary}>
+          <button type="submit" disabled={saving} className={`gap-2 ${btnPrimary}`}>
+            {saving && <Spinner className="h-4 w-4" />}
             保存
           </button>
         </form>

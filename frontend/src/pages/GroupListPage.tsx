@@ -2,12 +2,17 @@ import { useEffect, useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, StaffGroup } from '../api/client';
 import { AppShell } from '../components/AppShell';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PageHeader } from '../components/PageHeader';
-import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, listRow } from '../styles/ui';
+import { Spinner } from '../components/Spinner';
+import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, listRow } from '../styles/ui';
 
 export function GroupListPage() {
   const [groups, setGroups] = useState<StaffGroup[]>([]);
   const [name, setName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<StaffGroup | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => setGroups(await api.groups.list());
 
@@ -17,9 +22,14 @@ export function GroupListPage() {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    await api.groups.create(name);
-    setName('');
-    await load();
+    setCreating(true);
+    try {
+      await api.groups.create(name);
+      setName('');
+      await load();
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleRename = async (id: string, currentName: string) => {
@@ -29,9 +39,16 @@ export function GroupListPage() {
     await load();
   };
 
-  const handleDelete = async (id: string) => {
-    await api.groups.remove(id);
-    await load();
+  const handleConfirmDelete = async () => {
+    if (!confirmTarget) return;
+    setDeleting(true);
+    try {
+      await api.groups.remove(confirmTarget.id);
+      setConfirmTarget(null);
+      await load();
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -39,15 +56,22 @@ export function GroupListPage() {
       <div className="space-y-6">
         <PageHeader title="小组管理" description="把员工分组，一次性排进同一份班表" />
 
-        <form onSubmit={handleCreate} className={`${cardBase} flex gap-3`}>
-          <input
-            placeholder="小组名称"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={`${inputBase} flex-1`}
-            required
-          />
-          <button type="submit" className={`${btnPrimary} shrink-0`}>
+        <form onSubmit={handleCreate} className={`${cardBase} flex flex-col gap-3 sm:flex-row sm:items-end`}>
+          <div className="sm:flex-1">
+            <label htmlFor="group-name" className={labelBase}>
+              小组名称
+            </label>
+            <input
+              id="group-name"
+              placeholder="小组名称"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputBase}
+              required
+            />
+          </div>
+          <button type="submit" disabled={creating} className={`shrink-0 gap-2 ${btnPrimary}`}>
+            {creating && <Spinner className="h-4 w-4" />}
             创建小组
           </button>
         </form>
@@ -69,7 +93,7 @@ export function GroupListPage() {
                   <button onClick={() => handleRename(g.id, g.name)} className={btnSecondary}>
                     重命名
                   </button>
-                  <button onClick={() => handleDelete(g.id)} className={btnDanger}>
+                  <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
                     删除
                   </button>
                 </div>
@@ -78,6 +102,15 @@ export function GroupListPage() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        title="删除小组"
+        message={`确定要删除「${confirmTarget?.name ?? ''}」吗？此操作不可撤销。`}
+        loading={deleting}
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </AppShell>
   );
 }

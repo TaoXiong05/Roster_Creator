@@ -3,7 +3,7 @@ import request from 'supertest';
 
 vi.mock('../../db', () => ({
   prisma: {
-    roster: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+    roster: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     staffGroup: { findUnique: vi.fn() },
     shiftTemplate: { findUnique: vi.fn() },
   },
@@ -160,6 +160,124 @@ describe('POST /rosters', () => {
       requiredSkills: ['cashier'],
     });
   });
+
+  it('pre-creates one unfilled assignment slot per headcount so shifts can be staffed manually without AI', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+    (prisma.roster.create as any).mockResolvedValue({ id: 'roster-1' });
+
+    await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 3, requiredSkills: [] }],
+      });
+
+    const callArg = (prisma.roster.create as any).mock.calls[0][0];
+    const shiftAssignments = callArg.data.rosterShifts.create[0].assignments.create;
+    expect(shiftAssignments).toHaveLength(3);
+    expect(shiftAssignments).toEqual([
+      { staffId: null, unfilledTag: null },
+      { staffId: null, unfilledTag: null },
+      { staffId: null, unfilledTag: null },
+    ]);
+  });
+
+  it('defaults hoursPerShift to 8 when omitted', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+    (prisma.roster.create as any).mockResolvedValue({ id: 'roster-1' });
+
+    await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 1, requiredSkills: [] }],
+      });
+
+    const callArg = (prisma.roster.create as any).mock.calls[0][0];
+    expect(callArg.data.hoursPerShift).toBe(8);
+  });
+
+  it('stores an explicit hoursPerShift', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+    (prisma.roster.create as any).mockResolvedValue({ id: 'roster-1' });
+
+    await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        hoursPerShift: 6,
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 1, requiredSkills: [] }],
+      });
+
+    const callArg = (prisma.roster.create as any).mock.calls[0][0];
+    expect(callArg.data.hoursPerShift).toBe(6);
+  });
+
+  it('rejects a non-positive hoursPerShift', async () => {
+    const res = await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        hoursPerShift: 0,
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 1, requiredSkills: [] }],
+      });
+
+    expect(res.status).toBe(400);
+    expect(prisma.roster.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a date range where the start is after the end', async () => {
+    const res = await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-23',
+        dateRangeEnd: '2026-08-17',
+        groupId: 'group-1',
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-18'], headcount: 1, requiredSkills: [] }],
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a shift date outside the roster date range', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-09-01'], headcount: 1, requiredSkills: [] }],
+      });
+
+    expect(res.status).toBe(400);
+    expect(prisma.roster.create).not.toHaveBeenCalled();
+  });
 });
 
 describe("PUT /rosters/:id/publish", () => {
@@ -182,5 +300,28 @@ describe("PUT /rosters/:id/publish", () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('published');
     expect(prisma.roster.update).toHaveBeenCalledWith({ where: { id: 'roster-1' }, data: { status: 'published' } });
+  });
+});
+
+describe('DELETE /rosters/:id', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns 404 for another user's roster", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'someone-else' });
+
+    const res = await request(app).delete('/rosters/roster-1').set('Cookie', authCookie);
+
+    expect(res.status).toBe(404);
+    expect(prisma.roster.delete).not.toHaveBeenCalled();
+  });
+
+  it('deletes the roster', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1' });
+    (prisma.roster.delete as any).mockResolvedValue({ id: 'roster-1' });
+
+    const res = await request(app).delete('/rosters/roster-1').set('Cookie', authCookie);
+
+    expect(res.status).toBe(204);
+    expect(prisma.roster.delete).toHaveBeenCalledWith({ where: { id: 'roster-1' } });
   });
 });

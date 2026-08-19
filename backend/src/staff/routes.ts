@@ -26,12 +26,19 @@ staffRouter.get('/:id', async (req: AuthedRequest, res) => {
 });
 
 staffRouter.post('/', async (req: AuthedRequest, res) => {
-  const { name, email, skills } = req.body as { name?: string; email?: string; skills?: string[] };
+  const { name, email, responsibilityIds } = req.body as {
+    name?: string;
+    email?: string;
+    responsibilityIds?: string[];
+  };
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and email are required' });
   }
+  if (!responsibilityIds || responsibilityIds.length === 0) {
+    return res.status(400).json({ error: 'At least one responsibility is required' });
+  }
   const staff = await prisma.staff.create({
-    data: { userId: req.userId!, name, email, skills: skills ?? [] },
+    data: { userId: req.userId!, name, email, responsibilityIds },
   });
   res.status(201).json(staff);
 });
@@ -41,10 +48,17 @@ staffRouter.put('/:id', async (req: AuthedRequest, res) => {
   if (!existing || existing.userId !== req.userId) {
     return res.status(404).json({ error: 'Staff not found' });
   }
-  const { name, email, skills } = req.body as { name?: string; email?: string; skills?: string[] };
+  const { name, email, responsibilityIds } = req.body as {
+    name?: string;
+    email?: string;
+    responsibilityIds?: string[];
+  };
+  if (responsibilityIds !== undefined && responsibilityIds.length === 0) {
+    return res.status(400).json({ error: 'At least one responsibility is required' });
+  }
   const staff = await prisma.staff.update({
     where: { id: req.params.id },
-    data: { name, email, skills },
+    data: { name, email, responsibilityIds },
   });
   res.json(staff);
 });

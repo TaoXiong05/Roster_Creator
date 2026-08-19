@@ -6,7 +6,7 @@ import { ShiftTemplateListPage } from '../ShiftTemplateListPage';
 import { api } from '../../api/client';
 
 vi.mock('../../api/client', () => ({
-  api: { shiftTemplates: { list: vi.fn(), create: vi.fn(), remove: vi.fn() } },
+  api: { shiftTemplates: { list: vi.fn(), create: vi.fn(), remove: vi.fn(), update: vi.fn() } },
 }));
 
 describe('ShiftTemplateListPage', () => {
@@ -49,6 +49,40 @@ describe('ShiftTemplateListPage', () => {
       expect(api.shiftTemplates.create).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Evening' })
       )
+    );
+  });
+
+  it('edits a template', async () => {
+    (api.shiftTemplates.list as any).mockResolvedValue([
+      { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
+    ]);
+    (api.shiftTemplates.update as any).mockResolvedValue({
+      id: 'template-1',
+      name: 'Early Morning',
+      startTime: '05:00',
+      endTime: '13:00',
+    });
+
+    render(
+      <MemoryRouter>
+        <ShiftTemplateListPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '编辑' }));
+
+    const nameInput = screen.getAllByLabelText('模板名称')[1];
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'Early Morning');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() =>
+      expect(api.shiftTemplates.update).toHaveBeenCalledWith('template-1', {
+        name: 'Early Morning',
+        startTime: '06:00',
+        endTime: '14:00',
+      })
     );
   });
 });

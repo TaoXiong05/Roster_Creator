@@ -67,4 +67,17 @@ describe('POST /rosters/:id/send-emails', () => {
     );
     expect(res.body.sentTo).toEqual(['alice@b.com']);
   });
+
+  it("isolates one recipient's failure so the rest still send and the request does not throw", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (sendEmail as any).mockImplementation(({ to }: { to: string }) =>
+      to === 'bob@b.com' ? Promise.reject(new Error('Resend rejected this address')) : Promise.resolve(undefined)
+    );
+
+    const res = await request(app).post('/rosters/roster-1/send-emails').set('Cookie', authCookie).send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.sentTo).toEqual(['alice@b.com']);
+    expect(res.body.failed).toEqual(['bob@b.com']);
+  });
 });

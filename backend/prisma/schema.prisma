@@ -15,21 +15,22 @@ model User {
   googleId     String?  @unique
   createdAt    DateTime @default(now())
 
-  staff               Staff[]
-  staffGroups         StaffGroup[]
-  shiftTemplates      ShiftTemplate[]
-  rosters             Roster[]
-  passwordResetTokens PasswordResetToken[]
+  staff                   Staff[]
+  staffGroups             StaffGroup[]
+  shiftTemplates          ShiftTemplate[]
+  responsibilityTemplates ResponsibilityTemplate[]
+  rosters                 Roster[]
+  passwordResetTokens     PasswordResetToken[]
 }
 
 model Staff {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  email     String
-  skills    String[]
-  createdAt DateTime @default(now())
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  email             String
+  responsibilityIds String[] @default([])
+  createdAt         DateTime @default(now())
 
   preference   Preference?
   groupMembers GroupMember[]
@@ -37,14 +38,15 @@ model Staff {
 }
 
 model Preference {
-  id                        String   @id @default(uuid())
-  staffId                   String   @unique
-  staff                     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  preferredShiftTemplateIds String[]
-  unavailableDateRanges     Json
-  minHoursPerWeek           Float
-  maxHoursPerWeek           Float
-  preferredWeekdays         Int[]
+  id                    String   @id @default(uuid())
+  staffId               String   @unique
+  staff                 Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  preferredShifts       Json     @default("[]")
+  unavailableDateRanges Json
+  minHours              Float    @default(0)
+  maxHours              Float    @default(40)
+  hoursPeriod           String   @default("weekly")
+  hoursUnit             String   @default("hours")
 }
 
 model StaffGroup {
@@ -79,6 +81,14 @@ model ShiftTemplate {
   rosterShifts RosterShift[]
 }
 
+model ResponsibilityTemplate {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+}
+
 model Roster {
   id             String     @id @default(uuid())
   userId         String
@@ -89,6 +99,7 @@ model Roster {
   groupId        String
   group          StaffGroup @relation(fields: [groupId], references: [id])
   status         String     @default("draft")
+  hoursPerShift  Float      @default(8)
   createdAt      DateTime   @default(now())
 
   rosterShifts RosterShift[]

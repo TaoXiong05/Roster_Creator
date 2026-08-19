@@ -46,6 +46,7 @@ emailRouter.post('/:id/send-emails', async (req: AuthedRequest, res) => {
   }
 
   const sentTo: string[] = [];
+  const failed: string[] = [];
   for (const [staffId, entry] of shiftsByStaff) {
     const ics = buildIcs(
       entry.rows.map((row, index) => ({
@@ -63,14 +64,18 @@ emailRouter.post('/:id/send-emails', async (req: AuthedRequest, res) => {
       '</ul>',
     ].join('');
 
-    await sendEmail({
-      to: entry.email,
-      subject: `你的排班表：${roster.name}`,
-      html,
-      attachments: [{ filename: `${roster.name}.ics`, content: Buffer.from(ics).toString('base64') }],
-    });
-    sentTo.push(entry.email);
+    try {
+      await sendEmail({
+        to: entry.email,
+        subject: `你的排班表：${roster.name}`,
+        html,
+        attachments: [{ filename: `${roster.name}.ics`, content: Buffer.from(ics).toString('base64') }],
+      });
+      sentTo.push(entry.email);
+    } catch {
+      failed.push(entry.email);
+    }
   }
 
-  res.json({ sentTo });
+  res.json({ sentTo, failed });
 });

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, RosterDetail, AssignmentEntry, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
+import { Spinner } from '../components/Spinner';
 import { StatusPill } from '../components/StatusPill';
 import { btnPrimary, btnSecondary, cardBase, errorText, inputBase, successText } from '../styles/ui';
 
@@ -15,6 +17,10 @@ export function RosterDetailPage() {
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [sendingAll, setSendingAll] = useState(false);
+  const [sendingStaffId, setSendingStaffId] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
 
   const loadRoster = async () => {
@@ -64,6 +70,7 @@ export function RosterDetailPage() {
   const handleSave = async () => {
     if (!id) return;
     setError(null);
+    setSaving(true);
     try {
       const result = await api.rosters.saveAssignments(
         id,
@@ -73,27 +80,44 @@ export function RosterDetailPage() {
       setDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save assignments');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handlePublish = async () => {
     if (!id) return;
-    const updated = await api.rosters.publish(id);
-    setRoster((prev) => (prev ? { ...prev, status: updated.status } : prev));
+    setPublishing(true);
+    try {
+      const updated = await api.rosters.publish(id);
+      setRoster((prev) => (prev ? { ...prev, status: updated.status } : prev));
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const handleSendAll = async () => {
     if (!id) return;
     setEmailStatus(null);
-    const result = await api.rosters.sendEmails(id);
-    setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+    setSendingAll(true);
+    try {
+      const result = await api.rosters.sendEmails(id);
+      setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+    } finally {
+      setSendingAll(false);
+    }
   };
 
   const handleSendOne = async (staffId: string) => {
     if (!id) return;
     setEmailStatus(null);
-    const result = await api.rosters.sendEmails(id, [staffId]);
-    setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+    setSendingStaffId(staffId);
+    try {
+      const result = await api.rosters.sendEmails(id, [staffId]);
+      setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
+    } finally {
+      setSendingStaffId(null);
+    }
   };
 
   if (!roster)
@@ -106,6 +130,7 @@ export function RosterDetailPage() {
   return (
     <AppShell>
       <div className="space-y-6">
+        <BackLink to="/rosters" label="返回排班表" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -117,16 +142,25 @@ export function RosterDetailPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={handleGenerate} disabled={generating} className={btnSecondary}>
+            <button type="button" onClick={handleGenerate} disabled={generating} className={`gap-2 ${btnSecondary}`}>
+              {generating && <Spinner className="h-4 w-4" />}
               {generating ? '生成中...' : '生成排班'}
             </button>
-            <button type="button" onClick={handleSave} disabled={!dirty} className={btnPrimary}>
+            <button type="button" onClick={handleSave} disabled={!dirty || saving} className={`gap-2 ${btnPrimary}`}>
+              {saving && <Spinner className="h-4 w-4" />}
               保存
             </button>
-            <button type="button" onClick={handlePublish} disabled={roster.status === 'published'} className={btnSecondary}>
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={roster.status === 'published' || publishing}
+              className={`gap-2 ${btnSecondary}`}
+            >
+              {publishing && <Spinner className="h-4 w-4" />}
               发布
             </button>
-            <button type="button" onClick={handleSendAll} className={btnSecondary}>
+            <button type="button" onClick={handleSendAll} disabled={sendingAll} className={`gap-2 ${btnSecondary}`}>
+              {sendingAll && <Spinner className="h-4 w-4" />}
               发送邮件给全体
             </button>
           </div>
@@ -205,8 +239,14 @@ export function RosterDetailPage() {
                         </div>
                       )}
                       {row.staffId && (
-                        <div className="flex shrink-0 gap-3 text-xs">
-                          <button type="button" onClick={() => handleSendOne(row.staffId!)} className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+                        <div className="flex shrink-0 items-center gap-3 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleSendOne(row.staffId!)}
+                            disabled={sendingStaffId === row.staffId}
+                            className="inline-flex items-center gap-1.5 font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline disabled:no-underline disabled:opacity-60"
+                          >
+                            {sendingStaffId === row.staffId && <Spinner className="h-3.5 w-3.5" />}
                             发送给TA
                           </button>
                           <a href={api.rosters.exportUrl(roster.id, 'ics', row.staffId)} className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">

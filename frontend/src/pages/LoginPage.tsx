@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { AuthLayout } from '../components/AuthLayout';
 import { MailIcon, LockIcon } from '../components/AuthIcons';
+import { Spinner } from '../components/Spinner';
 import { btnPrimary, btnSecondary, errorText, inputBase, labelBase } from '../styles/ui';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -14,15 +15,18 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+      setLoading(false);
     }
   };
 
@@ -80,7 +84,8 @@ export function LoginPage() {
           </div>
         </div>
 
-        <button type="submit" className={`w-full ${btnPrimary}`}>
+        <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
+          {loading && <Spinner className="h-4 w-4" />}
           登录
         </button>
 

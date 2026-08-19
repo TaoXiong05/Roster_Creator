@@ -24,43 +24,135 @@ describe('PUT /staff/:id/preference', () => {
     const res = await request(app)
       .put('/staff/staff-1/preference')
       .set('Cookie', authCookie)
-      .send({ minHoursPerWeek: 10, maxHoursPerWeek: 30 });
+      .send({ minHours: 10, maxHours: 30 });
 
     expect(res.status).toBe(404);
   });
 
-  it('rejects minHoursPerWeek greater than maxHoursPerWeek', async () => {
+  it('rejects minHours greater than maxHours', async () => {
     (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
 
     const res = await request(app)
       .put('/staff/staff-1/preference')
       .set('Cookie', authCookie)
-      .send({ minHoursPerWeek: 40, maxHoursPerWeek: 20 });
+      .send({ minHours: 40, maxHours: 20 });
 
     expect(res.status).toBe(400);
   });
 
-  it('upserts the preference', async () => {
+  it('rejects an invalid hoursPeriod', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 10, maxHours: 30, hoursPeriod: 'daily' });
+
+    expect(res.status).toBe(400);
+    expect(prisma.preference.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid hoursUnit', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 10, maxHours: 30, hoursUnit: 'days' });
+
+    expect(res.status).toBe(400);
+    expect(prisma.preference.upsert).not.toHaveBeenCalled();
+  });
+
+  it('upserts the preference, defaulting hoursPeriod to weekly and hoursUnit to hours when omitted', async () => {
     (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
     (prisma.preference.upsert as any).mockResolvedValue({
       id: 'pref-1',
       staffId: 'staff-1',
-      preferredShiftTemplateIds: [],
+      preferredShifts: [{ weekday: 1, shiftTemplateId: 'template-1' }],
       unavailableDateRanges: [],
-      minHoursPerWeek: 10,
-      maxHoursPerWeek: 30,
-      preferredWeekdays: [1, 2, 3],
+      minHours: 10,
+      maxHours: 30,
+      hoursPeriod: 'weekly',
+      hoursUnit: 'hours',
     });
 
     const res = await request(app)
       .put('/staff/staff-1/preference')
       .set('Cookie', authCookie)
-      .send({ minHoursPerWeek: 10, maxHoursPerWeek: 30, preferredWeekdays: [1, 2, 3] });
+      .send({ minHours: 10, maxHours: 30, preferredShifts: [{ weekday: 1, shiftTemplateId: 'template-1' }] });
 
     expect(res.status).toBe(200);
-    expect(res.body.preferredWeekdays).toEqual([1, 2, 3]);
+    expect(res.body.preferredShifts).toEqual([{ weekday: 1, shiftTemplateId: 'template-1' }]);
+    expect(res.body.hoursPeriod).toBe('weekly');
+    expect(res.body.hoursUnit).toBe('hours');
     expect(prisma.preference.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ where: { staffId: 'staff-1' } })
     );
+  });
+
+  it('upserts the preference with an explicit shifts hoursUnit', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+    (prisma.preference.upsert as any).mockResolvedValue({
+      id: 'pref-1',
+      staffId: 'staff-1',
+      preferredShifts: [],
+      unavailableDateRanges: [],
+      minHours: 2,
+      maxHours: 5,
+      hoursPeriod: 'weekly',
+      hoursUnit: 'shifts',
+    });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 2, maxHours: 5, hoursUnit: 'shifts' });
+
+    expect(res.status).toBe(200);
+    expect(prisma.preference.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ hoursUnit: 'shifts' }),
+        update: expect.objectContaining({ hoursUnit: 'shifts' }),
+      })
+    );
+  });
+
+  it('upserts the preference with an explicit fortnightly hoursPeriod', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+    (prisma.preference.upsert as any).mockResolvedValue({
+      id: 'pref-1',
+      staffId: 'staff-1',
+      preferredShifts: [],
+      unavailableDateRanges: [],
+      minHours: 20,
+      maxHours: 60,
+      hoursPeriod: 'fortnightly',
+    });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 20, maxHours: 60, hoursPeriod: 'fortnightly' });
+
+    expect(res.status).toBe(200);
+    expect(prisma.preference.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ hoursPeriod: 'fortnightly' }),
+        update: expect.objectContaining({ hoursPeriod: 'fortnightly' }),
+      })
+    );
+  });
+
+  it('rejects a malformed preferredShifts entry', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 10, maxHours: 30, preferredShifts: [{ weekday: 9, shiftTemplateId: 'template-1' }] });
+
+    expect(res.status).toBe(400);
+    expect(prisma.preference.upsert).not.toHaveBeenCalled();
   });
 });

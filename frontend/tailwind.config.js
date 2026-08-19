@@ -12,7 +12,7 @@ export default {
         coral: {
           DEFAULT: '#E8834F',
           light: '#F4A97C',
-          deep: '#C9642F',
+          deep: '#B04D22',
         },
         sand: {
           DEFAULT: '#FFF3E2',
@@ -66,6 +66,22 @@ export default {
           '25%': { transform: 'rotate(-14deg)' },
           '75%': { transform: 'rotate(10deg)' },
         },
+        blobDrift: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(4%, -6%) scale(1.08)' },
+          '66%': { transform: 'translate(-3%, 4%) scale(0.96)' },
+        },
+        leafFall: {
+          '0%': { transform: 'translateY(-10%) translateX(0) rotate(-10deg)', opacity: '0' },
+          '10%': { opacity: '0.5' },
+          '90%': { opacity: '0.35' },
+          '100%': { transform: 'translateY(110vh) translateX(28px) rotate(150deg)', opacity: '0' },
+        },
+        sunburstIn: {
+          '0%': { transform: 'scale(0.4)', opacity: '0' },
+          '55%': { transform: 'scale(1.15)', opacity: '0.9' },
+          '100%': { transform: 'scale(1)', opacity: '0.55' },
+        },
       },
       animation: {
         bob: 'bob 3.8s ease-in-out infinite',
@@ -73,6 +89,10 @@ export default {
         'ear-twitch': 'earTwitch 5.5s ease-in-out infinite',
         'rise-in': 'riseIn 0.6s ease-out both',
         wave: 'wave 2.2s ease-in-out infinite',
+        'blob-drift': 'blobDrift 26s ease-in-out infinite',
+        'blob-drift-slow': 'blobDrift 34s ease-in-out infinite reverse',
+        'leaf-fall': 'leafFall 17s linear infinite',
+        'sunburst-in': 'sunburstIn 1.3s cubic-bezier(0.34, 1.56, 0.64, 1) both',
       },
     },
   },

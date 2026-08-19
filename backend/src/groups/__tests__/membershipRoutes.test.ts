@@ -84,4 +84,14 @@ describe('DELETE /groups/:id/members/:staffId', () => {
       where: { groupId_staffId: { groupId: 'group-1', staffId: 'staff-1' } },
     });
   });
+
+  it('returns 404 instead of hanging when the membership no longer exists', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    const notFoundError = Object.assign(new Error('Record to delete does not exist'), { code: 'P2025' });
+    (prisma.groupMember.delete as any).mockRejectedValue(notFoundError);
+
+    const res = await request(app).delete('/groups/group-1/members/staff-1').set('Cookie', authCookie);
+
+    expect(res.status).toBe(404);
+  });
 });

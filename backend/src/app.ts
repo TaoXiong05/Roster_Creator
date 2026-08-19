@@ -1,3 +1,4 @@
+import 'express-async-errors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -9,6 +10,7 @@ import { preferenceRouter } from './staff/preferenceRoutes';
 import { groupsRouter } from './groups/routes';
 import { groupMembershipRouter } from './groups/membershipRoutes';
 import { shiftTemplateRouter } from './shiftTemplates/routes';
+import { responsibilityRouter } from './responsibilities/routes';
 import { rosterRouter } from './rosters/routes';
 import { assignmentRouter } from './rosters/assignmentRoutes';
 import { exportRouter } from './rosters/exportRoutes';
@@ -29,10 +31,22 @@ export function createApp() {
   app.use('/groups', groupsRouter);
   app.use('/groups', groupMembershipRouter);
   app.use('/shift-templates', shiftTemplateRouter);
+  app.use('/responsibilities', responsibilityRouter);
   app.use('/rosters', rosterRouter);
   app.use('/rosters', assignmentRouter);
   app.use('/rosters', exportRouter);
   app.use('/rosters', emailRouter);
+
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+    if (err?.code === 'P2025') {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+    if (err?.code === 'P2003') {
+      return res.status(409).json({ error: 'This item is referenced elsewhere and cannot be deleted' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  });
 
   return app;
 }

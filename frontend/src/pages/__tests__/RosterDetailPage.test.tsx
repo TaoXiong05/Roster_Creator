@@ -54,7 +54,7 @@ describe('RosterDetailPage', () => {
 
   it('generates assignments via the AI and shows the result', async () => {
     (api.rosters.get as any).mockResolvedValue(baseRoster);
-    (api.groups.listMembers as any).mockResolvedValue([{ id: 'staff-1', name: 'Alice', email: 'a@b.com', skills: [], preference: null }]);
+    (api.groups.listMembers as any).mockResolvedValue([{ id: 'staff-1', name: 'Alice', email: 'a@b.com', preference: null }]);
     (api.rosters.generateAssignments as any).mockResolvedValue({
       assignments: [{ id: 'a-1', rosterShiftId: 'rs-1', staffId: 'staff-1', unfilledTag: null, staff: { id: 'staff-1', name: 'Alice', email: 'a@b.com' } }],
     });
@@ -70,7 +70,7 @@ describe('RosterDetailPage', () => {
 
   it('disables save until an edit is made, then saves the local changes', async () => {
     (api.rosters.get as any).mockResolvedValue(baseRoster);
-    (api.groups.listMembers as any).mockResolvedValue([{ id: 'staff-1', name: 'Alice', email: 'a@b.com', skills: [], preference: null }]);
+    (api.groups.listMembers as any).mockResolvedValue([{ id: 'staff-1', name: 'Alice', email: 'a@b.com', preference: null }]);
     (api.rosters.saveAssignments as any).mockResolvedValue({
       assignments: [{ id: 'a-1', rosterShiftId: 'rs-1', staffId: 'staff-1', unfilledTag: null, staff: { id: 'staff-1', name: 'Alice', email: 'a@b.com' } }],
     });

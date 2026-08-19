@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { AmbientBackground } from './AmbientBackground';
 import { KangarooMascot } from './KangarooMascot';
 
 interface AuthLayoutProps {
@@ -12,10 +13,15 @@ interface AuthLayoutProps {
 export function AuthLayout({ headline, tagline, formEyebrow, formTitle, children }: AuthLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-sand">
+      <AmbientBackground />
+
       {/* brand / mascot panel */}
       <div className="relative overflow-hidden bg-gradient-to-b from-dusk-dark via-dusk to-coral-deep px-6 py-12 lg:w-1/2 lg:py-0 flex flex-col items-center justify-center text-center">
-        <div className="pointer-events-none absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-coral-light/25 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-56 w-56 rounded-full bg-eucalyptus/20 blur-3xl" />
+        <div className="motion-safe:animate-blob-drift pointer-events-none absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-coral-light/25 blur-3xl" />
+        <div
+          className="motion-safe:animate-blob-drift-slow pointer-events-none absolute bottom-0 right-0 h-56 w-56 rounded-full bg-eucalyptus/20 blur-3xl"
+          style={{ animationDelay: '3s' }}
+        />
 
         <span className="relative mb-6 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-1.5 font-display text-xs font-medium uppercase tracking-[0.2em] text-sand/90">
           Roster Creator

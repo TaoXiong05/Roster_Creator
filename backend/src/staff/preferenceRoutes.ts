@@ -5,6 +5,9 @@ import { requireAuth, AuthedRequest } from '../auth/middleware';
 export const preferenceRouter = Router();
 preferenceRouter.use(requireAuth);
 
+const HOURS_PERIODS = ['weekly', 'fortnightly', 'monthly'];
+const HOURS_UNITS = ['hours', 'shifts'];
+
 preferenceRouter.put('/:id/preference', async (req: AuthedRequest, res) => {
   const staff = await prisma.staff.findUnique({ where: { id: req.params.id } });
   if (!staff || staff.userId !== req.userId) {
@@ -12,32 +15,55 @@ preferenceRouter.put('/:id/preference', async (req: AuthedRequest, res) => {
   }
 
   const {
-    preferredShiftTemplateIds,
+    preferredShifts,
     unavailableDateRanges,
-    minHoursPerWeek,
-    maxHoursPerWeek,
-    preferredWeekdays,
+    minHours,
+    maxHours,
+    hoursPeriod,
+    hoursUnit,
   } = req.body as {
-    preferredShiftTemplateIds?: string[];
+    preferredShifts?: { weekday: number; shiftTemplateId: string }[];
     unavailableDateRanges?: { start: string; end: string }[];
-    minHoursPerWeek?: number;
-    maxHoursPerWeek?: number;
-    preferredWeekdays?: number[];
+    minHours?: number;
+    maxHours?: number;
+    hoursPeriod?: string;
+    hoursUnit?: string;
   };
 
-  if (minHoursPerWeek === undefined || maxHoursPerWeek === undefined) {
-    return res.status(400).json({ error: 'minHoursPerWeek and maxHoursPerWeek are required' });
+  if (minHours === undefined || maxHours === undefined) {
+    return res.status(400).json({ error: 'minHours and maxHours are required' });
   }
-  if (minHoursPerWeek > maxHoursPerWeek) {
-    return res.status(400).json({ error: 'minHoursPerWeek cannot exceed maxHoursPerWeek' });
+  if (minHours > maxHours) {
+    return res.status(400).json({ error: 'minHours cannot exceed maxHours' });
+  }
+  if (hoursPeriod !== undefined && !HOURS_PERIODS.includes(hoursPeriod)) {
+    return res.status(400).json({ error: `hoursPeriod must be one of ${HOURS_PERIODS.join(', ')}` });
+  }
+  if (hoursUnit !== undefined && !HOURS_UNITS.includes(hoursUnit)) {
+    return res.status(400).json({ error: `hoursUnit must be one of ${HOURS_UNITS.join(', ')}` });
+  }
+  const isValidPreferredShifts =
+    preferredShifts === undefined ||
+    (Array.isArray(preferredShifts) &&
+      preferredShifts.every(
+        (p) =>
+          p &&
+          typeof p.weekday === 'number' &&
+          p.weekday >= 0 &&
+          p.weekday <= 6 &&
+          typeof p.shiftTemplateId === 'string'
+      ));
+  if (!isValidPreferredShifts) {
+    return res.status(400).json({ error: 'preferredShifts must be an array of { weekday, shiftTemplateId }' });
   }
 
   const data = {
-    preferredShiftTemplateIds: preferredShiftTemplateIds ?? [],
+    preferredShifts: preferredShifts ?? [],
     unavailableDateRanges: unavailableDateRanges ?? [],
-    minHoursPerWeek,
-    maxHoursPerWeek,
-    preferredWeekdays: preferredWeekdays ?? [],
+    minHours,
+    maxHours,
+    hoursPeriod: hoursPeriod ?? 'weekly',
+    hoursUnit: hoursUnit ?? 'hours',
   };
 
   const preference = await prisma.preference.upsert({

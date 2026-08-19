@@ -11,7 +11,7 @@ describe('api.login', () => {
     (fetch as any).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ id: 'user-1', email: 'a@b.com' }),
+      text: async () => JSON.stringify({ id: 'user-1', email: 'a@b.com' }),
     });
 
     const user = await api.login('a@b.com', 'password123');
@@ -40,14 +40,14 @@ describe('api.staff', () => {
   });
 
   it('lists staff', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify([]) });
     await api.staff.list();
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/staff'), expect.objectContaining({ credentials: 'include' }));
   });
 
   it('creates staff', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 'staff-1' }) });
-    await api.staff.create({ name: 'Alice', email: 'a@b.com', skills: [] });
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, text: async () => JSON.stringify({ id: 'staff-1' }) });
+    await api.staff.create({ name: 'Alice', email: 'a@b.com', responsibilityIds: ['resp-1'] });
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/staff'),
       expect.objectContaining({ method: 'POST' })
@@ -61,8 +61,11 @@ describe('api.groups', () => {
   });
 
   it('adds a member', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 204, json: async () => ({}) });
-    await api.groups.addMember('group-1', 'staff-1');
+    // The backend responds 201 with an empty body for this endpoint — regression
+    // test for a bug where apiRequest called res.json() on an empty body and threw,
+    // silently skipping the UI refresh after adding a member.
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, text: async () => '' });
+    await expect(api.groups.addMember('group-1', 'staff-1')).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/groups/group-1/members'),
       expect.objectContaining({ method: 'POST' })
@@ -76,7 +79,7 @@ describe('api.shiftTemplates', () => {
   });
 
   it('creates a shift template', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 'template-1' }) });
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, text: async () => JSON.stringify({ id: 'template-1' }) });
     await api.shiftTemplates.create({ name: 'Morning', startTime: '06:00', endTime: '14:00' });
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/shift-templates'),
@@ -91,12 +94,13 @@ describe('api.rosters', () => {
   });
 
   it('creates a roster', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 'roster-1' }) });
+    (fetch as any).mockResolvedValue({ ok: true, status: 201, text: async () => JSON.stringify({ id: 'roster-1' }) });
     await api.rosters.create({
       name: 'Week 34',
       dateRangeStart: '2026-08-17',
       dateRangeEnd: '2026-08-23',
       groupId: 'group-1',
+      hoursPerShift: 8,
       shifts: [],
     });
     expect(fetch).toHaveBeenCalledWith(
@@ -112,7 +116,7 @@ describe('api.rosters assignment methods', () => {
   });
 
   it('generates assignments', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ assignments: [] }) });
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ assignments: [] }) });
     await api.rosters.generateAssignments('roster-1');
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/rosters/roster-1/generate-assignments'),
@@ -121,7 +125,7 @@ describe('api.rosters assignment methods', () => {
   });
 
   it('saves assignments', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ assignments: [] }) });
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ assignments: [] }) });
     await api.rosters.saveAssignments('roster-1', [{ id: 'a-1', staffId: null, unfilledTag: 'AGENT' }]);
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/rosters/roster-1/assignments'),
@@ -136,7 +140,11 @@ describe('api.rosters publish/export/email', () => {
   });
 
   it('publishes a roster', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 'roster-1', status: 'published' }) });
+    (fetch as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ id: 'roster-1', status: 'published' }),
+    });
     await api.rosters.publish('roster-1');
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/rosters/roster-1/publish'),
@@ -145,7 +153,7 @@ describe('api.rosters publish/export/email', () => {
   });
 
   it('sends emails with the given staffIds', async () => {
-    (fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ sentTo: [] }) });
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ sentTo: [] }) });
     await api.rosters.sendEmails('roster-1', ['staff-1']);
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/rosters/roster-1/send-emails'),
@@ -162,5 +170,14 @@ describe('api.rosters publish/export/email', () => {
   it('builds a whole-roster export url without a staffId', () => {
     const url = api.rosters.exportUrl('roster-1', 'csv');
     expect(url).toBe(`${url.split('/rosters')[0]}/rosters/roster-1/export/csv`);
+  });
+
+  it('deletes a roster', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 204, text: async () => '' });
+    await api.rosters.remove('roster-1');
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters/roster-1'),
+      expect.objectContaining({ method: 'DELETE' })
+    );
   });
 });

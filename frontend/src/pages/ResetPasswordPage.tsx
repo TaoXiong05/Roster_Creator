@@ -4,6 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
 import { LockIcon } from '../components/AuthIcons';
+import { Spinner } from '../components/Spinner';
 import { btnPrimary, errorText, inputBase, labelBase, successText } from '../styles/ui';
 
 export function ResetPasswordPage() {
@@ -12,15 +13,18 @@ export function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
     try {
       await api.confirmPasswordReset(token, password);
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Reset failed');
+      setLoading(false);
     }
   };
 
@@ -65,7 +69,8 @@ export function ResetPasswordPage() {
               />
             </div>
           </div>
-          <button type="submit" className={`w-full ${btnPrimary}`}>
+          <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
+            {loading && <Spinner className="h-4 w-4" />}
             重置密码
           </button>
         </form>

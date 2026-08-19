@@ -1,16 +1,15 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api, ShiftTemplate, StaffGroup } from '../api/client';
+import { useNavigate, Link } from 'react-router-dom';
+import { api, RosterShiftInput, ShiftTemplate, StaffGroup } from '../api/client';
 import { AppShell } from '../components/AppShell';
+import { BackLink } from '../components/BackLink';
+import { DayShiftDialog, DayShiftRow } from '../components/DayShiftDialog';
 import { PageHeader } from '../components/PageHeader';
-import { btnPrimary, btnSecondary, cardBase, errorText, inputBase, labelBase } from '../styles/ui';
+import { Spinner } from '../components/Spinner';
+import { btnPrimary, btnSecondary, cardBase, errorText, fieldErrorText, inputBase, inputError, labelBase } from '../styles/ui';
 
-interface ShiftRow {
-  shiftTemplateId: string;
-  headcount: number;
-  requiredSkills: string;
-  dates: string[];
-}
+const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
+const DAYS_PER_PAGE = 7;
 
 function datesBetween(start: string, end: string): string[] {
   if (!start || !end) return [];
@@ -24,6 +23,10 @@ function datesBetween(start: string, end: string): string[] {
   return dates;
 }
 
+function weekdayLabel(date: string): string {
+  return WEEKDAY_LABELS[new Date(`${date}T00:00:00Z`).getUTCDay()];
+}
+
 export function RosterCreatePage() {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
@@ -32,72 +35,93 @@ export function RosterCreatePage() {
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
   const [groupId, setGroupId] = useState('');
-  const [shifts, setShifts] = useState<ShiftRow[]>([]);
+  const [hoursPerShift, setHoursPerShift] = useState(8);
+  const [dayShifts, setDayShifts] = useState<Record<string, DayShiftRow[]>>({});
+  const [pageIndex, setPageIndex] = useState(0);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const dateFieldError = error && /date/i.test(error) ? error : null;
+  const groupFieldError = error && /group/i.test(error) ? error : null;
+  const bannerError = error && !dateFieldError && !groupFieldError ? error : null;
 
   useEffect(() => {
     api.shiftTemplates.list().then(setTemplates);
     api.groups.list().then(setGroups);
   }, []);
 
+  useEffect(() => {
+    setPageIndex(0);
+  }, [dateRangeStart, dateRangeEnd]);
+
   const availableDates = datesBetween(dateRangeStart, dateRangeEnd);
+  const totalPages = Math.max(1, Math.ceil(availableDates.length / DAYS_PER_PAGE));
+  const clampedPageIndex = Math.min(pageIndex, totalPages - 1);
+  const pageDates = availableDates.slice(
+    clampedPageIndex * DAYS_PER_PAGE,
+    clampedPageIndex * DAYS_PER_PAGE + DAYS_PER_PAGE
+  );
 
-  const addShiftRow = () => {
-    if (templates.length === 0) return;
-    setShifts((prev) => [...prev, { shiftTemplateId: templates[0].id, headcount: 1, requiredSkills: '', dates: [] }]);
+  const addDayShift = (date: string, shiftTemplateId: string) => {
+    setDayShifts((prev) => ({
+      ...prev,
+      [date]: [...(prev[date] || []), { shiftTemplateId, headcount: 1 }],
+    }));
   };
 
-  const updateShiftRow = (index: number, patch: Partial<ShiftRow>) => {
-    setShifts((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  const removeDayShift = (date: string, index: number) => {
+    setDayShifts((prev) => ({
+      ...prev,
+      [date]: (prev[date] || []).filter((_, i) => i !== index),
+    }));
   };
 
-  const toggleDate = (index: number, date: string) => {
-    setShifts((prev) =>
-      prev.map((s, i) => {
-        if (i !== index) return s;
-        const dates = s.dates.includes(date) ? s.dates.filter((d) => d !== date) : [...s.dates, date];
-        return { ...s, dates };
-      })
-    );
+  const updateDayShiftHeadcount = (date: string, index: number, value: number) => {
+    setDayShifts((prev) => ({
+      ...prev,
+      [date]: (prev[date] || []).map((row, i) => (i === index ? { ...row, headcount: Math.max(0, value) } : row)),
+    }));
   };
 
-  const removeShiftRow = (index: number) => {
-    setShifts((prev) => prev.filter((_, i) => i !== index));
+  const buildShifts = (): RosterShiftInput[] => {
+    const shifts: RosterShiftInput[] = [];
+    for (const date of availableDates) {
+      for (const row of dayShifts[date] || []) {
+        if (row.headcount <= 0) continue;
+        shifts.push({ shiftTemplateId: row.shiftTemplateId, headcount: row.headcount, dates: [date], requiredSkills: [] });
+      }
+    }
+    return shifts;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    const shifts = buildShifts();
+    if (shifts.length === 0) {
+      setError('至少需要为一天设置一个班次的人数');
+      return;
+    }
+    setCreating(true);
     try {
-      const roster = await api.rosters.create({
-        name,
-        dateRangeStart,
-        dateRangeEnd,
-        groupId,
-        shifts: shifts.map((s) => ({
-          shiftTemplateId: s.shiftTemplateId,
-          headcount: s.headcount,
-          requiredSkills: s.requiredSkills
-            .split(',')
-            .map((x) => x.trim())
-            .filter(Boolean),
-          dates: s.dates,
-        })),
-      });
+      const roster = await api.rosters.create({ name, dateRangeStart, dateRangeEnd, groupId, hoursPerShift, shifts });
       navigate(`/rosters/${roster.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create roster');
+      setCreating(false);
     }
   };
 
   return (
     <AppShell>
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-3xl space-y-4">
+        <BackLink to="/rosters" label="返回排班表" />
         <PageHeader title="创建排班" />
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
+          {bannerError && (
             <p role="alert" className={errorText}>
-              {error}
+              {bannerError}
             </p>
           )}
 
@@ -120,7 +144,7 @@ export function RosterCreatePage() {
                   value={dateRangeStart}
                   onChange={(e) => setDateRangeStart(e.target.value)}
                   aria-label="开始日期"
-                  className={inputBase}
+                  className={dateFieldError ? inputError : inputBase}
                   required
                 />
               </div>
@@ -131,104 +155,148 @@ export function RosterCreatePage() {
                   value={dateRangeEnd}
                   onChange={(e) => setDateRangeEnd(e.target.value)}
                   aria-label="结束日期"
+                  className={dateFieldError ? inputError : inputBase}
+                  required
+                />
+              </div>
+            </div>
+            {dateFieldError && (
+              <p role="alert" className={fieldErrorText}>
+                {dateFieldError}
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelBase}>员工小组</label>
+                <select
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
+                  aria-label="员工小组"
+                  className={groupFieldError ? inputError : inputBase}
+                  required
+                >
+                  <option value="">选择员工小组</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+                {groupFieldError && (
+                  <p role="alert" className={fieldErrorText}>
+                    {groupFieldError}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelBase}>每个班次等于多少小时</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={hoursPerShift}
+                  onChange={(e) => setHoursPerShift(Number(e.target.value))}
+                  aria-label="每个班次等于多少小时"
                   className={inputBase}
                   required
                 />
               </div>
             </div>
-            <div>
-              <label className={labelBase}>员工小组</label>
-              <select
-                value={groupId}
-                onChange={(e) => setGroupId(e.target.value)}
-                aria-label="员工小组"
-                className={inputBase}
-                required
-              >
-                <option value="">选择员工小组</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="space-y-3">
+            <div>
               <h2 className="font-display text-base font-semibold text-ink">班次安排</h2>
-              <button type="button" onClick={addShiftRow} className={btnSecondary}>
-                添加班次
-              </button>
+              <p className="mt-0.5 text-sm text-ink-soft">点击某一天，设置当天需要哪些班次、各需要几人。</p>
             </div>
-            {shifts.map((shift, index) => (
-              <div key={index} className={`${cardBase} space-y-3`}>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <select
-                    value={shift.shiftTemplateId}
-                    onChange={(e) => updateShiftRow(index, { shiftTemplateId: e.target.value })}
-                    aria-label="班次模板"
-                    className={`${inputBase} sm:flex-1`}
-                  >
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}（{t.startTime}-{t.endTime}）
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min={1}
-                    value={shift.headcount}
-                    onChange={(e) => updateShiftRow(index, { headcount: Number(e.target.value) })}
-                    aria-label="所需人数"
-                    className={`${inputBase} sm:w-24`}
-                  />
-                  <input
-                    placeholder="所需技能（逗号分隔）"
-                    value={shift.requiredSkills}
-                    onChange={(e) => updateShiftRow(index, { requiredSkills: e.target.value })}
-                    className={`${inputBase} sm:flex-1`}
-                  />
+
+            {templates.length === 0 ? (
+              <div className={`${cardBase} flex flex-wrap items-center gap-2`}>
+                <p className="text-sm text-ink-soft">还没有设置班次模板，需要先创建至少一个才能安排排班。</p>
+                <Link to="/shift-templates" className={btnSecondary}>
+                  去设置班次模板
+                </Link>
+              </div>
+            ) : availableDates.length === 0 ? (
+              <p className={`${cardBase} text-sm text-ink-soft`}>请先选择开始和结束日期。</p>
+            ) : (
+              <div className={`${cardBase} space-y-3`}>
+                <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => removeShiftRow(index)}
-                    className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
+                    onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                    disabled={clampedPageIndex === 0}
+                    className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    移除
+                    ← 上一周
+                  </button>
+                  <span className="text-sm text-ink-soft">
+                    第 {clampedPageIndex + 1} / {totalPages} 页
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={clampedPageIndex >= totalPages - 1}
+                    className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    下一周 →
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {availableDates.map((date) => (
-                    <label
-                      key={date}
-                      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                        shift.dates.includes(date)
-                          ? 'border-coral-deep bg-coral-deep text-white'
-                          : 'border-tan/30 bg-white/70 text-ink-soft hover:border-coral/40'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={shift.dates.includes(date)}
-                        onChange={() => toggleDate(index, date)}
-                        aria-label={date}
-                        className="sr-only"
-                      />
-                      {date}
-                    </label>
-                  ))}
+
+                <div className="overflow-x-auto">
+                  <div className="grid grid-cols-7 gap-2" style={{ minWidth: '42rem' }}>
+                    {pageDates.map((date) => {
+                      const rows = dayShifts[date] || [];
+                      return (
+                        <button
+                          type="button"
+                          key={date}
+                          onClick={() => setEditingDate(date)}
+                          className="min-h-[6.5rem] rounded-2xl border border-tan/15 bg-white/60 p-3 text-left transition hover:border-coral/40 hover:bg-white"
+                        >
+                          <p className="text-xs font-medium text-ink-soft">
+                            {date.slice(5)} 周{weekdayLabel(date)}
+                          </p>
+                          {rows.length === 0 ? (
+                            <p className="mt-2 text-xs text-ink-soft/60">点击设置班次</p>
+                          ) : (
+                            <ul className="mt-2 space-y-1">
+                              {rows.map((row) => {
+                                const t = templates.find((tpl) => tpl.id === row.shiftTemplateId);
+                                return (
+                                  <li key={row.shiftTemplateId} className="text-xs text-ink">
+                                    {t?.name ?? '?'} × {row.headcount}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
 
-          <button type="submit" className={btnPrimary}>
+          <button type="submit" disabled={creating} className={`gap-2 ${btnPrimary}`}>
+            {creating && <Spinner className="h-4 w-4" />}
             创建排班
           </button>
         </form>
       </div>
+
+      <DayShiftDialog
+        open={editingDate !== null}
+        date={editingDate}
+        templates={templates}
+        rows={editingDate ? dayShifts[editingDate] || [] : []}
+        onAddRow={(shiftTemplateId) => editingDate && addDayShift(editingDate, shiftTemplateId)}
+        onRemoveRow={(index) => editingDate && removeDayShift(editingDate, index)}
+        onHeadcountChange={(index, value) => editingDate && updateDayShiftHeadcount(editingDate, index, value)}
+        onClose={() => setEditingDate(null)}
+      />
     </AppShell>
   );
 }

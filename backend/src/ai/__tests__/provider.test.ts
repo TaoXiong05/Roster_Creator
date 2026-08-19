@@ -3,7 +3,7 @@ import { OpenAICompatibleProvider } from '../provider';
 
 describe('OpenAICompatibleProvider', () => {
   const originalEnv = { ...process.env };
-  const context = { shifts: [], staff: [] };
+  const context = { shifts: [], staff: [], hoursPerShift: 8 };
 
   beforeEach(() => {
     process.env.AI_BASE_URL = 'https://api.example.com/v1';

@@ -18,8 +18,8 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
     const body = (await res.json().catch(() => ({ error: 'Request failed' }))) as ApiError;
     throw new Error(body.error || 'Request failed');
   }
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export interface User {
@@ -27,21 +27,30 @@ export interface User {
   email: string;
 }
 
+export interface PreferredShift {
+  weekday: number;
+  shiftTemplateId: string;
+}
+
+export type HoursPeriod = 'weekly' | 'fortnightly' | 'monthly';
+export type HoursUnit = 'hours' | 'shifts';
+
 export interface Preference {
   id: string;
   staffId: string;
-  preferredShiftTemplateIds: string[];
+  preferredShifts: PreferredShift[];
   unavailableDateRanges: { start: string; end: string }[];
-  minHoursPerWeek: number;
-  maxHoursPerWeek: number;
-  preferredWeekdays: number[];
+  minHours: number;
+  maxHours: number;
+  hoursPeriod: HoursPeriod;
+  hoursUnit: HoursUnit;
 }
 
 export interface Staff {
   id: string;
   name: string;
   email: string;
-  skills: string[];
+  responsibilityIds: string[];
   preference: Preference | null;
 }
 
@@ -56,6 +65,11 @@ export interface ShiftTemplate {
   name: string;
   startTime: string;
   endTime: string;
+}
+
+export interface Responsibility {
+  id: string;
+  name: string;
 }
 
 export interface RosterShiftInput {
@@ -100,15 +114,17 @@ export interface RosterDetail {
   dateRangeEnd: string;
   groupId: string;
   status: string;
+  hoursPerShift: number;
   rosterShifts: RosterShift[];
 }
 
 export interface PreferenceInput {
-  preferredShiftTemplateIds: string[];
+  preferredShifts: PreferredShift[];
   unavailableDateRanges: { start: string; end: string }[];
-  minHoursPerWeek: number;
-  maxHoursPerWeek: number;
-  preferredWeekdays: number[];
+  minHours: number;
+  maxHours: number;
+  hoursPeriod: HoursPeriod;
+  hoursUnit: HoursUnit;
 }
 
 export const api = {
@@ -125,9 +141,9 @@ export const api = {
   staff: {
     list: () => apiRequest<Staff[]>('/staff'),
     get: (id: string) => apiRequest<Staff>(`/staff/${id}`),
-    create: (data: { name: string; email: string; skills: string[] }) =>
+    create: (data: { name: string; email: string; responsibilityIds: string[] }) =>
       apiRequest<Staff>('/staff', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: { name: string; email: string; skills: string[] }) =>
+    update: (id: string, data: { name: string; email: string; responsibilityIds: string[] }) =>
       apiRequest<Staff>(`/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => apiRequest<void>(`/staff/${id}`, { method: 'DELETE' }),
     updatePreference: (id: string, data: PreferenceInput) =>
@@ -153,6 +169,13 @@ export const api = {
       apiRequest<ShiftTemplate>(`/shift-templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => apiRequest<void>(`/shift-templates/${id}`, { method: 'DELETE' }),
   },
+  responsibilities: {
+    list: () => apiRequest<Responsibility[]>('/responsibilities'),
+    create: (name: string) => apiRequest<Responsibility>('/responsibilities', { method: 'POST', body: JSON.stringify({ name }) }),
+    update: (id: string, name: string) =>
+      apiRequest<Responsibility>(`/responsibilities/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
+    remove: (id: string) => apiRequest<void>(`/responsibilities/${id}`, { method: 'DELETE' }),
+  },
   rosters: {
     list: () => apiRequest<RosterListItem[]>('/rosters'),
     get: (id: string) => apiRequest<RosterDetail>(`/rosters/${id}`),
@@ -161,6 +184,7 @@ export const api = {
       dateRangeStart: string;
       dateRangeEnd: string;
       groupId: string;
+      hoursPerShift: number;
       shifts: RosterShiftInput[];
     }) => apiRequest<RosterDetail>('/rosters', { method: 'POST', body: JSON.stringify(data) }),
     generateAssignments: (id: string) =>
@@ -172,7 +196,7 @@ export const api = {
       }),
     publish: (id: string) => apiRequest<{ id: string; status: string }>(`/rosters/${id}/publish`, { method: 'PUT' }),
     sendEmails: (id: string, staffIds?: string[]) =>
-      apiRequest<{ sentTo: string[] }>(`/rosters/${id}/send-emails`, {
+      apiRequest<{ sentTo: string[]; failed: string[] }>(`/rosters/${id}/send-emails`, {
         method: 'POST',
         body: JSON.stringify({ staffIds }),
       }),
@@ -180,5 +204,6 @@ export const api = {
       const base = `${API_BASE}/rosters/${id}/export/${format}`;
       return staffId ? `${base}?staffId=${staffId}` : base;
     },
+    remove: (id: string) => apiRequest<void>(`/rosters/${id}`, { method: 'DELETE' }),
   },
 };

@@ -50,12 +50,13 @@ rosterRouter.get('/:id', async (req: AuthedRequest, res) => {
 });
 
 rosterRouter.post('/', async (req: AuthedRequest, res) => {
-  const { name, dateRangeStart, dateRangeEnd, groupId, shifts } = req.body as {
+  const { name, dateRangeStart, dateRangeEnd, groupId, shifts, hoursPerShift } = req.body as {
     name?: string;
     dateRangeStart?: string;
     dateRangeEnd?: string;
     groupId?: string;
     shifts?: ShiftInput[];
+    hoursPerShift?: number;
   };
 
   if (!name || !dateRangeStart || !dateRangeEnd || !groupId) {
@@ -63,6 +64,22 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
   }
   if (!shifts || shifts.length === 0) {
     return res.status(400).json({ error: 'At least one shift is required' });
+  }
+  if (hoursPerShift !== undefined && hoursPerShift <= 0) {
+    return res.status(400).json({ error: 'hoursPerShift must be greater than 0' });
+  }
+  const rangeStart = new Date(dateRangeStart);
+  const rangeEnd = new Date(dateRangeEnd);
+  if (rangeStart > rangeEnd) {
+    return res.status(400).json({ error: 'dateRangeStart must not be after dateRangeEnd' });
+  }
+  for (const shift of shifts) {
+    for (const date of shift.dates ?? []) {
+      const d = new Date(date);
+      if (d < rangeStart || d > rangeEnd) {
+        return res.status(400).json({ error: `Date ${date} is outside the roster's date range` });
+      }
+    }
   }
 
   const group = await prisma.staffGroup.findUnique({ where: { id: groupId } });
@@ -90,6 +107,7 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
       dateRangeStart: new Date(dateRangeStart),
       dateRangeEnd: new Date(dateRangeEnd),
       groupId,
+      hoursPerShift: hoursPerShift ?? 8,
       rosterShifts: {
         create: shifts.flatMap((shift) =>
           shift.dates.map((date) => ({
@@ -97,6 +115,12 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
             date: new Date(date),
             headcount: shift.headcount,
             requiredSkills: shift.requiredSkills ?? [],
+            assignments: {
+              create: Array.from({ length: shift.headcount }, () => ({
+                staffId: null,
+                unfilledTag: null,
+              })),
+            },
           }))
         ),
       },
@@ -114,4 +138,13 @@ rosterRouter.put('/:id/publish', async (req: AuthedRequest, res) => {
   }
   const roster = await prisma.roster.update({ where: { id: req.params.id }, data: { status: 'published' } });
   res.json(roster);
+});
+
+rosterRouter.delete('/:id', async (req: AuthedRequest, res) => {
+  const existing = await prisma.roster.findUnique({ where: { id: req.params.id } });
+  if (!existing || existing.userId !== req.userId) {
+    return res.status(404).json({ error: 'Roster not found' });
+  }
+  await prisma.roster.delete({ where: { id: req.params.id } });
+  res.status(204).send();
 });

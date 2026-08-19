@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { AuthLayout } from '../components/AuthLayout';
 import { MailIcon, LockIcon } from '../components/AuthIcons';
-import { btnPrimary, errorText, inputBase, labelBase } from '../styles/ui';
+import { Spinner } from '../components/Spinner';
+import { btnPrimary, errorText, fieldErrorText, inputBase, inputError, labelBase } from '../styles/ui';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -12,15 +13,21 @@ export function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const emailFieldError = error && /email/i.test(error) ? error : null;
+  const bannerError = error && !emailFieldError ? error : null;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
     try {
       await register(email, password);
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
+      setLoading(false);
     }
   };
 
@@ -32,9 +39,9 @@ export function RegisterPage() {
       formTitle="注册"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
+        {bannerError && (
           <p role="alert" className={errorText}>
-            {error}
+            {bannerError}
           </p>
         )}
 
@@ -52,10 +59,15 @@ export function RegisterPage() {
               placeholder="邮箱"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`${inputBase} pl-11`}
+              className={`${emailFieldError ? inputError : inputBase} pl-11`}
               required
             />
           </div>
+          {emailFieldError && (
+            <p role="alert" className={fieldErrorText}>
+              {emailFieldError}
+            </p>
+          )}
         </div>
 
         <div>
@@ -79,7 +91,8 @@ export function RegisterPage() {
           </div>
         </div>
 
-        <button type="submit" className={`w-full ${btnPrimary}`}>
+        <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
+          {loading && <Spinner className="h-4 w-4" />}
           注册
         </button>
 

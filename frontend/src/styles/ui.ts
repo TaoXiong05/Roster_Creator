@@ -27,3 +27,7 @@ export const listRow =
 
 export const errorText = 'rounded-xl border border-coral-deep/30 bg-coral-deep/10 px-4 py-2.5 text-sm text-coral-deep';
 export const successText = 'rounded-xl border border-eucalyptus/30 bg-eucalyptus/10 px-4 py-2.5 text-sm text-eucalyptus-dark';
+
+export const inputError =
+  'w-full rounded-2xl border border-red-400 bg-red-50/50 px-4 py-2.5 text-sm text-ink placeholder:text-ink-soft/40 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-200';
+export const fieldErrorText = 'mt-1.5 text-xs font-medium text-red-600';

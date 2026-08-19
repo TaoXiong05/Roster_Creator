@@ -6,6 +6,8 @@ vi.mock('../../db', () => ({
     roster: { findUnique: vi.fn() },
     rosterShift: { findMany: vi.fn() },
     assignment: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+    staff: { findMany: vi.fn() },
+    $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   },
 }));
 vi.mock('../../ai/provider', () => ({ aiProvider: { assignShifts: vi.fn() } }));
@@ -21,6 +23,7 @@ const authCookie = `token=${signToken({ userId: 'user-1' })}`;
 const rosterFixture = {
   id: 'roster-1',
   userId: 'user-1',
+  hoursPerShift: 6,
   rosterShifts: [
     {
       id: 'rs-1',
@@ -36,8 +39,14 @@ const rosterFixture = {
         staff: {
           id: 'staff-1',
           name: 'Alice',
-          skills: [],
-          preference: { minHoursPerWeek: 10, maxHoursPerWeek: 30, preferredShiftTemplateIds: [], preferredWeekdays: [], unavailableDateRanges: [] },
+          preference: {
+            minHours: 10,
+            maxHours: 30,
+            hoursPeriod: 'weekly',
+            hoursUnit: 'hours',
+            preferredShifts: [],
+            unavailableDateRanges: [],
+          },
         },
       },
     ],
@@ -66,6 +75,17 @@ describe('POST /rosters/:id/generate-assignments', () => {
     expect(prisma.assignment.createMany).not.toHaveBeenCalled();
   });
 
+  it("passes the roster's hoursPerShift through to the AI context", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
+    (prisma.assignment.findMany as any).mockResolvedValue([]);
+
+    await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
+    expect(contextArg.hoursPerShift).toBe(6);
+  });
+
   it('replaces assignments and fills unfilled slots when ai returns fewer staff than headcount', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
     (aiProvider.assignShifts as any).mockResolvedValue({
@@ -85,6 +105,32 @@ describe('POST /rosters/:id/generate-assignments', () => {
     expect(createArg.data.filter((r: any) => r.staffId === 'staff-1')).toHaveLength(1);
     expect(createArg.data.filter((r: any) => r.staffId === null)).toHaveLength(1);
     expect(res.body.assignments).toHaveLength(2);
+  });
+
+  it('returns 502 and makes no db changes when the ai hallucinates a staff id', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (aiProvider.assignShifts as any).mockResolvedValue({
+      assignments: [{ rosterShiftId: 'rs-1', staffIds: ['staff-does-not-exist'] }],
+    });
+
+    const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    expect(res.status).toBe(502);
+    expect(prisma.assignment.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.assignment.createMany).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 and makes no db changes when the ai references an unknown roster shift', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (aiProvider.assignShifts as any).mockResolvedValue({
+      assignments: [{ rosterShiftId: 'rs-does-not-exist', staffIds: [] }],
+    });
+
+    const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    expect(res.status).toBe(502);
+    expect(prisma.assignment.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.assignment.createMany).not.toHaveBeenCalled();
   });
 });
 
@@ -122,6 +168,7 @@ describe('PUT /rosters/:id/assignments', () => {
     (prisma.assignment.findMany as any)
       .mockResolvedValueOnce([{ id: 'a-1', rosterShiftId: 'rs-1' }])
       .mockResolvedValueOnce([{ id: 'a-1', rosterShiftId: 'rs-1', staffId: 'staff-2', unfilledTag: null, staff: { id: 'staff-2', name: 'Bob' } }]);
+    (prisma.staff.findMany as any).mockResolvedValue([{ id: 'staff-2', userId: 'user-1' }]);
     (prisma.assignment.update as any).mockResolvedValue({});
 
     const res = await request(app)
@@ -135,5 +182,20 @@ describe('PUT /rosters/:id/assignments', () => {
       data: { staffId: 'staff-2', unfilledTag: null },
     });
     expect(res.body.assignments[0].staffId).toBe('staff-2');
+  });
+
+  it("rejects a staffId that belongs to another user's staff record", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1' });
+    (prisma.rosterShift.findMany as any).mockResolvedValue([{ id: 'rs-1' }]);
+    (prisma.assignment.findMany as any).mockResolvedValue([{ id: 'a-1', rosterShiftId: 'rs-1' }]);
+    (prisma.staff.findMany as any).mockResolvedValue([{ id: 'staff-foreign', userId: 'someone-else' }]);
+
+    const res = await request(app)
+      .put('/rosters/roster-1/assignments')
+      .set('Cookie', authCookie)
+      .send({ assignments: [{ id: 'a-1', staffId: 'staff-foreign', unfilledTag: null }] });
+
+    expect(res.status).toBe(404);
+    expect(prisma.assignment.update).not.toHaveBeenCalled();
   });
 });

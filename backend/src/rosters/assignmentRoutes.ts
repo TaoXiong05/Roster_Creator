@@ -19,6 +19,7 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
   }
 
   const context: AssignmentContext = {
+    hoursPerShift: roster.hoursPerShift ?? 8,
     shifts: roster.rosterShifts.map((rs) => ({
       rosterShiftId: rs.id,
       date: rs.date.toISOString().slice(0, 10),
@@ -30,11 +31,12 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
     staff: roster.group.members.map((m) => ({
       staffId: m.staff.id,
       name: m.staff.name,
-      skills: m.staff.skills,
-      minHoursPerWeek: m.staff.preference?.minHoursPerWeek ?? 0,
-      maxHoursPerWeek: m.staff.preference?.maxHoursPerWeek ?? 40,
-      preferredShiftTemplateIds: m.staff.preference?.preferredShiftTemplateIds ?? [],
-      preferredWeekdays: m.staff.preference?.preferredWeekdays ?? [],
+      minHours: m.staff.preference?.minHours ?? 0,
+      maxHours: m.staff.preference?.maxHours ?? 40,
+      hoursPeriod: m.staff.preference?.hoursPeriod ?? 'weekly',
+      hoursUnit: m.staff.preference?.hoursUnit ?? 'hours',
+      preferredShifts:
+        (m.staff.preference?.preferredShifts as { weekday: number; shiftTemplateId: string }[]) ?? [],
       unavailableDateRanges: (m.staff.preference?.unavailableDateRanges as { start: string; end: string }[]) ?? [],
     })),
   };
@@ -47,9 +49,21 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
   }
 
   const shiftIds = roster.rosterShifts.map((rs) => rs.id);
-  const resultByShift = new Map(result.assignments.map((a) => [a.rosterShiftId, a.staffIds]));
+  const shiftIdSet = new Set(shiftIds);
+  const knownStaffIds = new Set(roster.group.members.map((m) => m.staff.id));
 
-  await prisma.assignment.deleteMany({ where: { rosterShiftId: { in: shiftIds } } });
+  for (const a of result.assignments) {
+    if (!shiftIdSet.has(a.rosterShiftId)) {
+      return res.status(502).json({ error: 'AI provider referenced a roster shift that does not exist' });
+    }
+    for (const staffId of a.staffIds) {
+      if (!knownStaffIds.has(staffId)) {
+        return res.status(502).json({ error: 'AI provider referenced a staff member that does not exist' });
+      }
+    }
+  }
+
+  const resultByShift = new Map(result.assignments.map((a) => [a.rosterShiftId, a.staffIds]));
 
   const rows = roster.rosterShifts.flatMap((rs) => {
     const staffIds = resultByShift.get(rs.id) ?? [];
@@ -65,7 +79,10 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
     return [...filled, ...unfilled];
   });
 
-  await prisma.assignment.createMany({ data: rows });
+  await prisma.$transaction([
+    prisma.assignment.deleteMany({ where: { rosterShiftId: { in: shiftIds } } }),
+    prisma.assignment.createMany({ data: rows }),
+  ]);
 
   const assignments = await prisma.assignment.findMany({
     where: { rosterShiftId: { in: shiftIds } },
@@ -100,6 +117,17 @@ assignmentRouter.put('/:id/assignments', async (req: AuthedRequest, res) => {
   for (const a of assignments) {
     if (!ownedIds.has(a.id)) {
       return res.status(404).json({ error: `Assignment ${a.id} not found in this roster` });
+    }
+  }
+
+  const staffIds = [...new Set(assignments.map((a) => a.staffId).filter((id): id is string => id !== null))];
+  if (staffIds.length > 0) {
+    const staff = await prisma.staff.findMany({ where: { id: { in: staffIds } } });
+    const ownedStaffIds = new Set(staff.filter((s) => s.userId === req.userId).map((s) => s.id));
+    for (const staffId of staffIds) {
+      if (!ownedStaffIds.has(staffId)) {
+        return res.status(404).json({ error: `Staff ${staffId} not found` });
+      }
     }
   }
 
