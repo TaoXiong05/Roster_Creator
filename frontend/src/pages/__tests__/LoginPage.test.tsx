@@ -23,8 +23,8 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'a@b.com');
-    await userEvent.type(screen.getByPlaceholderText('密码'), 'wrongpass');
+    await userEvent.type(screen.getByLabelText('邮箱'), 'a@b.com');
+    await userEvent.type(screen.getByLabelText('密码'), 'wrongpass');
     await userEvent.click(screen.getByRole('button', { name: '登录' }));
 
     expect(login).toHaveBeenCalledWith('a@b.com', 'wrongpass');

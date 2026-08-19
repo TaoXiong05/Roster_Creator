@@ -1,7 +1,10 @@
 // frontend/src/pages/ResetPasswordPage.tsx
 import { useState, FormEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { AuthLayout } from '../components/AuthLayout';
+import { LockIcon } from '../components/AuthIcons';
+import { btnPrimary, errorText, inputBase, labelBase, successText } from '../styles/ui';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -22,33 +25,51 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-semibold">重置密码</h1>
-        {done ? (
-          <p>密码已重置，请用新密码登录。</p>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <p role="alert" className="text-red-600 text-sm">
-                {error}
-              </p>
-            )}
-            <input
-              type="password"
-              placeholder="新密码（至少6位）"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            <button type="submit" className="w-full bg-blue-600 text-white rounded py-2">
-              重置密码
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+    <AuthLayout
+      headline="马上就能拿到新钥匙啦"
+      tagline="设置一个新密码，就能回到工作台"
+      formEyebrow="重置密码"
+      formTitle="设置新密码"
+    >
+      {done ? (
+        <div className="space-y-4">
+          <p className={successText}>密码已重置，请用新密码登录。</p>
+          <Link to="/login" className="text-sm text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            返回登录
+          </Link>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <p role="alert" className={errorText}>
+              {error}
+            </p>
+          )}
+          <div>
+            <label htmlFor="password" className={labelBase}>
+              新密码
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
+                <LockIcon />
+              </span>
+              <input
+                id="password"
+                type="password"
+                placeholder="新密码（至少6位）"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                className={`${inputBase} pl-11`}
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" className={`w-full ${btnPrimary}`}>
+            重置密码
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }

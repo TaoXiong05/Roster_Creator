@@ -1,6 +1,9 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ShiftTemplate, StaffGroup } from '../api/client';
+import { AppShell } from '../components/AppShell';
+import { PageHeader } from '../components/PageHeader';
+import { btnPrimary, btnSecondary, cardBase, errorText, inputBase, labelBase } from '../styles/ui';
 
 interface ShiftRow {
   shiftTemplateId: string;
@@ -88,110 +91,144 @@ export function RosterCreatePage() {
   };
 
   return (
-    <div className="p-4 max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold">创建排班</h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <p role="alert" className="text-red-600 text-sm">
-            {error}
-          </p>
-        )}
-        <input
-          placeholder="排班名称"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            type="date"
-            value={dateRangeStart}
-            onChange={(e) => setDateRangeStart(e.target.value)}
-            aria-label="开始日期"
-            className="border rounded px-3 py-2"
-            required
-          />
-          <input
-            type="date"
-            value={dateRangeEnd}
-            onChange={(e) => setDateRangeEnd(e.target.value)}
-            aria-label="结束日期"
-            className="border rounded px-3 py-2"
-            required
-          />
-        </div>
-        <select
-          value={groupId}
-          onChange={(e) => setGroupId(e.target.value)}
-          aria-label="员工小组"
-          className="w-full border rounded px-3 py-2"
-          required
-        >
-          <option value="">选择员工小组</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+    <AppShell>
+      <div className="max-w-2xl space-y-6">
+        <PageHeader title="创建排班" />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <p role="alert" className={errorText}>
+              {error}
+            </p>
+          )}
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">班次安排</h2>
-            <button type="button" onClick={addShiftRow} className="border rounded px-3 py-1 text-sm">
-              添加班次
-            </button>
-          </div>
-          {shifts.map((shift, index) => (
-            <div key={index} className="border rounded p-3 space-y-2">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <select
-                  value={shift.shiftTemplateId}
-                  onChange={(e) => updateShiftRow(index, { shiftTemplateId: e.target.value })}
-                  aria-label="班次模板"
-                  className="border rounded px-3 py-2 flex-1"
-                >
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}（{t.startTime}-{t.endTime}）
-                    </option>
-                  ))}
-                </select>
+          <div className={`${cardBase} space-y-4`}>
+            <div>
+              <label className={labelBase}>排班名称</label>
+              <input
+                placeholder="排班名称"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={inputBase}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelBase}>开始日期</label>
                 <input
-                  type="number"
-                  min={1}
-                  value={shift.headcount}
-                  onChange={(e) => updateShiftRow(index, { headcount: Number(e.target.value) })}
-                  aria-label="所需人数"
-                  className="border rounded px-3 py-2 w-24"
+                  type="date"
+                  value={dateRangeStart}
+                  onChange={(e) => setDateRangeStart(e.target.value)}
+                  aria-label="开始日期"
+                  className={inputBase}
+                  required
                 />
-                <input
-                  placeholder="所需技能（逗号分隔）"
-                  value={shift.requiredSkills}
-                  onChange={(e) => updateShiftRow(index, { requiredSkills: e.target.value })}
-                  className="border rounded px-3 py-2 flex-1"
-                />
-                <button type="button" onClick={() => removeShiftRow(index)} className="text-red-600 text-sm">
-                  移除
-                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {availableDates.map((date) => (
-                  <label key={date} className="text-xs flex items-center gap-1 border rounded px-2 py-1">
-                    <input type="checkbox" checked={shift.dates.includes(date)} onChange={() => toggleDate(index, date)} aria-label={date} />
-                    {date}
-                  </label>
-                ))}
+              <div>
+                <label className={labelBase}>结束日期</label>
+                <input
+                  type="date"
+                  value={dateRangeEnd}
+                  onChange={(e) => setDateRangeEnd(e.target.value)}
+                  aria-label="结束日期"
+                  className={inputBase}
+                  required
+                />
               </div>
             </div>
-          ))}
-        </div>
+            <div>
+              <label className={labelBase}>员工小组</label>
+              <select
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+                aria-label="员工小组"
+                className={inputBase}
+                required
+              >
+                <option value="">选择员工小组</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-        <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">
-          创建排班
-        </button>
-      </form>
-    </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-base font-semibold text-ink">班次安排</h2>
+              <button type="button" onClick={addShiftRow} className={btnSecondary}>
+                添加班次
+              </button>
+            </div>
+            {shifts.map((shift, index) => (
+              <div key={index} className={`${cardBase} space-y-3`}>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select
+                    value={shift.shiftTemplateId}
+                    onChange={(e) => updateShiftRow(index, { shiftTemplateId: e.target.value })}
+                    aria-label="班次模板"
+                    className={`${inputBase} sm:flex-1`}
+                  >
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}（{t.startTime}-{t.endTime}）
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={1}
+                    value={shift.headcount}
+                    onChange={(e) => updateShiftRow(index, { headcount: Number(e.target.value) })}
+                    aria-label="所需人数"
+                    className={`${inputBase} sm:w-24`}
+                  />
+                  <input
+                    placeholder="所需技能（逗号分隔）"
+                    value={shift.requiredSkills}
+                    onChange={(e) => updateShiftRow(index, { requiredSkills: e.target.value })}
+                    className={`${inputBase} sm:flex-1`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeShiftRow(index)}
+                    className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
+                  >
+                    移除
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableDates.map((date) => (
+                    <label
+                      key={date}
+                      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        shift.dates.includes(date)
+                          ? 'border-coral-deep bg-coral-deep text-white'
+                          : 'border-tan/30 bg-white/70 text-ink-soft hover:border-coral/40'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={shift.dates.includes(date)}
+                        onChange={() => toggleDate(index, date)}
+                        aria-label={date}
+                        className="sr-only"
+                      />
+                      {date}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button type="submit" className={btnPrimary}>
+            创建排班
+          </button>
+        </form>
+      </div>
+    </AppShell>
   );
 }

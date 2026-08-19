@@ -6,7 +6,7 @@ import { DashboardPage } from '../DashboardPage';
 import * as AuthContextModule from '../../auth/AuthContext';
 
 describe('DashboardPage', () => {
-  it('shows the logged-in user email', () => {
+  it('greets the logged-in user by their email name', () => {
     vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
       user: { id: 'user-1', email: 'a@b.com' },
       loading: false,
@@ -21,6 +21,6 @@ describe('DashboardPage', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/a@b.com/)).toBeInTheDocument();
+    expect(screen.getByText(/你好呀，a/)).toBeInTheDocument();
   });
 });

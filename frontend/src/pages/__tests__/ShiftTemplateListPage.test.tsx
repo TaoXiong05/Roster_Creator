@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { ShiftTemplateListPage } from '../ShiftTemplateListPage';
 import { api } from '../../api/client';
 
@@ -16,7 +17,11 @@ describe('ShiftTemplateListPage', () => {
       { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
     ]);
 
-    render(<ShiftTemplateListPage />);
+    render(
+      <MemoryRouter>
+        <ShiftTemplateListPage />
+      </MemoryRouter>
+    );
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
   });
@@ -30,7 +35,11 @@ describe('ShiftTemplateListPage', () => {
       endTime: '22:00',
     });
 
-    render(<ShiftTemplateListPage />);
+    render(
+      <MemoryRouter>
+        <ShiftTemplateListPage />
+      </MemoryRouter>
+    );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
     await userEvent.type(screen.getByPlaceholderText('名称（如：早班）'), 'Evening');

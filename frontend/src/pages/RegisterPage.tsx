@@ -2,6 +2,9 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { AuthLayout } from '../components/AuthLayout';
+import { MailIcon, LockIcon } from '../components/AuthIcons';
+import { btnPrimary, errorText, inputBase, labelBase } from '../styles/ui';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -22,38 +25,70 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-semibold">注册</h1>
+    <AuthLayout
+      headline="让我陪你把整个团队安排好"
+      tagline="创建一个账号，开始记录员工、班次和排班表"
+      formEyebrow="第一次来呀"
+      formTitle="注册"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <p role="alert" className="text-red-600 text-sm">
+          <p role="alert" className={errorText}>
             {error}
           </p>
         )}
-        <input
-          type="email"
-          placeholder="邮箱"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          type="password"
-          placeholder="密码（至少6位）"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          minLength={6}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <button type="submit" className="w-full bg-blue-600 text-white rounded py-2">
+
+        <div>
+          <label htmlFor="email" className={labelBase}>
+            邮箱
+          </label>
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
+              <MailIcon />
+            </span>
+            <input
+              id="email"
+              type="email"
+              placeholder="邮箱"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`${inputBase} pl-11`}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="password" className={labelBase}>
+            密码
+          </label>
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tan">
+              <LockIcon />
+            </span>
+            <input
+              id="password"
+              type="password"
+              placeholder="密码（至少6位）"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              className={`${inputBase} pl-11`}
+              required
+            />
+          </div>
+        </div>
+
+        <button type="submit" className={`w-full ${btnPrimary}`}>
           注册
         </button>
-        <div className="text-sm">
-          <Link to="/login">已有账号？登录</Link>
-        </div>
+
+        <p className="text-sm text-ink-soft">
+          <Link to="/login" className="underline-offset-4 hover:text-coral-deep hover:underline">
+            已有账号？登录
+          </Link>
+        </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }

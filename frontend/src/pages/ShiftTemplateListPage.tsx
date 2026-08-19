@@ -1,5 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { api, ShiftTemplate } from '../api/client';
+import { AppShell } from '../components/AppShell';
+import { PageHeader } from '../components/PageHeader';
+import { btnDanger, btnPrimary, cardBase, inputBase, listRow } from '../styles/ui';
 
 export function ShiftTemplateListPage() {
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
@@ -26,48 +29,56 @@ export function ShiftTemplateListPage() {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <h1 className="text-xl font-semibold">班次模板</h1>
-      <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-2">
-        <input
-          placeholder="名称（如：早班）"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border rounded px-3 py-2 flex-1"
-          required
-        />
-        <input
-          type="time"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
-          aria-label="开始时间"
-          className="border rounded px-3 py-2"
-          required
-        />
-        <input
-          type="time"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-          aria-label="结束时间"
-          className="border rounded px-3 py-2"
-          required
-        />
-        <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2">
-          添加模板
-        </button>
-      </form>
-      <ul className="divide-y">
-        {templates.map((t) => (
-          <li key={t.id} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <span>
-              {t.name}（{t.startTime} - {t.endTime}）
-            </span>
-            <button onClick={() => handleDelete(t.id)} className="border rounded px-3 py-1 text-sm text-red-600">
-              删除
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <AppShell>
+      <div className="space-y-6">
+        <PageHeader title="班次模板" description="设定好上下班时间，随时复用" />
+
+        <form onSubmit={handleCreate} className={`${cardBase} flex flex-col gap-3 sm:flex-row`}>
+          <input
+            placeholder="名称（如：早班）"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={`${inputBase} sm:flex-1`}
+            required
+          />
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            aria-label="开始时间"
+            className={inputBase}
+            required
+          />
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            aria-label="结束时间"
+            className={inputBase}
+            required
+          />
+          <button type="submit" className={`${btnPrimary} shrink-0`}>
+            添加模板
+          </button>
+        </form>
+
+        {templates.length === 0 ? (
+          <p className="text-sm text-ink-soft">还没有班次模板，先在上面添加一个吧。</p>
+        ) : (
+          <ul className="space-y-3">
+            {templates.map((t) => (
+              <li key={t.id} className={listRow}>
+                <span className="font-medium text-ink">
+                  {t.name}（{t.startTime} - {t.endTime}）
+                </span>
+                <button onClick={() => handleDelete(t.id)} className={`${btnDanger} shrink-0`}>
+                  删除
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </AppShell>
   );
 }

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, RosterDetail, AssignmentEntry, Staff } from '../api/client';
+import { AppShell } from '../components/AppShell';
+import { StatusPill } from '../components/StatusPill';
+import { btnPrimary, btnSecondary, cardBase, errorText, inputBase, successText } from '../styles/ui';
 
 const TAG_OPTIONS = ['AGENT', 'PICKUP'];
 
@@ -93,127 +96,132 @@ export function RosterDetailPage() {
     setEmailStatus(`已发送给 ${result.sentTo.length} 位员工`);
   };
 
-  if (!roster) return <div className="p-4">加载中...</div>;
+  if (!roster)
+    return (
+      <AppShell>
+        <p className="text-sm text-ink-soft">加载中...</p>
+      </AppShell>
+    );
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold">{roster.name}</h1>
-          <p className="text-sm text-gray-500">
-            {roster.dateRangeStart.slice(0, 10)} ~ {roster.dateRangeEnd.slice(0, 10)} · 状态：{roster.status}
+    <AppShell>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-2xl font-semibold text-ink">{roster.name}</h1>
+              <StatusPill status={roster.status} />
+            </div>
+            <p className="mt-1 text-sm text-ink-soft">
+              {roster.dateRangeStart.slice(0, 10)} ~ {roster.dateRangeEnd.slice(0, 10)}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={handleGenerate} disabled={generating} className={btnSecondary}>
+              {generating ? '生成中...' : '生成排班'}
+            </button>
+            <button type="button" onClick={handleSave} disabled={!dirty} className={btnPrimary}>
+              保存
+            </button>
+            <button type="button" onClick={handlePublish} disabled={roster.status === 'published'} className={btnSecondary}>
+              发布
+            </button>
+            <button type="button" onClick={handleSendAll} className={btnSecondary}>
+              发送邮件给全体
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <p role="alert" className={errorText}>
+            {error}
           </p>
+        )}
+        {emailStatus && <p className={successText}>{emailStatus}</p>}
+
+        <div className="flex flex-wrap gap-4 text-sm">
+          <a href={api.rosters.exportUrl(roster.id, 'ics')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            导出 ICS
+          </a>
+          <a href={api.rosters.exportUrl(roster.id, 'csv')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            导出 CSV
+          </a>
+          <a href={api.rosters.exportUrl(roster.id, 'pdf')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            导出 PDF
+          </a>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="border rounded px-3 py-2 text-sm disabled:opacity-50"
-          >
-            {generating ? '生成中...' : '生成排班'}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!dirty}
-            className="bg-blue-600 text-white rounded px-3 py-2 text-sm disabled:opacity-50"
-          >
-            保存
-          </button>
-          <button
-            onClick={handlePublish}
-            disabled={roster.status === 'published'}
-            className="border rounded px-3 py-2 text-sm disabled:opacity-50"
-          >
-            发布
-          </button>
-          <button onClick={handleSendAll} className="border rounded px-3 py-2 text-sm">
-            发送邮件给全体
-          </button>
-        </div>
-      </div>
-      {error && (
-        <p role="alert" className="text-red-600 text-sm">
-          {error}
-        </p>
-      )}
-      {emailStatus && <p className="text-sm text-green-600">{emailStatus}</p>}
-      <div className="flex gap-3 text-sm">
-        <a href={api.rosters.exportUrl(roster.id, 'ics')} className="underline">
-          导出 ICS
-        </a>
-        <a href={api.rosters.exportUrl(roster.id, 'csv')} className="underline">
-          导出 CSV
-        </a>
-        <a href={api.rosters.exportUrl(roster.id, 'pdf')} className="underline">
-          导出 PDF
-        </a>
-      </div>
-      <ul className="divide-y">
-        {roster.rosterShifts.map((rs) => {
-          const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
-          return (
-            <li key={rs.id} className="py-3 space-y-2">
-              <p className="font-medium">
-                {rs.date.slice(0, 10)} · {rs.shiftTemplate.name}（{rs.shiftTemplate.startTime}-{rs.shiftTemplate.endTime}）
-              </p>
-              <p className="text-sm text-gray-500">
-                需要 {rs.headcount} 人{rs.requiredSkills.length > 0 ? ` · 技能: ${rs.requiredSkills.join(', ')}` : ''}
-              </p>
-              <div className="space-y-2">
-                {rows.map((row) => (
-                  <div key={row.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <select
-                      value={row.staffId ?? ''}
-                      onChange={(e) => updateAssignment(row.id, { staffId: e.target.value || null, unfilledTag: null })}
-                      aria-label="分配员工"
-                      className="border rounded px-2 py-1 text-sm flex-1"
-                    >
-                      <option value="">未分配</option>
-                      {members.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                    {!row.staffId && (
-                      <div className="flex gap-1 items-center flex-wrap">
-                        {TAG_OPTIONS.map((tag) => (
-                          <button
-                            type="button"
-                            key={tag}
-                            onClick={() => updateAssignment(row.id, { unfilledTag: tag })}
-                            className={`border rounded px-2 py-1 text-xs ${
-                              row.unfilledTag === tag ? 'bg-blue-600 text-white' : ''
-                            }`}
-                          >
-                            {tag}
-                          </button>
+
+        <ul className="space-y-4">
+          {roster.rosterShifts.map((rs) => {
+            const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
+            return (
+              <li key={rs.id} className={`${cardBase} space-y-3`}>
+                <div>
+                  <p className="font-medium text-ink">
+                    {rs.date.slice(0, 10)} · {rs.shiftTemplate.name}（{rs.shiftTemplate.startTime}-{rs.shiftTemplate.endTime}）
+                  </p>
+                  <p className="text-sm text-ink-soft">
+                    需要 {rs.headcount} 人{rs.requiredSkills.length > 0 ? ` · 技能: ${rs.requiredSkills.join(', ')}` : ''}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {rows.map((row) => (
+                    <div key={row.id} className="flex flex-col gap-2 rounded-2xl border border-tan/15 bg-white/60 p-3 sm:flex-row sm:items-center">
+                      <select
+                        value={row.staffId ?? ''}
+                        onChange={(e) => updateAssignment(row.id, { staffId: e.target.value || null, unfilledTag: null })}
+                        aria-label="分配员工"
+                        className={`${inputBase} sm:flex-1`}
+                      >
+                        <option value="">未分配</option>
+                        {members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
                         ))}
-                        <input
-                          placeholder="自定义标签"
-                          value={row.unfilledTag && !TAG_OPTIONS.includes(row.unfilledTag) ? row.unfilledTag : ''}
-                          onChange={(e) => updateAssignment(row.id, { unfilledTag: e.target.value || null })}
-                          className="border rounded px-2 py-1 text-xs w-28"
-                        />
-                      </div>
-                    )}
-                    {row.staffId && (
-                      <div className="flex gap-2 text-xs">
-                        <button type="button" onClick={() => handleSendOne(row.staffId!)} className="underline">
-                          发送给TA
-                        </button>
-                        <a href={api.rosters.exportUrl(roster.id, 'ics', row.staffId)} className="underline">
-                          个人ICS
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+                      </select>
+                      {!row.staffId && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {TAG_OPTIONS.map((tag) => (
+                            <button
+                              type="button"
+                              key={tag}
+                              onClick={() => updateAssignment(row.id, { unfilledTag: tag })}
+                              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                                row.unfilledTag === tag
+                                  ? 'border-coral-deep bg-coral-deep text-white'
+                                  : 'border-tan/30 bg-white/70 text-ink-soft hover:border-coral/40'
+                              }`}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                          <input
+                            placeholder="自定义标签"
+                            value={row.unfilledTag && !TAG_OPTIONS.includes(row.unfilledTag) ? row.unfilledTag : ''}
+                            onChange={(e) => updateAssignment(row.id, { unfilledTag: e.target.value || null })}
+                            className="w-28 rounded-full border border-tan/30 bg-white/70 px-3 py-1 text-xs text-ink outline-none transition focus:border-coral focus:ring-2 focus:ring-coral/30"
+                          />
+                        </div>
+                      )}
+                      {row.staffId && (
+                        <div className="flex shrink-0 gap-3 text-xs">
+                          <button type="button" onClick={() => handleSendOne(row.staffId!)} className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+                            发送给TA
+                          </button>
+                          <a href={api.rosters.exportUrl(roster.id, 'ics', row.staffId)} className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+                            个人ICS
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </AppShell>
   );
 }

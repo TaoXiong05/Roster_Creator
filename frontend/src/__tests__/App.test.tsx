@@ -57,7 +57,7 @@ describe('App routing', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /欢迎/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /你好呀/ })).toBeInTheDocument();
   });
 
   it('redirects authenticated users away from /register to /dashboard', () => {
@@ -75,6 +75,6 @@ describe('App routing', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /欢迎/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /你好呀/ })).toBeInTheDocument();
   });
 });

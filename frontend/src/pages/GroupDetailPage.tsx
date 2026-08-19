@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, Staff } from '../api/client';
+import { AppShell } from '../components/AppShell';
+import { PageHeader } from '../components/PageHeader';
+import { btnDanger, btnSecondary, cardBase } from '../styles/ui';
 
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,34 +37,46 @@ export function GroupDetailPage() {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <h1 className="text-xl font-semibold">小组成员</h1>
-      <div>
-        <h2 className="font-medium mb-2">组内成员</h2>
-        <ul className="divide-y">
-          {members.map((m) => (
-            <li key={m.id} className="py-2 flex items-center justify-between">
-              <span>{m.name}</span>
-              <button onClick={() => handleRemove(m.id)} className="border rounded px-3 py-1 text-sm text-red-600">
-                移出
-              </button>
-            </li>
-          ))}
-        </ul>
+    <AppShell>
+      <div className="space-y-8">
+        <PageHeader title="小组成员" />
+
+        <div className={`${cardBase} space-y-3`}>
+          <h2 className="font-display text-base font-semibold text-ink">组内成员</h2>
+          {members.length === 0 ? (
+            <p className="text-sm text-ink-soft">这个小组还没有成员。</p>
+          ) : (
+            <ul className="divide-y divide-tan/15">
+              {members.map((m) => (
+                <li key={m.id} className="flex items-center justify-between py-2.5">
+                  <span className="text-sm text-ink">{m.name}</span>
+                  <button onClick={() => handleRemove(m.id)} className={btnDanger}>
+                    移出
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className={`${cardBase} space-y-3`}>
+          <h2 className="font-display text-base font-semibold text-ink">其他员工</h2>
+          {available.length === 0 ? (
+            <p className="text-sm text-ink-soft">没有可添加的员工了。</p>
+          ) : (
+            <ul className="divide-y divide-tan/15">
+              {available.map((s) => (
+                <li key={s.id} className="flex items-center justify-between py-2.5">
+                  <span className="text-sm text-ink">{s.name}</span>
+                  <button onClick={() => handleAdd(s.id)} className={btnSecondary}>
+                    加入
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-      <div>
-        <h2 className="font-medium mb-2">其他员工</h2>
-        <ul className="divide-y">
-          {available.map((s) => (
-            <li key={s.id} className="py-2 flex items-center justify-between">
-              <span>{s.name}</span>
-              <button onClick={() => handleAdd(s.id)} className="border rounded px-3 py-1 text-sm">
-                加入
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    </AppShell>
   );
 }
