@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom';
 import { api, StaffGroup } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EmptyState } from '../components/EmptyState';
+import { KangarooMascot } from '../components/KangarooMascot';
 import { PageHeader } from '../components/PageHeader';
+import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
-import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, listRow } from '../styles/ui';
+import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase } from '../styles/ui';
 
 export function GroupListPage() {
   const [groups, setGroups] = useState<StaffGroup[]>([]);
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<StaffGroup | null>(null);
@@ -17,7 +21,11 @@ export function GroupListPage() {
   const load = async () => setGroups(await api.groups.list());
 
   useEffect(() => {
-    load();
+    let active = true;
+    load().finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleCreate = async (e: FormEvent) => {
@@ -52,7 +60,7 @@ export function GroupListPage() {
   };
 
   return (
-    <AppShell>
+    <AppShell width="wide">
       <div className="space-y-6">
         <PageHeader title="小组管理" description="把员工分组，一次性排进同一份班表" />
 
@@ -76,30 +84,49 @@ export function GroupListPage() {
           </button>
         </form>
 
-        {groups.length === 0 ? (
-          <p className="text-sm text-ink-soft">还没有小组，先在上面创建一个吧。</p>
+        {loading ? (
+          <PageSkeleton rows={3} />
+        ) : groups.length === 0 ? (
+          <EmptyState
+            icon={<KangarooMascot variant="badge" animated={false} className="h-16 w-16" />}
+            title="还没有小组"
+            description="在上方输入名称，创建第一个小组来归拢员工。"
+          />
         ) : (
-          <ul className="space-y-3">
-            {groups.map((g) => (
-              <li key={g.id} className={listRow}>
-                <div>
-                  <p className="font-medium text-ink">{g.name}</p>
-                  <p className="text-sm text-ink-soft">{g.memberCount} 名成员</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Link to={`/groups/${g.id}`} className={btnSecondary}>
-                    管理成员
-                  </Link>
-                  <button onClick={() => handleRename(g.id, g.name)} className={btnSecondary}>
-                    重命名
-                  </button>
-                  <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
-                    删除
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                  <th className="px-5 py-3">小组名称</th>
+                  <th className="px-5 py-3">成员数</th>
+                  <th className="px-5 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-tan/10">
+                {groups.map((g) => (
+                  <tr key={g.id} className="transition-colors hover:bg-sand/70">
+                    <td className="px-5 py-3 font-medium text-ink">{g.name}</td>
+                    <td className="px-5 py-3 text-ink-soft">
+                      {g.memberCount} 名成员
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Link to={`/groups/${g.id}`} className={btnSecondary}>
+                          管理成员
+                        </Link>
+                        <button onClick={() => handleRename(g.id, g.name)} className={btnSecondary}>
+                          重命名
+                        </button>
+                        <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

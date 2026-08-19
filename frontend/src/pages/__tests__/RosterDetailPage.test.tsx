@@ -129,7 +129,7 @@ describe('RosterDetailPage publish and email actions', () => {
     await userEvent.click(screen.getByRole('button', { name: '发布' }));
 
     await waitFor(() => expect(api.rosters.publish).toHaveBeenCalledWith('roster-1'));
-    await waitFor(() => expect(screen.getByText(/published/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('已发布')).toBeInTheDocument());
   });
 
   it('sends emails to everyone assigned', async () => {
