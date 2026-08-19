@@ -28,7 +28,7 @@ const rosterFixture = {
     {
       id: 'rs-1',
       headcount: 2,
-      requiredSkills: [],
+      responsibilityId: 'resp-1',
       date: new Date('2026-08-17'),
       shiftTemplate: { startTime: '06:00', endTime: '14:00' },
     },
@@ -39,12 +39,14 @@ const rosterFixture = {
         staff: {
           id: 'staff-1',
           name: 'Alice',
+          responsibilityIds: ['resp-1'],
           preference: {
             minHours: 10,
             maxHours: 30,
             hoursPeriod: 'weekly',
             hoursUnit: 'hours',
             preferredShifts: [],
+            unavailableShifts: [{ weekday: 3, shiftTemplateId: 'template-1' }],
             unavailableDateRanges: [],
           },
         },
@@ -84,6 +86,29 @@ describe('POST /rosters/:id/generate-assignments', () => {
 
     const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
     expect(contextArg.hoursPerShift).toBe(6);
+  });
+
+  it("passes each shift's responsibilityId and each staff member's responsibilityIds through to the AI context", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
+    (prisma.assignment.findMany as any).mockResolvedValue([]);
+
+    await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
+    expect(contextArg.shifts[0].responsibilityId).toBe('resp-1');
+    expect(contextArg.staff[0].responsibilityIds).toEqual(['resp-1']);
+  });
+
+  it("passes each staff member's unavailableShifts through to the AI context", async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
+    (prisma.assignment.findMany as any).mockResolvedValue([]);
+
+    await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
+    expect(contextArg.staff[0].unavailableShifts).toEqual([{ weekday: 3, shiftTemplateId: 'template-1' }]);
   });
 
   it('replaces assignments and fills unfilled slots when ai returns fewer staff than headcount', async () => {

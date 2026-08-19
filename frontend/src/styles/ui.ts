@@ -19,6 +19,7 @@ export const btnDanger =
 export const btnPillActive = 'rounded-full border border-coral-deep bg-coral-deep px-3 py-1.5 text-sm font-medium text-white transition';
 export const btnPillInactive =
   'rounded-full border border-tan/30 bg-white/85 px-3 py-1.5 text-sm font-medium text-ink-soft transition hover:border-coral/40 hover:text-ink';
+export const btnPillDanger = 'rounded-full border border-red-500 bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition';
 
 export const inputBase =
   'w-full rounded-2xl border border-tan/30 bg-white px-4 py-2.5 text-[15px] text-ink placeholder:text-ink-soft/45 outline-none transition focus:border-coral focus:ring-2 focus:ring-coral/30';

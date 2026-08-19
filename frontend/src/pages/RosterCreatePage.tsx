@@ -1,6 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { api, RosterShiftInput, ShiftTemplate, StaffGroup } from '../api/client';
+import { api, Responsibility, RosterShiftInput, ShiftTemplate, StaffGroup } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { DayShiftDialog, DayShiftRow } from '../components/DayShiftDialog';
@@ -32,6 +32,7 @@ export function RosterCreatePage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
+  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [groups, setGroups] = useState<StaffGroup[]>([]);
   const [name, setName] = useState('');
   const [dateRangeStart, setDateRangeStart] = useState('');
@@ -50,6 +51,7 @@ export function RosterCreatePage() {
 
   useEffect(() => {
     api.shiftTemplates.list().then(setTemplates);
+    api.responsibilities.list().then(setResponsibilities);
     api.groups.list().then(setGroups);
   }, []);
 
@@ -68,7 +70,13 @@ export function RosterCreatePage() {
         const byDate: Record<string, DayShiftRow[]> = {};
         for (const rs of r.rosterShifts) {
           const date = rs.date.slice(0, 10);
-          byDate[date] = [...(byDate[date] || []), { shiftTemplateId: rs.shiftTemplate.id, headcount: rs.headcount }];
+          const rows = byDate[date] || (byDate[date] = []);
+          let row = rows.find((row) => row.shiftTemplateId === rs.shiftTemplate.id);
+          if (!row) {
+            row = { shiftTemplateId: rs.shiftTemplate.id, requirements: [] };
+            rows.push(row);
+          }
+          row.requirements.push({ responsibilityId: rs.responsibilityId, headcount: rs.headcount });
         }
         setDayShifts(byDate);
       })
@@ -93,21 +101,52 @@ export function RosterCreatePage() {
   const addDayShift = (date: string, shiftTemplateId: string) => {
     setDayShifts((prev) => ({
       ...prev,
-      [date]: [...(prev[date] || []), { shiftTemplateId, headcount: 1 }],
+      [date]: [...(prev[date] || []), { shiftTemplateId, requirements: [{ responsibilityId: '', headcount: 1 }] }],
     }));
   };
 
-  const removeDayShift = (date: string, index: number) => {
+  const removeDayShift = (date: string, rowIndex: number) => {
     setDayShifts((prev) => ({
       ...prev,
-      [date]: (prev[date] || []).filter((_, i) => i !== index),
+      [date]: (prev[date] || []).filter((_, i) => i !== rowIndex),
     }));
   };
 
-  const updateDayShiftHeadcount = (date: string, index: number, value: number) => {
+  const addRequirement = (date: string, rowIndex: number) => {
     setDayShifts((prev) => ({
       ...prev,
-      [date]: (prev[date] || []).map((row, i) => (i === index ? { ...row, headcount: Math.max(0, value) } : row)),
+      [date]: (prev[date] || []).map((row, i) =>
+        i === rowIndex ? { ...row, requirements: [...row.requirements, { responsibilityId: '', headcount: 1 }] } : row
+      ),
+    }));
+  };
+
+  const removeRequirement = (date: string, rowIndex: number, reqIndex: number) => {
+    setDayShifts((prev) => {
+      const rows = prev[date] || [];
+      const row = rows[rowIndex];
+      if (!row) return prev;
+      const nextRequirements = row.requirements.filter((_, i) => i !== reqIndex);
+      if (nextRequirements.length === 0) {
+        return { ...prev, [date]: rows.filter((_, i) => i !== rowIndex) };
+      }
+      return { ...prev, [date]: rows.map((r, i) => (i === rowIndex ? { ...r, requirements: nextRequirements } : r)) };
+    });
+  };
+
+  const updateRequirement = (
+    date: string,
+    rowIndex: number,
+    reqIndex: number,
+    patch: Partial<{ responsibilityId: string; headcount: number }>
+  ) => {
+    setDayShifts((prev) => ({
+      ...prev,
+      [date]: (prev[date] || []).map((row, ri) =>
+        ri === rowIndex
+          ? { ...row, requirements: row.requirements.map((req, qi) => (qi === reqIndex ? { ...req, ...patch } : req)) }
+          : row
+      ),
     }));
   };
 
@@ -115,8 +154,9 @@ export function RosterCreatePage() {
     const shifts: RosterShiftInput[] = [];
     for (const date of availableDates) {
       for (const row of dayShifts[date] || []) {
-        if (row.headcount <= 0) continue;
-        shifts.push({ shiftTemplateId: row.shiftTemplateId, headcount: row.headcount, dates: [date], requiredSkills: [] });
+        const requirements = row.requirements.filter((req) => req.headcount > 0);
+        if (requirements.length === 0) continue;
+        shifts.push({ shiftTemplateId: row.shiftTemplateId, dates: [date], requirements });
       }
     }
     return shifts;
@@ -125,6 +165,13 @@ export function RosterCreatePage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    const hasMissingResponsibility = availableDates.some((date) =>
+      (dayShifts[date] || []).some((row) => row.requirements.some((req) => req.headcount > 0 && !req.responsibilityId))
+    );
+    if (hasMissingResponsibility) {
+      setError('请为每个班次的人数需求选择职责');
+      return;
+    }
     const shifts = buildShifts();
     if (shifts.length === 0) {
       setError('至少需要为一天设置一个班次的人数');
@@ -250,6 +297,13 @@ export function RosterCreatePage() {
                   去设置班次模板
                 </Link>
               </div>
+            ) : responsibilities.length === 0 ? (
+              <div className={`${cardBase} flex flex-wrap items-center gap-2`}>
+                <p className="text-sm text-ink-soft">还没有设置职责模板，需要先创建至少一个职责才能安排排班。</p>
+                <Link to="/responsibilities" className={btnSecondary}>
+                  去设置职责模板
+                </Link>
+              </div>
             ) : availableDates.length === 0 ? (
               <p className={`${cardBase} text-sm text-ink-soft`}>请先选择开始和结束日期。</p>
             ) : (
@@ -296,9 +350,16 @@ export function RosterCreatePage() {
                             <ul className="mt-2 space-y-1">
                               {rows.map((row) => {
                                 const t = templates.find((tpl) => tpl.id === row.shiftTemplateId);
+                                const summary = row.requirements
+                                  .filter((req) => req.headcount > 0)
+                                  .map((req) => {
+                                    const r = responsibilities.find((resp) => resp.id === req.responsibilityId);
+                                    return `${r?.name ?? '未选职责'} × ${req.headcount}`;
+                                  })
+                                  .join('、');
                                 return (
                                   <li key={row.shiftTemplateId} className="text-xs text-ink">
-                                    {t?.name ?? '?'} × {row.headcount}
+                                    {t?.name ?? '?'}：{summary || '未设置人数'}
                                   </li>
                                 );
                               })}
@@ -324,10 +385,15 @@ export function RosterCreatePage() {
         open={editingDate !== null}
         date={editingDate}
         templates={templates}
+        responsibilities={responsibilities}
         rows={editingDate ? dayShifts[editingDate] || [] : []}
         onAddRow={(shiftTemplateId) => editingDate && addDayShift(editingDate, shiftTemplateId)}
-        onRemoveRow={(index) => editingDate && removeDayShift(editingDate, index)}
-        onHeadcountChange={(index, value) => editingDate && updateDayShiftHeadcount(editingDate, index, value)}
+        onRemoveRow={(rowIndex) => editingDate && removeDayShift(editingDate, rowIndex)}
+        onAddRequirement={(rowIndex) => editingDate && addRequirement(editingDate, rowIndex)}
+        onRemoveRequirement={(rowIndex, reqIndex) => editingDate && removeRequirement(editingDate, rowIndex, reqIndex)}
+        onRequirementChange={(rowIndex, reqIndex, patch) =>
+          editingDate && updateRequirement(editingDate, rowIndex, reqIndex, patch)
+        }
         onClose={() => setEditingDate(null)}
       />
     </AppShell>

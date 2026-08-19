@@ -26,17 +26,20 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
       startTime: rs.shiftTemplate.startTime,
       endTime: rs.shiftTemplate.endTime,
       headcount: rs.headcount,
-      requiredSkills: rs.requiredSkills,
+      responsibilityId: rs.responsibilityId,
     })),
     staff: roster.group.members.map((m) => ({
       staffId: m.staff.id,
       name: m.staff.name,
+      responsibilityIds: m.staff.responsibilityIds,
       minHours: m.staff.preference?.minHours ?? 0,
       maxHours: m.staff.preference?.maxHours ?? 40,
       hoursPeriod: m.staff.preference?.hoursPeriod ?? 'weekly',
       hoursUnit: m.staff.preference?.hoursUnit ?? 'hours',
       preferredShifts:
         (m.staff.preference?.preferredShifts as { weekday: number; shiftTemplateId: string }[]) ?? [],
+      unavailableShifts:
+        (m.staff.preference?.unavailableShifts as { weekday: number; shiftTemplateId: string }[]) ?? [],
       unavailableDateRanges: (m.staff.preference?.unavailableDateRanges as { start: string; end: string }[]) ?? [],
     })),
   };

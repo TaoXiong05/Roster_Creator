@@ -6,6 +6,7 @@ import { BackLink } from '../components/BackLink';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PageHeader } from '../components/PageHeader';
 import { Spinner } from '../components/Spinner';
+import { UnavailableDatesDialog } from '../components/UnavailableDatesDialog';
 import { btnDanger, btnSecondary, cardBase } from '../styles/ui';
 
 export function GroupDetailPage() {
@@ -15,6 +16,7 @@ export function GroupDetailPage() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [unavailabilityTarget, setUnavailabilityTarget] = useState<Staff | null>(null);
 
   const load = async () => {
     if (!id) return;
@@ -71,9 +73,14 @@ export function GroupDetailPage() {
                     <tr key={m.id} className="transition-colors hover:bg-sand/60">
                       <td className="px-4 py-2.5 text-ink">{m.name}</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setConfirmTarget(m)} className={btnDanger}>
-                          移出
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setUnavailabilityTarget(m)} className={btnSecondary}>
+                            设置不可用日期
+                          </button>
+                          <button onClick={() => setConfirmTarget(m)} className={btnDanger}>
+                            移出
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -117,6 +124,13 @@ export function GroupDetailPage() {
         loading={removing}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmRemove}
+      />
+
+      <UnavailableDatesDialog
+        open={!!unavailabilityTarget}
+        staff={unavailabilityTarget}
+        onClose={() => setUnavailabilityTarget(null)}
+        onSaved={(updated) => setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))}
       />
     </AppShell>
   );

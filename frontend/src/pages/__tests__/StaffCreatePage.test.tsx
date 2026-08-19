@@ -68,5 +68,37 @@ describe('StaffCreatePage', () => {
         responsibilityIds: ['resp-1'],
       })
     );
+    expect(api.staff.updatePreference).toHaveBeenCalledWith(
+      'staff-1',
+      expect.objectContaining({ unavailableShifts: [] })
+    );
+  });
+
+  it('saves selected unavailable shifts alongside preferred shifts', async () => {
+    (api.shiftTemplates.list as any).mockResolvedValue([
+      { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
+    ]);
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
+    (api.staff.create as any).mockResolvedValue({ id: 'staff-1', name: 'Bob', email: 'bob@b.com' });
+    (api.staff.updatePreference as any).mockResolvedValue({});
+
+    renderPage();
+
+    await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
+    await userEvent.type(screen.getByPlaceholderText('姓名'), 'Bob');
+    await userEvent.type(screen.getByPlaceholderText('邮箱'), 'bob@b.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
+
+    await userEvent.click(screen.getByRole('button', { name: '不可用 周一' }));
+    await userEvent.click(screen.getByRole('button', { name: '不可用 Morning' }));
+
+    await userEvent.click(screen.getByRole('button', { name: '添加员工' }));
+
+    await waitFor(() =>
+      expect(api.staff.updatePreference).toHaveBeenCalledWith(
+        'staff-1',
+        expect.objectContaining({ unavailableShifts: [{ weekday: 1, shiftTemplateId: 'template-1' }] })
+      )
+    );
   });
 });

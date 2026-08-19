@@ -5,11 +5,15 @@ import { requireAuth, AuthedRequest } from '../auth/middleware';
 export const rosterRouter = Router();
 rosterRouter.use(requireAuth);
 
+interface ShiftRequirement {
+  responsibilityId: string;
+  headcount: number;
+}
+
 interface ShiftInput {
   shiftTemplateId: string;
   dates: string[];
-  headcount: number;
-  requiredSkills: string[];
+  requirements: ShiftRequirement[];
 }
 
 rosterRouter.get('/', async (req: AuthedRequest, res) => {
@@ -95,8 +99,16 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
     if (!shift.dates || shift.dates.length === 0) {
       return res.status(400).json({ error: 'Each shift needs at least one date' });
     }
-    if (!shift.headcount || shift.headcount < 1) {
-      return res.status(400).json({ error: 'headcount must be at least 1' });
+    if (!shift.requirements || shift.requirements.length === 0) {
+      return res.status(400).json({ error: 'Each shift needs at least one responsibility requirement' });
+    }
+    for (const req of shift.requirements) {
+      if (!req.responsibilityId) {
+        return res.status(400).json({ error: 'responsibilityId is required for each requirement' });
+      }
+      if (!req.headcount || req.headcount < 1) {
+        return res.status(400).json({ error: 'headcount must be at least 1' });
+      }
     }
   }
 
@@ -110,18 +122,20 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
       hoursPerShift: hoursPerShift ?? 8,
       rosterShifts: {
         create: shifts.flatMap((shift) =>
-          shift.dates.map((date) => ({
-            shiftTemplateId: shift.shiftTemplateId,
-            date: new Date(date),
-            headcount: shift.headcount,
-            requiredSkills: shift.requiredSkills ?? [],
-            assignments: {
-              create: Array.from({ length: shift.headcount }, () => ({
-                staffId: null,
-                unfilledTag: null,
-              })),
-            },
-          }))
+          shift.dates.flatMap((date) =>
+            shift.requirements.map((requirement) => ({
+              shiftTemplateId: shift.shiftTemplateId,
+              date: new Date(date),
+              headcount: requirement.headcount,
+              responsibilityId: requirement.responsibilityId,
+              assignments: {
+                create: Array.from({ length: requirement.headcount }, () => ({
+                  staffId: null,
+                  unfilledTag: null,
+                })),
+              },
+            }))
+          )
         ),
       },
     },
@@ -182,8 +196,16 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
     if (!shift.dates || shift.dates.length === 0) {
       return res.status(400).json({ error: 'Each shift needs at least one date' });
     }
-    if (!shift.headcount || shift.headcount < 1) {
-      return res.status(400).json({ error: 'headcount must be at least 1' });
+    if (!shift.requirements || shift.requirements.length === 0) {
+      return res.status(400).json({ error: 'Each shift needs at least one responsibility requirement' });
+    }
+    for (const req of shift.requirements) {
+      if (!req.responsibilityId) {
+        return res.status(400).json({ error: 'responsibilityId is required for each requirement' });
+      }
+      if (!req.headcount || req.headcount < 1) {
+        return res.status(400).json({ error: 'headcount must be at least 1' });
+      }
     }
   }
 
@@ -201,21 +223,23 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
     await tx.rosterShift.deleteMany({ where: { rosterId: existing.id } });
     for (const shift of shifts) {
       for (const date of shift.dates) {
-        await tx.rosterShift.create({
-          data: {
-            rosterId: existing.id,
-            shiftTemplateId: shift.shiftTemplateId,
-            date: new Date(date),
-            headcount: shift.headcount,
-            requiredSkills: shift.requiredSkills ?? [],
-            assignments: {
-              create: Array.from({ length: shift.headcount }, () => ({
-                staffId: null,
-                unfilledTag: null,
-              })),
+        for (const requirement of shift.requirements) {
+          await tx.rosterShift.create({
+            data: {
+              rosterId: existing.id,
+              shiftTemplateId: shift.shiftTemplateId,
+              date: new Date(date),
+              headcount: requirement.headcount,
+              responsibilityId: requirement.responsibilityId,
+              assignments: {
+                create: Array.from({ length: requirement.headcount }, () => ({
+                  staffId: null,
+                  unfilledTag: null,
+                })),
+              },
             },
-          },
-        });
+          });
+        }
       }
     }
     return roster;

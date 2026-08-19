@@ -39,6 +39,7 @@ export interface Preference {
   id: string;
   staffId: string;
   preferredShifts: PreferredShift[];
+  unavailableShifts: PreferredShift[];
   unavailableDateRanges: { start: string; end: string }[];
   minHours: number;
   maxHours: number;
@@ -72,11 +73,15 @@ export interface Responsibility {
   name: string;
 }
 
+export interface RosterShiftRequirement {
+  responsibilityId: string;
+  headcount: number;
+}
+
 export interface RosterShiftInput {
   shiftTemplateId: string;
   dates: string[];
-  headcount: number;
-  requiredSkills: string[];
+  requirements: RosterShiftRequirement[];
 }
 
 export interface RosterListItem {
@@ -102,7 +107,7 @@ export interface RosterShift {
   id: string;
   date: string;
   headcount: number;
-  requiredSkills: string[];
+  responsibilityId: string;
   shiftTemplate: ShiftTemplate;
   assignments: AssignmentEntry[];
 }
@@ -120,6 +125,7 @@ export interface RosterDetail {
 
 export interface PreferenceInput {
   preferredShifts: PreferredShift[];
+  unavailableShifts: PreferredShift[];
   unavailableDateRanges: { start: string; end: string }[];
   minHours: number;
   maxHours: number;

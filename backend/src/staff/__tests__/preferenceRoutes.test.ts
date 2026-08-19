@@ -155,4 +155,64 @@ describe('PUT /staff/:id/preference', () => {
     expect(res.status).toBe(400);
     expect(prisma.preference.upsert).not.toHaveBeenCalled();
   });
+
+  it('rejects a malformed unavailableShifts entry', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 10, maxHours: 30, unavailableShifts: [{ weekday: 9, shiftTemplateId: 'template-1' }] });
+
+    expect(res.status).toBe(400);
+    expect(prisma.preference.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed unavailableDateRanges entry', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({ minHours: 10, maxHours: 30, unavailableDateRanges: [{ start: '2026-08-01' }] });
+
+    expect(res.status).toBe(400);
+    expect(prisma.preference.upsert).not.toHaveBeenCalled();
+  });
+
+  it('upserts the preference with unavailableShifts and unavailableDateRanges', async () => {
+    (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+    (prisma.preference.upsert as any).mockResolvedValue({
+      id: 'pref-1',
+      staffId: 'staff-1',
+      preferredShifts: [],
+      unavailableShifts: [{ weekday: 2, shiftTemplateId: 'template-1' }],
+      unavailableDateRanges: [{ start: '2026-08-01', end: '2026-08-05' }],
+      minHours: 10,
+      maxHours: 30,
+      hoursPeriod: 'weekly',
+      hoursUnit: 'hours',
+    });
+
+    const res = await request(app)
+      .put('/staff/staff-1/preference')
+      .set('Cookie', authCookie)
+      .send({
+        minHours: 10,
+        maxHours: 30,
+        unavailableShifts: [{ weekday: 2, shiftTemplateId: 'template-1' }],
+        unavailableDateRanges: [{ start: '2026-08-01', end: '2026-08-05' }],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.unavailableShifts).toEqual([{ weekday: 2, shiftTemplateId: 'template-1' }]);
+    expect(prisma.preference.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          unavailableShifts: [{ weekday: 2, shiftTemplateId: 'template-1' }],
+          unavailableDateRanges: [{ start: '2026-08-01', end: '2026-08-05' }],
+        }),
+      })
+    );
+  });
 });

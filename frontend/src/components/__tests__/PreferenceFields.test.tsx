@@ -23,17 +23,22 @@ const baseProps = {
   activeWeekday: null as number | null,
   onSelectWeekday: vi.fn(),
   onToggleShift: vi.fn(),
+  unavailableShifts: [] as { weekday: number; shiftTemplateId: string }[],
+  unavailableActiveWeekday: null as number | null,
+  onSelectUnavailableWeekday: vi.fn(),
+  onToggleUnavailableShift: vi.fn(),
 };
 
 describe('PreferenceFields', () => {
-  it('prompts to set up a shift template when none exist', () => {
+  it('prompts to set up a shift template when none exist, once per picker section', () => {
     render(
       <MemoryRouter>
         <PreferenceFields {...baseProps} templates={[]} />
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/还没有设置班次模板/)).toBeInTheDocument();
+    // One reminder for the preferred-shifts picker, one for the unavailable-shifts picker.
+    expect(screen.getAllByText(/还没有设置班次模板/)).toHaveLength(2);
     expect(screen.queryByText('Morning')).not.toBeInTheDocument();
   });
 
@@ -181,5 +186,84 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
     expect(screen.getByText('最小班次数')).toBeInTheDocument();
+  });
+
+  it('mirrors the preferred-shifts picker for unavailable shifts, scoped to its own active weekday', () => {
+    render(
+      <MemoryRouter>
+        <PreferenceFields
+          {...baseProps}
+          activeWeekday={0}
+          unavailableActiveWeekday={2}
+          unavailableShifts={[{ weekday: 2, shiftTemplateId: 'template-1' }]}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('周二不能上的班次')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '不可用 Morning' })).toHaveClass('bg-red-500');
+    expect(screen.getByRole('button', { name: '不可用 Evening' })).not.toHaveClass('bg-red-500');
+    // The preferred-shifts picker is unaffected and still has its own bare "Morning" button.
+    expect(screen.getByRole('button', { name: 'Morning' })).toBeInTheDocument();
+  });
+
+  it('calls onSelectUnavailableWeekday independently from the preferred weekday selector', async () => {
+    const onSelectWeekday = vi.fn();
+    const onSelectUnavailableWeekday = vi.fn();
+    render(
+      <MemoryRouter>
+        <PreferenceFields
+          {...baseProps}
+          onSelectWeekday={onSelectWeekday}
+          onSelectUnavailableWeekday={onSelectUnavailableWeekday}
+        />
+      </MemoryRouter>
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: '不可用 周三' }));
+    expect(onSelectUnavailableWeekday).toHaveBeenCalledWith(3);
+    expect(onSelectWeekday).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: '周三' }));
+    expect(onSelectWeekday).toHaveBeenCalledWith(3);
+  });
+
+  it('calls onToggleUnavailableShift scoped to the active weekday when an unavailable shift pill is clicked', async () => {
+    const onToggleUnavailableShift = vi.fn();
+    render(
+      <MemoryRouter>
+        <PreferenceFields
+          {...baseProps}
+          unavailableActiveWeekday={1}
+          onToggleUnavailableShift={onToggleUnavailableShift}
+        />
+      </MemoryRouter>
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: '不可用 Morning' }));
+    expect(onToggleUnavailableShift).toHaveBeenCalledWith(1, 'template-1');
+  });
+
+  it('shows a separate summary and checkmarks for configured unavailable weekdays', () => {
+    render(
+      <MemoryRouter>
+        <PreferenceFields
+          {...baseProps}
+          unavailableActiveWeekday={2}
+          unavailableShifts={[
+            { weekday: 0, shiftTemplateId: 'template-1' },
+            { weekday: 2, shiftTemplateId: 'template-2' },
+          ]}
+        />
+      </MemoryRouter>
+    );
+
+    const summary = screen.getByText('不可用总结').closest('div')!;
+    expect(summary).toHaveTextContent('周日：Morning');
+    expect(summary).toHaveTextContent('周二：Evening');
+    expect(screen.getByRole('button', { name: '不可用 周日' }).querySelector('svg')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '不可用 周一' }).querySelector('svg')).not.toBeInTheDocument();
+    // The preferred-shifts summary is unaffected and still absent when nothing is configured there.
+    expect(screen.queryByText('偏好总结')).not.toBeInTheDocument();
   });
 });

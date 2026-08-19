@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api, RosterDetail, AssignmentEntry, Staff } from '../api/client';
+import { api, RosterDetail, AssignmentEntry, Responsibility, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { PageSkeleton } from '../components/Skeleton';
@@ -14,6 +14,7 @@ export function RosterDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [roster, setRoster] = useState<RosterDetail | null>(null);
   const [members, setMembers] = useState<Staff[]>([]);
+  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
   const [assignments, setAssignments] = useState<AssignmentEntry[]>([]);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +38,10 @@ export function RosterDetailPage() {
   useEffect(() => {
     loadRoster();
   }, [id]);
+
+  useEffect(() => {
+    api.responsibilities.list().then(setResponsibilities);
+  }, []);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -202,8 +207,7 @@ export function RosterDetailPage() {
                           {rs.shiftTemplate.name}（{rs.shiftTemplate.startTime}-{rs.shiftTemplate.endTime}）
                         </p>
                         <p className="text-xs text-ink-soft">
-                          需要 {rs.headcount} 人
-                          {rs.requiredSkills.length > 0 ? ` · 技能: ${rs.requiredSkills.join(', ')}` : ''}
+                          需要 {rs.headcount} 人 · 职责: {responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? '未知职责'}
                         </p>
                       </td>
                       <td className="px-5 py-3 text-right">

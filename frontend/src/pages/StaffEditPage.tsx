@@ -23,6 +23,8 @@ export function StaffEditPage() {
   const [hoursUnit, setHoursUnit] = useState<HoursUnit>('hours');
   const [preferredShifts, setPreferredShifts] = useState<PreferredShift[]>([]);
   const [activeWeekday, setActiveWeekday] = useState<number | null>(null);
+  const [unavailableShifts, setUnavailableShifts] = useState<PreferredShift[]>([]);
+  const [unavailableActiveWeekday, setUnavailableActiveWeekday] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +49,10 @@ export function StaffEditPage() {
         if (s.preference.preferredShifts.length > 0) {
           setActiveWeekday(Math.min(...s.preference.preferredShifts.map((p) => p.weekday)));
         }
+        setUnavailableShifts(s.preference.unavailableShifts);
+        if (s.preference.unavailableShifts.length > 0) {
+          setUnavailableActiveWeekday(Math.min(...s.preference.unavailableShifts.map((p) => p.weekday)));
+        }
       }
     });
   }, [id]);
@@ -57,6 +63,14 @@ export function StaffEditPage() {
 
   const toggleShift = (day: number, shiftTemplateId: string) => {
     setPreferredShifts((prev) =>
+      prev.some((p) => p.weekday === day && p.shiftTemplateId === shiftTemplateId)
+        ? prev.filter((p) => !(p.weekday === day && p.shiftTemplateId === shiftTemplateId))
+        : [...prev, { weekday: day, shiftTemplateId }]
+    );
+  };
+
+  const toggleUnavailableShift = (day: number, shiftTemplateId: string) => {
+    setUnavailableShifts((prev) =>
       prev.some((p) => p.weekday === day && p.shiftTemplateId === shiftTemplateId)
         ? prev.filter((p) => !(p.weekday === day && p.shiftTemplateId === shiftTemplateId))
         : [...prev, { weekday: day, shiftTemplateId }]
@@ -76,6 +90,7 @@ export function StaffEditPage() {
       await api.staff.update(id, { name, email, responsibilityIds });
       await api.staff.updatePreference(id, {
         preferredShifts,
+        unavailableShifts,
         unavailableDateRanges: staff?.preference?.unavailableDateRanges ?? [],
         minHours,
         maxHours,
@@ -162,6 +177,10 @@ export function StaffEditPage() {
               activeWeekday={activeWeekday}
               onSelectWeekday={setActiveWeekday}
               onToggleShift={toggleShift}
+              unavailableShifts={unavailableShifts}
+              unavailableActiveWeekday={unavailableActiveWeekday}
+              onSelectUnavailableWeekday={setUnavailableActiveWeekday}
+              onToggleUnavailableShift={toggleUnavailableShift}
             />
           </div>
           <button type="submit" disabled={saving} className={`gap-2 ${btnPrimary}`}>

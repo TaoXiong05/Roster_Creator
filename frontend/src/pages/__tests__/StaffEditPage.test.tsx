@@ -30,6 +30,7 @@ describe('StaffEditPage', () => {
         id: 'pref-1',
         staffId: 'staff-1',
         preferredShifts: [{ weekday: 1, shiftTemplateId: 'template-1' }],
+        unavailableShifts: [{ weekday: 4, shiftTemplateId: 'template-1' }],
         unavailableDateRanges: [],
         minHours: 10,
         maxHours: 30,
@@ -67,6 +68,7 @@ describe('StaffEditPage', () => {
         hoursPeriod: 'fortnightly',
         hoursUnit: 'shifts',
         preferredShifts: [{ weekday: 1, shiftTemplateId: 'template-1' }],
+        unavailableShifts: [{ weekday: 4, shiftTemplateId: 'template-1' }],
       })
     );
   });
@@ -179,5 +181,48 @@ describe('StaffEditPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('请至少选择一个职责');
     expect(api.staff.update).not.toHaveBeenCalled();
+  });
+
+  it('saves unavailable shifts independently from preferred shifts', async () => {
+    (api.staff.get as any).mockResolvedValue({
+      id: 'staff-1',
+      name: 'Alice',
+      email: 'alice@b.com',
+      responsibilityIds: ['resp-1'],
+      preference: null,
+    });
+    (api.shiftTemplates.list as any).mockResolvedValue([
+      { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
+    ]);
+    (api.staff.update as any).mockResolvedValue({});
+    (api.staff.updatePreference as any).mockResolvedValue({});
+
+    render(
+      <MemoryRouter initialEntries={['/staff/staff-1']}>
+        <Routes>
+          <Route path="/staff/:id" element={<StaffEditPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: '周一' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Morning' }));
+
+    await userEvent.click(screen.getByRole('button', { name: '不可用 周五' }));
+    await userEvent.click(screen.getByRole('button', { name: '不可用 Morning' }));
+
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() =>
+      expect(api.staff.updatePreference).toHaveBeenCalledWith(
+        'staff-1',
+        expect.objectContaining({
+          preferredShifts: [{ weekday: 1, shiftTemplateId: 'template-1' }],
+          unavailableShifts: [{ weekday: 5, shiftTemplateId: 'template-1' }],
+        })
+      )
+    );
   });
 });

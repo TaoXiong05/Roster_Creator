@@ -64,7 +64,7 @@ describe('GET /rosters/:id', () => {
           id: 'rs-1',
           date: new Date('2026-08-17'),
           headcount: 3,
-          requiredSkills: [],
+          responsibilityId: 'resp-1',
           shiftTemplate: { name: 'Morning' },
         },
       ],
@@ -91,7 +91,9 @@ describe('POST /rosters', () => {
         dateRangeStart: '2026-08-17',
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 2, requiredSkills: [] }],
+        shifts: [
+          { shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 2 }] },
+        ],
       });
 
     expect(res.status).toBe(404);
@@ -109,7 +111,7 @@ describe('POST /rosters', () => {
         dateRangeStart: '2026-08-17',
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 2, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 2 }] }],
       });
 
     expect(res.status).toBe(404);
@@ -147,8 +149,7 @@ describe('POST /rosters', () => {
           {
             shiftTemplateId: 'template-1',
             dates: ['2026-08-17', '2026-08-18'],
-            headcount: 3,
-            requiredSkills: ['cashier'],
+            requirements: [{ responsibilityId: 'resp-1', headcount: 3 }],
           },
         ],
       });
@@ -159,8 +160,84 @@ describe('POST /rosters', () => {
     expect(callArg.data.rosterShifts.create[0]).toMatchObject({
       shiftTemplateId: 'template-1',
       headcount: 3,
-      requiredSkills: ['cashier'],
+      responsibilityId: 'resp-1',
     });
+  });
+
+  it('creates one RosterShift per requirement when a shift has multiple responsibility requirements', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+    (prisma.roster.create as any).mockResolvedValue({ id: 'roster-1' });
+
+    const res = await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        shifts: [
+          {
+            shiftTemplateId: 'template-1',
+            dates: ['2026-08-17'],
+            requirements: [
+              { responsibilityId: 'resp-cashier', headcount: 2 },
+              { responsibilityId: 'resp-cleaning', headcount: 1 },
+            ],
+          },
+        ],
+      });
+
+    expect(res.status).toBe(201);
+    const callArg = (prisma.roster.create as any).mock.calls[0][0];
+    expect(callArg.data.rosterShifts.create).toHaveLength(2);
+    expect(callArg.data.rosterShifts.create).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ responsibilityId: 'resp-cashier', headcount: 2 }),
+        expect.objectContaining({ responsibilityId: 'resp-cleaning', headcount: 1 }),
+      ])
+    );
+  });
+
+  it('rejects a requirement missing a responsibilityId', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        shifts: [
+          { shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: '', headcount: 1 }] },
+        ],
+      });
+
+    expect(res.status).toBe(400);
+    expect(prisma.roster.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a shift with an empty requirements array', async () => {
+    (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
+    (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
+
+    const res = await request(app)
+      .post('/rosters')
+      .set('Cookie', authCookie)
+      .send({
+        name: 'Week 34',
+        dateRangeStart: '2026-08-17',
+        dateRangeEnd: '2026-08-23',
+        groupId: 'group-1',
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [] }],
+      });
+
+    expect(res.status).toBe(400);
+    expect(prisma.roster.create).not.toHaveBeenCalled();
   });
 
   it('pre-creates one unfilled assignment slot per headcount so shifts can be staffed manually without AI', async () => {
@@ -176,7 +253,7 @@ describe('POST /rosters', () => {
         dateRangeStart: '2026-08-17',
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 3, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 3 }] }],
       });
 
     const callArg = (prisma.roster.create as any).mock.calls[0][0];
@@ -202,7 +279,7 @@ describe('POST /rosters', () => {
         dateRangeStart: '2026-08-17',
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 1, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 1 }] }],
       });
 
     const callArg = (prisma.roster.create as any).mock.calls[0][0];
@@ -223,7 +300,7 @@ describe('POST /rosters', () => {
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
         hoursPerShift: 6,
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 1, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 1 }] }],
       });
 
     const callArg = (prisma.roster.create as any).mock.calls[0][0];
@@ -240,7 +317,7 @@ describe('POST /rosters', () => {
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
         hoursPerShift: 0,
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 1, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 1 }] }],
       });
 
     expect(res.status).toBe(400);
@@ -256,7 +333,7 @@ describe('POST /rosters', () => {
         dateRangeStart: '2026-08-23',
         dateRangeEnd: '2026-08-17',
         groupId: 'group-1',
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-18'], headcount: 1, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-18'], requirements: [{ responsibilityId: 'resp-1', headcount: 1 }] }],
       });
 
     expect(res.status).toBe(400);
@@ -274,7 +351,7 @@ describe('POST /rosters', () => {
         dateRangeStart: '2026-08-17',
         dateRangeEnd: '2026-08-23',
         groupId: 'group-1',
-        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-09-01'], headcount: 1, requiredSkills: [] }],
+        shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-09-01'], requirements: [{ responsibilityId: 'resp-1', headcount: 1 }] }],
       });
 
     expect(res.status).toBe(400);
@@ -293,7 +370,7 @@ describe("PUT /rosters/:id", () => {
       dateRangeStart: '2026-08-24',
       dateRangeEnd: '2026-08-30',
       groupId: 'group-1',
-      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], headcount: 2, requiredSkills: [] }],
+      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], requirements: [{ responsibilityId: 'resp-1', headcount: 2 }] }],
     });
 
     expect(res.status).toBe(404);
@@ -309,7 +386,7 @@ describe("PUT /rosters/:id", () => {
       dateRangeStart: '2026-08-24',
       dateRangeEnd: '2026-08-30',
       groupId: 'group-1',
-      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], headcount: 2, requiredSkills: [] }],
+      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], requirements: [{ responsibilityId: 'resp-1', headcount: 2 }] }],
     });
 
     expect(res.status).toBe(404);
@@ -331,7 +408,7 @@ describe("PUT /rosters/:id", () => {
       groupId: 'group-1',
       hoursPerShift: 6,
       shifts: [
-        { shiftTemplateId: 'template-1', dates: ['2026-08-24'], headcount: 2, requiredSkills: [] },
+        { shiftTemplateId: 'template-1', dates: ['2026-08-24'], requirements: [{ responsibilityId: 'resp-1', headcount: 2 }] },
       ],
     });
 

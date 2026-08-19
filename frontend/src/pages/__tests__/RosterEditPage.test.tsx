@@ -8,6 +8,7 @@ import { api } from '../../api/client';
 vi.mock('../../api/client', () => ({
   api: {
     shiftTemplates: { list: vi.fn() },
+    responsibilities: { list: vi.fn() },
     groups: { list: vi.fn() },
     rosters: { get: vi.fn(), update: vi.fn() },
   },
@@ -26,7 +27,7 @@ const existingRoster = {
       id: 'rs-1',
       date: '2026-08-17T00:00:00.000Z',
       headcount: 3,
-      requiredSkills: [],
+      responsibilityId: 'resp-1',
       shiftTemplate: { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
       assignments: [],
     },
@@ -52,6 +53,7 @@ describe('RosterCreatePage (edit mode)', () => {
     (api.shiftTemplates.list as any).mockResolvedValue([
       { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
     ]);
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
     (api.rosters.get as any).mockResolvedValue(existingRoster);
     (api.rosters.update as any).mockResolvedValue({ id: 'roster-1' });
@@ -79,7 +81,11 @@ describe('RosterCreatePage (edit mode)', () => {
           groupId: 'group-1',
           hoursPerShift: 8,
           shifts: expect.arrayContaining([
-            expect.objectContaining({ shiftTemplateId: 'template-1', dates: ['2026-08-17'], headcount: 3 }),
+            expect.objectContaining({
+              shiftTemplateId: 'template-1',
+              dates: ['2026-08-17'],
+              requirements: [{ responsibilityId: 'resp-1', headcount: 3 }],
+            }),
           ]),
         })
       )

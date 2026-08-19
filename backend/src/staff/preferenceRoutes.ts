@@ -16,6 +16,7 @@ preferenceRouter.put('/:id/preference', async (req: AuthedRequest, res) => {
 
   const {
     preferredShifts,
+    unavailableShifts,
     unavailableDateRanges,
     minHours,
     maxHours,
@@ -23,6 +24,7 @@ preferenceRouter.put('/:id/preference', async (req: AuthedRequest, res) => {
     hoursUnit,
   } = req.body as {
     preferredShifts?: { weekday: number; shiftTemplateId: string }[];
+    unavailableShifts?: { weekday: number; shiftTemplateId: string }[];
     unavailableDateRanges?: { start: string; end: string }[];
     minHours?: number;
     maxHours?: number;
@@ -42,23 +44,33 @@ preferenceRouter.put('/:id/preference', async (req: AuthedRequest, res) => {
   if (hoursUnit !== undefined && !HOURS_UNITS.includes(hoursUnit)) {
     return res.status(400).json({ error: `hoursUnit must be one of ${HOURS_UNITS.join(', ')}` });
   }
-  const isValidPreferredShifts =
-    preferredShifts === undefined ||
-    (Array.isArray(preferredShifts) &&
-      preferredShifts.every(
-        (p) =>
-          p &&
-          typeof p.weekday === 'number' &&
-          p.weekday >= 0 &&
-          p.weekday <= 6 &&
-          typeof p.shiftTemplateId === 'string'
-      ));
-  if (!isValidPreferredShifts) {
+  const isWeekdayShiftList = (value: unknown): value is { weekday: number; shiftTemplateId: string }[] =>
+    Array.isArray(value) &&
+    value.every(
+      (p) =>
+        p &&
+        typeof p.weekday === 'number' &&
+        p.weekday >= 0 &&
+        p.weekday <= 6 &&
+        typeof p.shiftTemplateId === 'string'
+    );
+  if (preferredShifts !== undefined && !isWeekdayShiftList(preferredShifts)) {
     return res.status(400).json({ error: 'preferredShifts must be an array of { weekday, shiftTemplateId }' });
+  }
+  if (unavailableShifts !== undefined && !isWeekdayShiftList(unavailableShifts)) {
+    return res.status(400).json({ error: 'unavailableShifts must be an array of { weekday, shiftTemplateId }' });
+  }
+  const isValidDateRanges =
+    unavailableDateRanges === undefined ||
+    (Array.isArray(unavailableDateRanges) &&
+      unavailableDateRanges.every((r) => r && typeof r.start === 'string' && typeof r.end === 'string'));
+  if (!isValidDateRanges) {
+    return res.status(400).json({ error: 'unavailableDateRanges must be an array of { start, end }' });
   }
 
   const data = {
     preferredShifts: preferredShifts ?? [],
+    unavailableShifts: unavailableShifts ?? [],
     unavailableDateRanges: unavailableDateRanges ?? [],
     minHours,
     maxHours,

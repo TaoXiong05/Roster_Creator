@@ -18,6 +18,7 @@ vi.mock('../../api/client', () => ({
       ),
     },
     groups: { listMembers: vi.fn() },
+    responsibilities: { list: vi.fn() },
   },
 }));
 
@@ -33,7 +34,7 @@ const baseRoster = {
       id: 'rs-1',
       date: '2026-08-17T00:00:00.000Z',
       headcount: 1,
-      requiredSkills: [],
+      responsibilityId: 'resp-1',
       shiftTemplate: { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
       assignments: [{ id: 'a-1', rosterShiftId: 'rs-1', staffId: null, unfilledTag: null, staff: null }],
     },
@@ -41,7 +42,10 @@ const baseRoster = {
 };
 
 describe('RosterDetailPage', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
+  });
 
   const renderPage = () =>
     render(
@@ -62,6 +66,7 @@ describe('RosterDetailPage', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
+    expect(screen.getByText(/职责: Cashier/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '生成排班' }));
 
     await waitFor(() => expect(api.rosters.generateAssignments).toHaveBeenCalledWith('roster-1'));
@@ -107,7 +112,10 @@ describe('RosterDetailPage', () => {
 });
 
 describe('RosterDetailPage publish and email actions', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
+  });
 
   const renderPage = () =>
     render(

@@ -27,16 +27,24 @@ describe('GET /groups/:id/members', () => {
     expect(res.status).toBe(404);
   });
 
-  it('lists the staff in the group', async () => {
+  it('lists the staff in the group, including each member\'s preference', async () => {
     (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
     (prisma.groupMember.findMany as any).mockResolvedValue([
-      { groupId: 'group-1', staffId: 'staff-1', staff: { id: 'staff-1', name: 'Alice' } },
+      {
+        groupId: 'group-1',
+        staffId: 'staff-1',
+        staff: { id: 'staff-1', name: 'Alice', preference: { minHours: 10, maxHours: 30 } },
+      },
     ]);
 
     const res = await request(app).get('/groups/group-1/members').set('Cookie', authCookie);
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([{ id: 'staff-1', name: 'Alice' }]);
+    expect(res.body).toEqual([{ id: 'staff-1', name: 'Alice', preference: { minHours: 10, maxHours: 30 } }]);
+    expect(prisma.groupMember.findMany).toHaveBeenCalledWith({
+      where: { groupId: 'group-1' },
+      include: { staff: { include: { preference: true } } },
+    });
   });
 });
 

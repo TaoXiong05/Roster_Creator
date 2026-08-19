@@ -32,6 +32,8 @@ export function StaffCreatePage() {
   const [hoursUnit, setHoursUnit] = useState<HoursUnit>('hours');
   const [preferredShifts, setPreferredShifts] = useState<PreferredShift[]>([]);
   const [activeWeekday, setActiveWeekday] = useState<number | null>(null);
+  const [unavailableShifts, setUnavailableShifts] = useState<PreferredShift[]>([]);
+  const [unavailableActiveWeekday, setUnavailableActiveWeekday] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -52,6 +54,14 @@ export function StaffCreatePage() {
     );
   };
 
+  const toggleUnavailableShift = (day: number, shiftTemplateId: string) => {
+    setUnavailableShifts((prev) =>
+      prev.some((p) => p.weekday === day && p.shiftTemplateId === shiftTemplateId)
+        ? prev.filter((p) => !(p.weekday === day && p.shiftTemplateId === shiftTemplateId))
+        : [...prev, { weekday: day, shiftTemplateId }]
+    );
+  };
+
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -65,6 +75,7 @@ export function StaffCreatePage() {
       if (showPreferences) {
         await api.staff.updatePreference(created.id, {
           preferredShifts,
+          unavailableShifts,
           unavailableDateRanges: [],
           minHours,
           maxHours,
@@ -173,6 +184,10 @@ export function StaffCreatePage() {
                 activeWeekday={activeWeekday}
                 onSelectWeekday={setActiveWeekday}
                 onToggleShift={toggleShift}
+                unavailableShifts={unavailableShifts}
+                unavailableActiveWeekday={unavailableActiveWeekday}
+                onSelectUnavailableWeekday={setUnavailableActiveWeekday}
+                onToggleUnavailableShift={toggleUnavailableShift}
               />
             </div>
           ) : (

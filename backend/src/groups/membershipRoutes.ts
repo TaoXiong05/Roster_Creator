@@ -17,7 +17,7 @@ groupMembershipRouter.get('/:id/members', async (req: AuthedRequest, res) => {
 
   const members = await prisma.groupMember.findMany({
     where: { groupId: req.params.id },
-    include: { staff: true },
+    include: { staff: { include: { preference: true } } },
   });
   res.json(members.map((m) => m.staff));
 });
