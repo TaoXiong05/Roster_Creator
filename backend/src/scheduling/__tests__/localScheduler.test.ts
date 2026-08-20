@@ -149,13 +149,20 @@ describe('localScheduler', () => {
     expect(prevStaff).not.toBe(nextStaff);
   });
 
-  it('avoids double-booking the same person on two shifts the same day when an alternative exists', async () => {
-    const shiftMorning = makeShift({ rosterShiftId: 'rs-morning', date: '2026-08-24', startTime: '06:00', endTime: '10:00' });
+  it('never assigns the same person to two different-time shifts the same day, even with staff to spare', async () => {
+    const shiftMorning = makeShift({
+      rosterShiftId: 'rs-morning',
+      date: '2026-08-24',
+      startTime: '06:00',
+      endTime: '10:00',
+      shiftTemplateId: 'template-morning',
+    });
     const shiftAfternoon = makeShift({
       rosterShiftId: 'rs-afternoon',
       date: '2026-08-24',
       startTime: '14:00',
       endTime: '18:00',
+      shiftTemplateId: 'template-afternoon',
     });
     const context: AssignmentContext = {
       hoursPerShift: 4,
@@ -168,6 +175,74 @@ describe('localScheduler', () => {
     const morningStaff = findShift(result.assignments, 'rs-morning').staffIds[0];
     const afternoonStaff = findShift(result.assignments, 'rs-afternoon').staffIds[0];
     expect(morningStaff).not.toBe(afternoonStaff);
+  });
+
+  it('leaves a shift unfilled rather than double-booking the only staff member available that day', async () => {
+    const shiftMorning = makeShift({
+      rosterShiftId: 'rs-morning',
+      date: '2026-08-24',
+      startTime: '06:00',
+      endTime: '10:00',
+      shiftTemplateId: 'template-morning',
+    });
+    const shiftAfternoon = makeShift({
+      rosterShiftId: 'rs-afternoon',
+      date: '2026-08-24',
+      startTime: '14:00',
+      endTime: '18:00',
+      shiftTemplateId: 'template-afternoon',
+    });
+    const context: AssignmentContext = {
+      hoursPerShift: 4,
+      shifts: [shiftMorning, shiftAfternoon],
+      staff: [makeStaff({ staffId: 'staff-only' })],
+    };
+
+    const result = await localScheduler.assignShifts(context);
+
+    const morningStaff = findShift(result.assignments, 'rs-morning').staffIds;
+    const afternoonStaff = findShift(result.assignments, 'rs-afternoon').staffIds;
+    // staff-only can cover exactly one of the two same-day shifts; the other is left unfilled
+    // rather than double-booking them.
+    expect(morningStaff.length + afternoonStaff.length).toBe(1);
+  });
+
+  it('never assigns the same staff member to two roles within the same shift occurrence', async () => {
+    // Same date + shiftTemplateId = the same physical shift, split into two role requirements.
+    const roleA = makeShift({ rosterShiftId: 'rs-role-a', responsibilityId: 'resp-a' });
+    const roleB = makeShift({ rosterShiftId: 'rs-role-b', responsibilityId: 'resp-b' });
+    const context: AssignmentContext = {
+      hoursPerShift: 8,
+      shifts: [roleA, roleB],
+      staff: [makeStaff({ staffId: 'staff-multi', responsibilityIds: ['resp-a', 'resp-b'] })],
+    };
+
+    const result = await localScheduler.assignShifts(context);
+
+    const roleAStaff = findShift(result.assignments, 'rs-role-a').staffIds;
+    const roleBStaff = findShift(result.assignments, 'rs-role-b').staffIds;
+    // Only one of the two roles can be filled by the single available person; the other stays open.
+    expect(roleAStaff.length + roleBStaff.length).toBe(1);
+  });
+
+  it('gives the scarce role to the specialist and the flexible role to the generalist', async () => {
+    const roleA = makeShift({ rosterShiftId: 'rs-role-a', responsibilityId: 'resp-a' });
+    const roleB = makeShift({ rosterShiftId: 'rs-role-b', responsibilityId: 'resp-b' });
+    const context: AssignmentContext = {
+      hoursPerShift: 8,
+      shifts: [roleA, roleB],
+      staff: [
+        makeStaff({ staffId: 'staff-multi', responsibilityIds: ['resp-a', 'resp-b'] }),
+        makeStaff({ staffId: 'staff-single', responsibilityIds: ['resp-a'] }),
+      ],
+    };
+
+    const result = await localScheduler.assignShifts(context);
+
+    // staff-single can only ever cover role A, so role B (only staff-multi qualifies) must go to
+    // staff-multi, freeing staff-single for role A — both roles end up filled.
+    expect(findShift(result.assignments, 'rs-role-b').staffIds).toEqual(['staff-multi']);
+    expect(findShift(result.assignments, 'rs-role-a').staffIds).toEqual(['staff-single']);
   });
 
   it('distributes shifts so each staff member reaches their proportional minHours target', async () => {

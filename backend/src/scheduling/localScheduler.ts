@@ -45,17 +45,17 @@ export interface SchedulingEngine {
 // 2. minHours target (hard tier: satisfy each staff member's minimum hours/shifts for this period)
 // 3. shift preference (nice-to-have: honor preferredShifts / avoid unavailableShifts, respect maxHours)
 // 4. 11-hour rest gap between consecutive-day shifts (nice-to-have, lower priority than preference)
-// 5. daily overtime / double-shift avoidance (try-best-to-avoid, lowest priority)
+// A staff member is never given a second shift on a day they already have one (hard rule — see
+// isHardEligible), so daily-overtime-from-stacking and double-booking can no longer occur; a shift
+// left uncovered because everyone eligible is already booked that day is the expected outcome.
 const RESP_MATCH_BONUS = 5000;
 const SHORTFALL_WEIGHT = 1000;
 const PREFERRED_BONUS = 100;
 const UNAVAILABLE_SHIFT_PENALTY = 100;
 const MAX_HOURS_PENALTY = 100;
 const REST_GAP_PENALTY = 50;
-const OVERTIME_PENALTY = 10;
 
 const REST_GAP_MIN_HOURS = 11;
-const DAILY_HOURS_MAX = 9;
 const MAX_LOCAL_SEARCH_ITERATIONS = 300;
 
 const PERIOD_DAYS: Record<string, number> = {
@@ -91,7 +91,7 @@ function hasRestGapViolation(a: AssignmentContextShift, b: AssignmentContextShif
   const bEnd = bStart + shiftDurationHours(b) * 60;
   if (aEnd <= bStart) return bStart - aEnd < REST_GAP_MIN_HOURS * 60;
   if (bEnd <= aStart) return aStart - bEnd < REST_GAP_MIN_HOURS * 60;
-  return false; // overlapping shifts on the same day are handled by the overtime tier instead
+  return false; // shifts on the same day never co-occur for one staff member (see isHardEligible)
 }
 
 function dateWeekday(date: string): number {
@@ -156,7 +156,13 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
   }
 
   function isHardEligible(staffId: string, shift: AssignmentContextShift): boolean {
-    return !isUnavailableOnDate(staffById.get(staffId)!, shift.date);
+    if (isUnavailableOnDate(staffById.get(staffId)!, shift.date)) return false;
+    // A staff member can work at most one shift per day — this also covers the narrower case of
+    // holding only one role within the same shift occurrence (same date + shiftTemplateId), since
+    // that's a subset of "another shift the same date".
+    const others = otherAssignedShifts(staffId, shift.rosterShiftId);
+    if (others.some((o) => o.date === shift.date)) return false;
+    return true;
   }
 
   // Marginal score of having `staffId` on `shift`, given their other current assignments
@@ -184,17 +190,22 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
       if (hasRestGapViolation(other, shift)) score -= REST_GAP_PENALTY;
     }
 
-    const sameDay = others.filter((o) => o.date === shift.date);
-    if (sameDay.length > 0) score -= OVERTIME_PENALTY;
-    const dailyHours = shiftDurationHours(shift) + sameDay.reduce((sum, o) => sum + shiftDurationHours(o), 0);
-    if (dailyHours > DAILY_HOURS_MAX) score -= OVERTIME_PENALTY;
-
     return score;
   }
 
   function scarcity(shift: AssignmentContextShift): number {
-    const eligibleCount = staff.filter((s) => isHardEligible(s.staffId, shift)).length;
-    return eligibleCount === 0 ? -Infinity : eligibleCount / Math.max(shift.headcount, 1);
+    const eligible = staff.filter((s) => isHardEligible(s.staffId, shift));
+    if (eligible.length === 0) return -Infinity;
+    // Prefer counting only responsibility-qualified candidates: a shift with many hard-eligible
+    // staff but only one who actually matches its responsibility is more urgent to fill than the
+    // raw eligible count suggests (e.g. one generalist plus one specialist covering two roles in
+    // the same shift occurrence — the specialist-only role must be greedily filled first, since a
+    // single-role-per-slot hard constraint can't be undone by the later local-search swap pass).
+    // Fall back to the raw eligible count when nobody is qualified, so the existing "fill from a
+    // non-matching candidate rather than leave the shift empty" behavior is unaffected.
+    const qualified = eligible.filter((s) => s.responsibilityIds.includes(shift.responsibilityId));
+    const count = qualified.length > 0 ? qualified.length : eligible.length;
+    return count / Math.max(shift.headcount, 1);
   }
 
   // --- Phase 1: greedy fill, most-constrained shifts first ---
