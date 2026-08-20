@@ -51,7 +51,7 @@ describe('RosterCreatePage', () => {
     // Day 1: open the dialog, add Morning, choose a responsibility, set headcount to 3, close.
     await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    await userEvent.selectOptions(screen.getByLabelText('Morning responsibility 1'), 'resp-1');
+    await userEvent.selectOptions(screen.getByLabelText('Morning role 1'), 'resp-1');
     const morningHeadcount = screen.getByLabelText('Morning Cashier headcount');
     await userEvent.clear(morningHeadcount);
     await userEvent.type(morningHeadcount, '3');
@@ -60,7 +60,7 @@ describe('RosterCreatePage', () => {
     // Day 2: same flow with Evening, a different responsibility, headcount 4.
     await userEvent.click(screen.getByRole('button', { name: /18\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Evening' }));
-    await userEvent.selectOptions(screen.getByLabelText('Evening responsibility 1'), 'resp-2');
+    await userEvent.selectOptions(screen.getByLabelText('Evening role 1'), 'resp-2');
     const eveningHeadcount = screen.getByLabelText('Evening Cleaning headcount');
     await userEvent.clear(eveningHeadcount);
     await userEvent.type(eveningHeadcount, '4');
@@ -114,13 +114,13 @@ describe('RosterCreatePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    await userEvent.selectOptions(screen.getByLabelText('Morning responsibility 1'), 'resp-1');
+    await userEvent.selectOptions(screen.getByLabelText('Morning role 1'), 'resp-1');
     const firstHeadcount = screen.getByLabelText('Morning Cashier headcount');
     await userEvent.clear(firstHeadcount);
     await userEvent.type(firstHeadcount, '2');
 
     await userEvent.click(screen.getByRole('button', { name: '+ Add another requirement' }));
-    await userEvent.selectOptions(screen.getByLabelText('Morning responsibility 2'), 'resp-2');
+    await userEvent.selectOptions(screen.getByLabelText('Morning role 2'), 'resp-2');
     const secondHeadcount = screen.getByLabelText('Morning Cleaning headcount');
     await userEvent.clear(secondHeadcount);
     await userEvent.type(secondHeadcount, '1');
@@ -170,7 +170,7 @@ describe('RosterCreatePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Create Roster' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Please choose a responsibility for every headcount requirement');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please choose a role for every headcount requirement');
     expect(api.rosters.create).not.toHaveBeenCalled();
   });
 
@@ -217,10 +217,10 @@ describe('RosterCreatePage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
     await userEvent.click(await screen.findByRole('button', { name: '+ Morning' }));
-    expect(screen.getByLabelText('Morning responsibility headcount')).toBeInTheDocument();
+    expect(screen.getByLabelText('Morning role headcount')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Remove Morning' }));
-    expect(screen.queryByLabelText('Morning responsibility headcount')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Morning role headcount')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '+ Morning' })).toBeInTheDocument();
   });
 

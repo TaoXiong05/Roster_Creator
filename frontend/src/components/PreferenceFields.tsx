@@ -136,6 +136,170 @@ function WeekdayShiftSection({
   );
 }
 
+interface HoursFieldsProps {
+  minHours: number;
+  maxHours: number;
+  onMinHoursChange: (value: number) => void;
+  onMaxHoursChange: (value: number) => void;
+  hoursPeriod: HoursPeriod;
+  onHoursPeriodChange: (value: HoursPeriod) => void;
+  hoursUnit: HoursUnit;
+  onHoursUnitChange: (value: HoursUnit) => void;
+}
+
+// 工作时长：周期、单位、上下限
+export function HoursFields({
+  minHours,
+  maxHours,
+  onMinHoursChange,
+  onMaxHoursChange,
+  hoursPeriod,
+  onHoursPeriodChange,
+  hoursUnit,
+  onHoursUnitChange,
+}: HoursFieldsProps) {
+  const { t } = useLanguage();
+  const minMaxLabel = hoursUnit === 'shifts' ? t('preferenceFields.unitShifts') : t('preferenceFields.unitHours');
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="hours-period" className={labelBase}>
+            {t('preferenceFields.hoursPeriodLabel')}
+          </label>
+          <select
+            id="hours-period"
+            value={hoursPeriod}
+            onChange={(e) => onHoursPeriodChange(e.target.value as HoursPeriod)}
+            className={inputBase}
+          >
+            {HOURS_PERIODS.map((period) => (
+              <option key={period.value} value={period.value}>
+                {t(period.labelKey)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="hours-unit" className={labelBase}>
+            {t('preferenceFields.hoursUnitLabel')}
+          </label>
+          <select
+            id="hours-unit"
+            value={hoursUnit}
+            onChange={(e) => onHoursUnitChange(e.target.value as HoursUnit)}
+            className={inputBase}
+          >
+            {HOURS_UNITS.map((unit) => (
+              <option key={unit.value} value={unit.value}>
+                {t(unit.labelKey)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelBase}>{t('preferenceFields.minLabel', { unit: minMaxLabel })}</label>
+          <input
+            type="number"
+            value={minHours}
+            onChange={(e) => onMinHoursChange(Number(e.target.value))}
+            className={inputBase}
+          />
+        </div>
+        <div>
+          <label className={labelBase}>{t('preferenceFields.maxLabel', { unit: minMaxLabel })}</label>
+          <input
+            type="number"
+            value={maxHours}
+            onChange={(e) => onMaxHoursChange(Number(e.target.value))}
+            className={inputBase}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ShiftsSectionProps {
+  templates: ShiftTemplate[];
+  entries: PreferredShift[];
+  activeWeekday: number | null;
+  onSelectWeekday: (day: number) => void;
+  onToggleShift: (day: number, shiftTemplateId: string) => void;
+}
+
+// 希望上班的星期几 + 班次
+export function PreferredShiftsFields({
+  templates,
+  entries,
+  activeWeekday,
+  onSelectWeekday,
+  onToggleShift,
+}: ShiftsSectionProps) {
+  const { t, language } = useLanguage();
+  const days = getDictionary(language).weekdaysShort;
+  return (
+    <WeekdayShiftSection
+      heading={t('preferenceFields.preferredHeading')}
+      templates={templates}
+      entries={entries}
+      activeWeekday={activeWeekday}
+      onSelectWeekday={onSelectWeekday}
+      onToggleShift={onToggleShift}
+      activeLabel={(day) =>
+        day === null
+          ? t('preferenceFields.preferredActiveLabelNull')
+          : t('preferenceFields.preferredActiveLabel', { day: days[day] })
+      }
+      emptyHint={t('preferenceFields.selectDayFirst')}
+      summaryHeading={t('preferenceFields.summaryHeading')}
+      activePillClass={btnPillActive}
+      weekdays={days}
+      noTemplatesHint={t('common.noShiftTemplatesHint')}
+      goSetUp={t('common.goSetUp')}
+    />
+  );
+}
+
+// 不希望在班的星期几 + 班次
+export function UnavailableShiftsFields({
+  templates,
+  entries,
+  activeWeekday,
+  onSelectWeekday,
+  onToggleShift,
+}: ShiftsSectionProps) {
+  const { t, language } = useLanguage();
+  const days = getDictionary(language).weekdaysShort;
+  return (
+    <WeekdayShiftSection
+      heading={t('preferenceFields.unavailableHeading')}
+      templates={templates}
+      entries={entries}
+      activeWeekday={activeWeekday}
+      onSelectWeekday={onSelectWeekday}
+      onToggleShift={onToggleShift}
+      activeLabel={(day) =>
+        day === null
+          ? t('preferenceFields.unavailableActiveLabelNull')
+          : t('preferenceFields.unavailableActiveLabel', { day: days[day] })
+      }
+      emptyHint={t('preferenceFields.selectUnavailableDayFirst')}
+      summaryHeading={t('preferenceFields.unavailableSummaryHeading')}
+      activePillClass={btnPillDanger}
+      weekdays={days}
+      noTemplatesHint={t('common.noShiftTemplatesHint')}
+      goSetUp={t('common.goSetUp')}
+      weekdayAriaLabel={(day) => t('preferenceFields.unavailableWeekdayAria', { day: days[day] })}
+      shiftAriaLabel={(name) => t('preferenceFields.unavailableShiftAria', { name })}
+    />
+  );
+}
+
 interface PreferenceFieldsProps {
   templates: ShiftTemplate[];
   minHours: number;

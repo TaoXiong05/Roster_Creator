@@ -51,6 +51,13 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
 
+    // Step 1 → 2
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 2 → 3
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 3 → 4
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
@@ -98,12 +105,18 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
 
+    // Reach Step 3 (preferred shifts)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
     await userEvent.click(screen.getByRole('button', { name: 'Sun' }));
     await userEvent.click(screen.getByRole('button', { name: 'Morning' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
     await userEvent.click(screen.getByRole('button', { name: 'Evening' }));
 
+    // Reach Step 4 and save
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
@@ -147,6 +160,12 @@ describe('StaffEditPage', () => {
     expect(screen.getByRole('button', { name: 'Cleaning' })).not.toHaveClass('bg-coral-deep');
 
     await userEvent.click(screen.getByRole('button', { name: 'Cleaning' }));
+
+    // Step 1 → 4
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
@@ -177,9 +196,9 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one responsibility');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one role');
     expect(api.staff.update).not.toHaveBeenCalled();
   });
 
@@ -207,8 +226,15 @@ describe('StaffEditPage', () => {
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
 
+    // Reach Step 3 (preferred shifts)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
     await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
     await userEvent.click(screen.getByRole('button', { name: 'Morning' }));
+
+    // Reach Step 4 (unavailable shifts)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Unavailable Fri' }));
     await userEvent.click(screen.getByRole('button', { name: 'Unavailable Morning' }));

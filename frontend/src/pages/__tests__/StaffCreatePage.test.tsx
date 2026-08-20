@@ -31,7 +31,7 @@ describe('StaffCreatePage', () => {
     (api.responsibilities.list as any).mockResolvedValue([]);
   });
 
-  it('blocks advancing to step 2 with a clear message when no responsibility is selected', async () => {
+  it('blocks advancing to step 2 with a clear message when no role is selected', async () => {
     (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
 
     renderPage();
@@ -41,11 +41,11 @@ describe('StaffCreatePage', () => {
     await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one responsibility');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one role');
     expect(api.staff.create).not.toHaveBeenCalled();
   });
 
-  it('creates a staff member with selected responsibilities', async () => {
+  it('creates a staff member with selected roles', async () => {
     (api.responsibilities.list as any).mockResolvedValue([
       { id: 'resp-1', name: 'Cashier' },
       { id: 'resp-2', name: 'Cleaning' },
@@ -59,7 +59,14 @@ describe('StaffCreatePage', () => {
     await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
     await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
+
+    // Step 1 → 2 (work hours)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 2 → 3 (preferred shifts)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 3 → 4 (unavailable shifts)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
     await userEvent.click(await screen.findByRole('button', { name: 'Add Staff' }));
 
     await waitFor(() =>
@@ -89,6 +96,12 @@ describe('StaffCreatePage', () => {
     await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
     await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
+
+    // Step 1 → 2 (work hours)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 2 → 3 (preferred shifts)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 3 → 4 (unavailable shifts)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await userEvent.click(await screen.findByRole('button', { name: 'Unavailable Mon' }));

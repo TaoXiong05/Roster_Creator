@@ -4,8 +4,9 @@ import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTempl
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { PageHeader } from '../components/PageHeader';
-import { PreferenceFields } from '../components/PreferenceFields';
+import { HoursFields, PreferredShiftsFields, UnavailableShiftsFields } from '../components/PreferenceFields';
 import { Spinner } from '../components/Spinner';
+import { StepStepper } from '../components/StepStepper';
 import { useLanguage } from '../i18n/LanguageContext';
 import {
   btnPrimary,
@@ -23,7 +24,7 @@ export function StaffCreatePage() {
   const { t } = useLanguage();
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<number>(0);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [responsibilityIds, setResponsibilityIds] = useState<string[]>([]);
@@ -63,13 +64,18 @@ export function StaffCreatePage() {
     );
   };
 
-  const handleNext = () => {
-    setError(null);
-    if (responsibilityIds.length === 0) {
+  const goToStep = (target: number) => {
+    if (target < step) {
+      setError(null);
+      setStep(target);
+      return;
+    }
+    if (target > step && step === 0 && responsibilityIds.length === 0) {
       setError(t('staff.responsibilityRequiredError'));
       return;
     }
-    setStep(2);
+    setError(null);
+    setStep(target);
   };
 
   const handleCreate = async (e: FormEvent) => {
@@ -94,16 +100,20 @@ export function StaffCreatePage() {
       setCreating(false);
     }
   };
+const stepTitles = [t('staff.step1Title'), t('staff.step2Title'), t('staff.step3Title'), t('staff.step4Title')];
 
   return (
     <AppShell>
-      <div className="max-w-lg space-y-4">
+      <div className="max-w-xl space-y-4">
         <BackLink to="/staff" label={t('staff.backToStaff')} />
         <PageHeader title={t('staff.createPageTitle')} description={t('staff.createPageDescription')} />
 
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-          {t('staff.stepIndicator', { current: step, total: 2 })}
-        </p>
+        <StepStepper
+          steps={stepTitles}
+          current={step}
+          onStepClick={goToStep}
+          ariaLabel={t('staff.stepIndicator', { current: step + 1, total: 4 })}
+        />
 
         {error && (
           <p role="alert" className={errorText}>
@@ -111,11 +121,11 @@ export function StaffCreatePage() {
           </p>
         )}
 
-        {step === 1 ? (
+        {step === 0 && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleNext();
+              goToStep(1);
             }}
             className={`${cardBase} space-y-4`}
           >
@@ -176,11 +186,17 @@ export function StaffCreatePage() {
               {t('common.next')}
             </button>
           </form>
-        ) : (
-          <form onSubmit={handleCreate} className={`${cardBase} space-y-4`}>
-            <p className="font-display text-sm font-semibold text-ink">{t('staff.preferencesHeading')}</p>
-            <PreferenceFields
-              templates={templates}
+        )}
+{step === 1 && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              goToStep(2);
+            }}
+            className={`${cardBase} space-y-4`}
+          >
+            <h2 className="font-display text-base font-semibold text-ink">{t('staff.step2Title')}</h2>
+            <HoursFields
               minHours={minHours}
               maxHours={maxHours}
               onMinHoursChange={setMinHours}
@@ -189,17 +205,57 @@ export function StaffCreatePage() {
               onHoursPeriodChange={setHoursPeriod}
               hoursUnit={hoursUnit}
               onHoursUnitChange={setHoursUnit}
-              preferredShifts={preferredShifts}
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => goToStep(0)} className={btnSecondary}>
+                {t('common.back')}
+              </button>
+              <button type="submit" className={`flex-1 gap-2 ${btnPrimary}`}>
+                {t('common.next')}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 2 && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              goToStep(3);
+            }}
+            className={`${cardBase} space-y-4`}
+          >
+            <h2 className="font-display text-base font-semibold text-ink">{t('staff.step3Title')}</h2>
+            <PreferredShiftsFields
+              templates={templates}
+              entries={preferredShifts}
               activeWeekday={activeWeekday}
               onSelectWeekday={setActiveWeekday}
               onToggleShift={toggleShift}
-              unavailableShifts={unavailableShifts}
-              unavailableActiveWeekday={unavailableActiveWeekday}
-              onSelectUnavailableWeekday={setUnavailableActiveWeekday}
-              onToggleUnavailableShift={toggleUnavailableShift}
             />
             <div className="flex gap-2">
-              <button type="button" onClick={() => setStep(1)} className={btnSecondary}>
+              <button type="button" onClick={() => goToStep(1)} className={btnSecondary}>
+                {t('common.back')}
+              </button>
+              <button type="submit" className={`flex-1 gap-2 ${btnPrimary}`}>
+                {t('common.next')}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 3 && (
+          <form onSubmit={handleCreate} className={`${cardBase} space-y-4`}>
+            <h2 className="font-display text-base font-semibold text-ink">{t('staff.step4Title')}</h2>
+            <UnavailableShiftsFields
+              templates={templates}
+              entries={unavailableShifts}
+              activeWeekday={unavailableActiveWeekday}
+              onSelectWeekday={setUnavailableActiveWeekday}
+              onToggleShift={toggleUnavailableShift}
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => goToStep(2)} className={btnSecondary}>
                 {t('common.back')}
               </button>
               <button type="submit" disabled={creating} className={`flex-1 gap-2 ${btnPrimary}`}>

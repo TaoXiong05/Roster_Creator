@@ -36,7 +36,7 @@ describe('ResponsibilityListPage', () => {
 
     await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
     await userEvent.type(screen.getByPlaceholderText('Name (e.g. Cashier)'), 'Cashier');
-    await userEvent.click(screen.getByRole('button', { name: 'Add Responsibility' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add Role' }));
 
     await waitFor(() => expect(api.responsibilities.create).toHaveBeenCalledWith('Cashier'));
   });
@@ -54,7 +54,7 @@ describe('ResponsibilityListPage', () => {
     await waitFor(() => expect(screen.getByText('Cashier')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
-    const nameInput = screen.getAllByLabelText('Responsibility Name')[1];
+    const nameInput = screen.getAllByLabelText('Role Name')[1];
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Head Cashier');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
