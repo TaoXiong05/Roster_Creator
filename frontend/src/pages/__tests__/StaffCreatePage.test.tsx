@@ -31,7 +31,7 @@ describe('StaffCreatePage', () => {
     (api.responsibilities.list as any).mockResolvedValue([]);
   });
 
-  it('blocks submission with a clear message when no responsibility is selected', async () => {
+  it('blocks advancing to step 2 with a clear message when no responsibility is selected', async () => {
     (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
 
     renderPage();
@@ -39,7 +39,7 @@ describe('StaffCreatePage', () => {
     await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
     await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
     await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
-    await userEvent.click(screen.getByRole('button', { name: 'Add Staff' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one responsibility');
     expect(api.staff.create).not.toHaveBeenCalled();
@@ -59,7 +59,8 @@ describe('StaffCreatePage', () => {
     await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
     await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Add Staff' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add Staff' }));
 
     await waitFor(() =>
       expect(api.staff.create).toHaveBeenCalledWith({
@@ -88,8 +89,9 @@ describe('StaffCreatePage', () => {
     await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
     await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
     await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Mon' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Unavailable Mon' }));
     await userEvent.click(screen.getByRole('button', { name: 'Unavailable Morning' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Add Staff' }));

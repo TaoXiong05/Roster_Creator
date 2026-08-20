@@ -15,6 +15,8 @@ export const zh = {
     colon: '：',
     noShiftTemplatesHint: '还没有设置班次模板，先去创建一个吧',
     noResponsibilityTemplatesHint: '还没有设置职责模板，先去创建一个吧',
+    next: '下一步',
+    back: '上一步',
   },
   nav: {
     responsibilities: '职责模板',
@@ -110,6 +112,8 @@ export const zh = {
     emailLabel: '邮箱',
     responsibilityLabel: '职责',
     responsibilityRequiredError: '请至少选择一个职责',
+    step1Title: '基本信息',
+    stepIndicator: '第 {{current}} / {{total}} 步',
     preferencesHeading: '排班偏好',
     collapse: '收起',
     expandPreferences: '+ 填写排班偏好（可选）',

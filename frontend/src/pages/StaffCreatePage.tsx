@@ -6,10 +6,10 @@ import { BackLink } from '../components/BackLink';
 import { PageHeader } from '../components/PageHeader';
 import { PreferenceFields } from '../components/PreferenceFields';
 import { Spinner } from '../components/Spinner';
-import { useTransitionPresence } from '../hooks/useTransitionPresence';
 import { useLanguage } from '../i18n/LanguageContext';
 import {
   btnPrimary,
+  btnSecondary,
   btnPillActive,
   btnPillInactive,
   cardBase,
@@ -23,11 +23,10 @@ export function StaffCreatePage() {
   const { t } = useLanguage();
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [responsibilityIds, setResponsibilityIds] = useState<string[]>([]);
-  const [showPreferences, setShowPreferences] = useState(true);
-  const { mounted: prefMounted, visible: prefVisible } = useTransitionPresence(showPreferences, 300);
   const [minHours, setMinHours] = useState(0);
   const [maxHours, setMaxHours] = useState(40);
   const [hoursPeriod, setHoursPeriod] = useState<HoursPeriod>('weekly');
@@ -64,27 +63,30 @@ export function StaffCreatePage() {
     );
   };
 
-  const handleCreate = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleNext = () => {
     setError(null);
     if (responsibilityIds.length === 0) {
       setError(t('staff.responsibilityRequiredError'));
       return;
     }
+    setStep(2);
+  };
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
     setCreating(true);
     try {
       const created = await api.staff.create({ name, email, responsibilityIds });
-      if (showPreferences) {
-        await api.staff.updatePreference(created.id, {
-          preferredShifts,
-          unavailableShifts,
-          unavailableDateRanges: [],
-          minHours,
-          maxHours,
-          hoursPeriod,
-          hoursUnit,
-        });
-      }
+      await api.staff.updatePreference(created.id, {
+        preferredShifts,
+        unavailableShifts,
+        unavailableDateRanges: [],
+        minHours,
+        maxHours,
+        hoursPeriod,
+        hoursUnit,
+      });
       navigate('/staff');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create staff');
@@ -99,110 +101,108 @@ export function StaffCreatePage() {
         <BackLink to="/staff" label={t('staff.backToStaff')} />
         <PageHeader title={t('staff.createPageTitle')} description={t('staff.createPageDescription')} />
 
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {t('staff.stepIndicator', { current: step, total: 2 })}
+        </p>
+
         {error && (
           <p role="alert" className={errorText}>
             {error}
           </p>
         )}
 
-        <form onSubmit={handleCreate} className={`${cardBase} space-y-4`}>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="sm:flex-1">
-              <label htmlFor="staff-name" className={labelBase}>
-                {t('staff.nameLabel')}
-              </label>
-              <input
-                id="staff-name"
-                placeholder={t('staff.namePlaceholder')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputBase}
-                required
-              />
-            </div>
-            <div className="sm:flex-1">
-              <label htmlFor="staff-email" className={labelBase}>
-                {t('staff.emailLabel')}
-              </label>
-              <input
-                id="staff-email"
-                type="email"
-                placeholder={t('staff.emailLabel')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputBase}
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label className={labelBase}>{t('staff.responsibilityLabel')}</label>
-            {responsibilities.length === 0 ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
-                <span>{t('common.noResponsibilityTemplatesHint')}</span>
-                <Link to="/responsibilities" className="font-medium text-coral-deep hover:underline">
-                  {t('common.goSetUp')}
-                </Link>
+        {step === 1 ? (
+          <div className={`${cardBase} space-y-4`}>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="sm:flex-1">
+                <label htmlFor="staff-name" className={labelBase}>
+                  {t('staff.nameLabel')}
+                </label>
+                <input
+                  id="staff-name"
+                  placeholder={t('staff.namePlaceholder')}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputBase}
+                  required
+                />
               </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {responsibilities.map((r) => (
-                  <button
-                    type="button"
-                    key={r.id}
-                    onClick={() => toggleResponsibility(r.id)}
-                    className={responsibilityIds.includes(r.id) ? btnPillActive : btnPillInactive}
-                  >
-                    {r.name}
-                  </button>
-                ))}
+              <div className="sm:flex-1">
+                <label htmlFor="staff-email" className={labelBase}>
+                  {t('staff.emailLabel')}
+                </label>
+                <input
+                  id="staff-email"
+                  type="email"
+                  placeholder={t('staff.emailLabel')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputBase}
+                  required
+                />
               </div>
-            )}
-          </div>
-
-          {prefMounted ? (
-            <div
-              className={`space-y-4 border-t border-tan/15 pt-4 transition-all duration-300 ease-in-out ${
-                prefVisible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <p className="font-display text-sm font-semibold text-ink">{t('staff.preferencesHeading')}</p>
-                <button type="button" onClick={() => setShowPreferences(false)} className="text-xs font-medium text-ink-soft hover:text-coral-deep">
-                  {t('staff.collapse')}
-                </button>
-              </div>
-              <PreferenceFields
-                templates={templates}
-                minHours={minHours}
-                maxHours={maxHours}
-                onMinHoursChange={setMinHours}
-                onMaxHoursChange={setMaxHours}
-                hoursPeriod={hoursPeriod}
-                onHoursPeriodChange={setHoursPeriod}
-                hoursUnit={hoursUnit}
-                onHoursUnitChange={setHoursUnit}
-                preferredShifts={preferredShifts}
-                activeWeekday={activeWeekday}
-                onSelectWeekday={setActiveWeekday}
-                onToggleShift={toggleShift}
-                unavailableShifts={unavailableShifts}
-                unavailableActiveWeekday={unavailableActiveWeekday}
-                onSelectUnavailableWeekday={setUnavailableActiveWeekday}
-                onToggleUnavailableShift={toggleUnavailableShift}
-              />
             </div>
-          ) : (
-            <button type="button" onClick={() => setShowPreferences(true)} className="text-sm font-medium text-coral-deep hover:underline">
-              {t('staff.expandPreferences')}
+            <div>
+              <label className={labelBase}>{t('staff.responsibilityLabel')}</label>
+              {responsibilities.length === 0 ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
+                  <span>{t('common.noResponsibilityTemplatesHint')}</span>
+                  <Link to="/responsibilities" className="font-medium text-coral-deep hover:underline">
+                    {t('common.goSetUp')}
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {responsibilities.map((r) => (
+                    <button
+                      type="button"
+                      key={r.id}
+                      onClick={() => toggleResponsibility(r.id)}
+                      className={responsibilityIds.includes(r.id) ? btnPillActive : btnPillInactive}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button type="button" onClick={handleNext} className={`w-full gap-2 ${btnPrimary}`}>
+              {t('common.next')}
             </button>
-          )}
-
-          <button type="submit" disabled={creating} className={`gap-2 ${btnPrimary}`}>
-            {creating && <Spinner className="h-4 w-4" />}
-            {t('staff.addStaffButton')}
-          </button>
-        </form>
+          </div>
+        ) : (
+          <form onSubmit={handleCreate} className={`${cardBase} space-y-4`}>
+            <p className="font-display text-sm font-semibold text-ink">{t('staff.preferencesHeading')}</p>
+            <PreferenceFields
+              templates={templates}
+              minHours={minHours}
+              maxHours={maxHours}
+              onMinHoursChange={setMinHours}
+              onMaxHoursChange={setMaxHours}
+              hoursPeriod={hoursPeriod}
+              onHoursPeriodChange={setHoursPeriod}
+              hoursUnit={hoursUnit}
+              onHoursUnitChange={setHoursUnit}
+              preferredShifts={preferredShifts}
+              activeWeekday={activeWeekday}
+              onSelectWeekday={setActiveWeekday}
+              onToggleShift={toggleShift}
+              unavailableShifts={unavailableShifts}
+              unavailableActiveWeekday={unavailableActiveWeekday}
+              onSelectUnavailableWeekday={setUnavailableActiveWeekday}
+              onToggleUnavailableShift={toggleUnavailableShift}
+            />
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setStep(1)} className={btnSecondary}>
+                {t('common.back')}
+              </button>
+              <button type="submit" disabled={creating} className={`flex-1 gap-2 ${btnPrimary}`}>
+                {creating && <Spinner className="h-4 w-4" />}
+                {t('staff.addStaffButton')}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </AppShell>
   );

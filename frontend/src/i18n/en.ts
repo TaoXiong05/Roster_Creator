@@ -15,6 +15,8 @@ export const en = {
     colon: ': ',
     noShiftTemplatesHint: 'No shift templates yet — create one first',
     noResponsibilityTemplatesHint: 'No responsibility templates yet — create one first',
+    next: 'Next',
+    back: 'Back',
   },
   nav: {
     responsibilities: 'Responsibility Templates',
@@ -111,6 +113,8 @@ export const en = {
     emailLabel: 'Email',
     responsibilityLabel: 'Responsibilities',
     responsibilityRequiredError: 'Please select at least one responsibility',
+    step1Title: 'Basic Info',
+    stepIndicator: 'Step {{current}} of {{total}}',
     preferencesHeading: 'Scheduling Preferences',
     collapse: 'Collapse',
     expandPreferences: '+ Add scheduling preferences (optional)',
