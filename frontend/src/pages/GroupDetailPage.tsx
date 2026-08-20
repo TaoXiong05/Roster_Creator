@@ -9,7 +9,7 @@ import { Spinner } from '../components/Spinner';
 import { UnavailableDatesDialog } from '../components/UnavailableDatesDialog';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate } from '../utils/date';
-import { btnDanger, btnSecondary, cardBase } from '../styles/ui';
+import { btnDanger, btnSecondary, cardBase, tableRow } from '../styles/ui';
 
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -69,14 +69,14 @@ export function GroupDetailPage() {
           {members.length === 0 ? (
             <p className="text-sm text-ink-soft">{t('groups.noMembers')}</p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-tan/15">
+            <div className="overflow-hidden rounded-[24px] border border-tan/15">
               <table className="w-full text-sm">
                 <tbody className="divide-y divide-tan/10">
                   {members.map((m) => {
                     const unavailableRanges = m.preference?.unavailableDateRanges ?? [];
                     return (
-                      <tr key={m.id} className="transition-colors hover:bg-sand/60">
-                        <td className="px-4 py-2.5 text-ink">
+                      <tr key={m.id} className={tableRow}>
+                        <td className="px-5 py-3 text-ink">
                           <p>{m.name}</p>
                           {unavailableRanges.length > 0 && (
                             <p className="mt-0.5 text-xs text-ink-soft">
@@ -84,7 +84,7 @@ export function GroupDetailPage() {
                             </p>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="px-5 py-3 text-right">
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setUnavailabilityTarget(m)} className={btnSecondary}>
                               {t('groups.setUnavailableDates')}
@@ -108,13 +108,13 @@ export function GroupDetailPage() {
           {available.length === 0 ? (
             <p className="text-sm text-ink-soft">{t('groups.noAvailableStaff')}</p>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-tan/15">
+            <div className="overflow-hidden rounded-[24px] border border-tan/15">
               <table className="w-full text-sm">
                 <tbody className="divide-y divide-tan/10">
                   {available.map((s) => (
-                    <tr key={s.id} className="transition-colors hover:bg-sand/60">
-                      <td className="px-4 py-2.5 text-ink">{s.name}</td>
-                      <td className="px-4 py-2.5 text-right">
+                    <tr key={s.id} className={tableRow}>
+                      <td className="px-5 py-3 text-ink">{s.name}</td>
+                      <td className="px-5 py-3 text-right">
                         <button onClick={() => handleAdd(s.id)} disabled={pendingId === s.id} className={`gap-2 ${btnSecondary}`}>
                           {pendingId === s.id && <Spinner className="h-4 w-4" />}
                           {t('groups.join')}
