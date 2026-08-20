@@ -89,14 +89,21 @@ useEffect(() => {
     );
   };
 
-  const goToStep = (target: number) => {
-    if (target < step) {
-      setError(null);
-      setStep(target);
-      return;
+  const validateStep = (s: number): string | null => {
+    if (s === 0) {
+      if (!name.trim()) return t('staff.nameRequiredError');
+      if (!email.trim()) return t('staff.emailRequiredError');
+      if (responsibilityIds.length === 0) return t('staff.responsibilityRequiredError');
     }
-    if (target > step && step === 0 && responsibilityIds.length === 0) {
-      setError(t('staff.responsibilityRequiredError'));
+    if (s === 1 && minHours > maxHours) return t('preferenceFields.minMaxError');
+    return null;
+  };
+
+  const goToStep = (target: number) => {
+    if (target === step) return;
+    const validationError = validateStep(step);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setError(null);
@@ -149,6 +156,7 @@ useEffect(() => {
           steps={stepTitles}
           current={step}
           onStepClick={goToStep}
+          freeSwitch
           ariaLabel={t('staff.stepIndicator', { current: step + 1, total: 4 })}
         />
 

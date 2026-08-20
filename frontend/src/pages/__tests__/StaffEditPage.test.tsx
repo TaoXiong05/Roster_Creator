@@ -13,6 +13,24 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
+const staffWith = (overrides: Record<string, unknown> = {}) => ({
+  id: 'staff-1',
+  name: 'Alice',
+  email: 'alice@b.com',
+  responsibilityIds: ['resp-1'],
+  preference: null,
+  ...overrides,
+});
+
+const renderEditPage = () =>
+  render(
+    <MemoryRouter initialEntries={['/staff/staff-1']}>
+      <Routes>
+        <Route path="/staff/:id" element={<StaffEditPage />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
 describe('StaffEditPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -250,5 +268,83 @@ describe('StaffEditPage', () => {
         })
       )
     );
+  });
+
+  it('lets the user jump directly to any step via the stepper', async () => {
+    (api.staff.get as any).mockResolvedValue(staffWith());
+    (api.staff.update as any).mockResolvedValue({});
+    (api.staff.updatePreference as any).mockResolvedValue({});
+
+    renderEditPage();
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    // Jump forward from Basic Info straight to Preferred Working Times (skip steps)
+    await userEvent.click(screen.getByRole('button', { name: 'Preferred Working Times' }));
+    expect(await screen.findByRole('heading', { name: 'Preferred Working Times' })).toBeInTheDocument();
+
+    // Jump forward again to Unavailable Working Times
+    await userEvent.click(screen.getByRole('button', { name: 'Unavailable Working Times' }));
+    expect(await screen.findByRole('heading', { name: 'Unavailable Working Times' })).toBeInTheDocument();
+
+    // Jump backward to the first step
+    await userEvent.click(screen.getByRole('button', { name: /^Basic Info/ }));
+    expect(await screen.findByLabelText('Name')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Unavailable Working Times' })).not.toBeInTheDocument();
+  });
+
+  it('blocks jumping away from Basic Info when no responsibility is selected', async () => {
+    (api.staff.get as any).mockResolvedValue(staffWith());
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
+
+    renderEditPage();
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cashier' })); // deselect the only role
+    await userEvent.click(screen.getByRole('button', { name: 'Working Hours' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please select at least one role');
+    expect(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Working Hours' })).not.toBeInTheDocument();
+  });
+
+  it('blocks jumping away from Basic Info with an empty name', async () => {
+    (api.staff.get as any).mockResolvedValue(staffWith());
+
+    renderEditPage();
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    await userEvent.clear(screen.getByLabelText('Name'));
+    await userEvent.click(screen.getByRole('button', { name: 'Working Hours' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please enter a name');
+    expect(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Working Hours' })).not.toBeInTheDocument();
+  });
+
+  it('blocks jumping away from Working Hours when min exceeds max', async () => {
+    (api.staff.get as any).mockResolvedValue(staffWith());
+    (api.staff.update as any).mockResolvedValue({});
+    (api.staff.updatePreference as any).mockResolvedValue({});
+
+    renderEditPage();
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Working Hours' }));
+    expect(await screen.findByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '50');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Preferred Working Times' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Minimum cannot exceed Maximum');
+    expect(screen.getByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
   });
 });

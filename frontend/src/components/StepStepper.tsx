@@ -9,16 +9,18 @@ interface StepStepperProps {
   onStepClick: (index: number) => void;
   /** stepper 的无障碍标签。 */
   ariaLabel: string;
+  /** 允许自由跳转到任意步骤（含前进）。默认 false：仅允许回到已完成的步骤。 */
+  freeSwitch?: boolean;
 }
 
 /**
  * 横向流程图式步骤条：每个步骤一个圆节点 + 标题，节点间以连接线相连。
  * - 已完成步骤：coral 实心 + 对勾，可点击回退。
  * - 当前步骤：coral 描边高亮，比其它节点略大。
- * - 未完成步骤：灰态，尚不可直接跳转（先要让用户经过前置步骤）。
+ * - 未完成步骤：灰态；默认不可点击（需经过前置步骤），开启 freeSwitch 后可任意跳转。
  * 语言与配色沿用当前暖色主题（coral / tan / ink）。
  */
-export function StepStepper({ steps, current, onStepClick, ariaLabel }: StepStepperProps) {
+export function StepStepper({ steps, current, onStepClick, ariaLabel, freeSwitch = false }: StepStepperProps) {
   const connectorBefore = (i: number) =>
     i > 0 && (
       <span
@@ -32,7 +34,7 @@ export function StepStepper({ steps, current, onStepClick, ariaLabel }: StepStep
       {steps.map((title, i) => {
         const done = i < current;
         const isCurrent = i === current;
-        const reachable = i <= current;
+        const reachable = freeSwitch || i <= current;
         const dotClass = done
           ? 'flex h-9 w-9 items-center justify-center rounded-full bg-coral-deep text-white shadow-warm-sm'
           : isCurrent
