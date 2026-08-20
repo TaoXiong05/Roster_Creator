@@ -8,7 +8,7 @@ import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
 import { StatusPill } from '../components/StatusPill';
 import { useLanguage } from '../i18n/LanguageContext';
-import { btnPrimary, btnSecondary, errorText, inputBase, successText } from '../styles/ui';
+import { btnPrimary, btnSecondary, errorText, inputBase, successText, tableShell } from '../styles/ui';
 
 const TAG_OPTIONS = ['AGENT', 'PICKUP'];
 
@@ -194,7 +194,7 @@ export function RosterDetailPage() {
           </a>
         </div>
 
-        <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
+        <div className={tableShell}>
           <table className="w-full text-sm">
             <tbody className="divide-y divide-tan/10">
               {roster.rosterShifts.map((rs) => {
