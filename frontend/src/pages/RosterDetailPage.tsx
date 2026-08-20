@@ -1,20 +1,35 @@
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api, RosterDetail, AssignmentEntry, Responsibility, Staff } from '../api/client';
+import { api, RosterDetail, AssignmentEntry, Responsibility, RosterShift, Staff } from '../api/client';
 import { formatDate } from '../utils/date';
+import {
+  DAYS_PER_PAGE,
+  datesBetween,
+  formatMonthLabel,
+  monthGridDates,
+  monthsInRange,
+  todayISODate,
+  ViewLength,
+  weekdayLabel,
+} from '../utils/calendarGrid';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
+import { DayAssignmentDialog } from '../components/DayAssignmentDialog';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
 import { StatusPill } from '../components/StatusPill';
-import { useLanguage } from '../i18n/LanguageContext';
-import { btnPrimary, btnSecondary, errorText, inputBase, successText, tableShell } from '../styles/ui';
+import { getDictionary, useLanguage } from '../i18n/LanguageContext';
+import { btnPillActive, btnPillInactive, btnPrimary, btnSecondary, cardBase, errorText, successText } from '../styles/ui';
 
-const TAG_OPTIONS = ['AGENT', 'PICKUP'];
+interface ShiftGroupSummary {
+  shiftTemplate: RosterShift['shiftTemplate'];
+  roles: { responsibilityId: string; responsibilityName: string; filledNames: string[]; unfilledCount: number }[];
+}
 
 export function RosterDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const weekdays = getDictionary(language).weekdaysShort;
   const [roster, setRoster] = useState<RosterDetail | null>(null);
   const [members, setMembers] = useState<Staff[]>([]);
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
@@ -27,6 +42,9 @@ export function RosterDetailPage() {
   const [sendingAll, setSendingAll] = useState(false);
   const [sendingStaffId, setSendingStaffId] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
+  const [viewLength, setViewLength] = useState<ViewLength>('weekly');
+  const [pageIndex, setPageIndex] = useState(0);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
 
   const loadRoster = async () => {
     if (!id) return;
@@ -55,6 +73,10 @@ export function RosterDetailPage() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [viewLength, roster?.id]);
 
   const handleGenerate = async () => {
     if (!id) return;
@@ -136,6 +158,55 @@ export function RosterDetailPage() {
       </AppShell>
     );
 
+  const dateRangeStart = roster.dateRangeStart.slice(0, 10);
+  const dateRangeEnd = roster.dateRangeEnd.slice(0, 10);
+  const availableDates = datesBetween(dateRangeStart, dateRangeEnd);
+  const availableDatesSet = new Set(availableDates);
+  const months = monthsInRange(dateRangeStart, dateRangeEnd);
+  const isMonthly = viewLength === 'monthly';
+  const daysPerPage = DAYS_PER_PAGE[viewLength];
+  const totalPages = isMonthly ? Math.max(1, months.length) : Math.max(1, Math.ceil(availableDates.length / daysPerPage!));
+  const clampedPageIndex = Math.min(pageIndex, totalPages - 1);
+  const pageDates = isMonthly
+    ? monthGridDates(months[clampedPageIndex] ?? dateRangeStart.slice(0, 7))
+    : availableDates.slice(clampedPageIndex * daysPerPage!, clampedPageIndex * daysPerPage! + daysPerPage!);
+  const today = todayISODate();
+
+  const rosterShiftsByDate = new Map<string, RosterShift[]>();
+  for (const rs of roster.rosterShifts) {
+    const date = rs.date.slice(0, 10);
+    const list = rosterShiftsByDate.get(date) ?? [];
+    list.push(rs);
+    rosterShiftsByDate.set(date, list);
+  }
+
+  const summarizeDate = (date: string): ShiftGroupSummary[] => {
+    const dayShifts = rosterShiftsByDate.get(date) ?? [];
+    const byTemplate = new Map<string, RosterShift[]>();
+    for (const rs of dayShifts) {
+      const list = byTemplate.get(rs.shiftTemplate.id) ?? [];
+      list.push(rs);
+      byTemplate.set(rs.shiftTemplate.id, list);
+    }
+    return Array.from(byTemplate.values()).map((group) => ({
+      shiftTemplate: group[0].shiftTemplate,
+      roles: group.map((rs) => {
+        const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
+        return {
+          responsibilityId: rs.responsibilityId,
+          responsibilityName: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
+          filledNames: rows.filter((r) => r.staffId).map((r) => members.find((m) => m.id === r.staffId)?.name ?? r.staff?.name ?? '?'),
+          unfilledCount: rows.filter((r) => !r.staffId).length,
+        };
+      }),
+    }));
+  };
+
+  const dayHasUnfilled = (date: string): boolean =>
+    (rosterShiftsByDate.get(date) ?? []).some((rs) => assignments.some((a) => a.rosterShiftId === rs.id && !a.staffId));
+
+  const editingDayShifts = editingDate ? rosterShiftsByDate.get(editingDate) ?? [] : [];
+
   return (
     <AppShell width="wide">
       <div className="space-y-6">
@@ -194,100 +265,164 @@ export function RosterDetailPage() {
           </a>
         </div>
 
-        <div className={tableShell}>
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-tan/10">
-              {roster.rosterShifts.map((rs) => {
-                const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
+        <div className={`${cardBase} space-y-3`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setViewLength('weekly')}
+                className={viewLength === 'weekly' ? btnPillActive : btnPillInactive}
+              >
+                {t('rosters.viewWeekly')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewLength('fortnightly')}
+                className={viewLength === 'fortnightly' ? btnPillActive : btnPillInactive}
+              >
+                {t('rosters.viewFortnightly')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewLength('monthly')}
+                className={viewLength === 'monthly' ? btnPillActive : btnPillInactive}
+              >
+                {t('rosters.viewMonthly')}
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                disabled={clampedPageIndex === 0}
+                className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                {t('rosters.prevPage')}
+              </button>
+              <span className="text-sm text-ink-soft">
+                {isMonthly ? formatMonthLabel(months[clampedPageIndex] ?? '', language) : t('rosters.pageIndicator', { current: clampedPageIndex + 1, total: totalPages })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={clampedPageIndex >= totalPages - 1}
+                className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+              >
+                {t('rosters.nextPage')}
+              </button>
+            </div>
+          </div>
+
+          {isMonthly && (
+            <div className="grid grid-cols-7 gap-2 px-1 text-center text-[11px] font-semibold text-ink-soft">
+              {weekdays.map((w) => (
+                <span key={w}>{w}</span>
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-7 gap-2">
+            {pageDates.map((date) => {
+              if (!availableDatesSet.has(date)) {
                 return (
-                  <Fragment key={rs.id}>
-                    <tr className="bg-sand/60">
-                      <td className="whitespace-nowrap px-5 py-3 align-top font-mono text-xs text-ink-soft">
-                        {formatDate(rs.date)}
-                      </td>
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-ink">
-                          {rs.shiftTemplate.name}（{rs.shiftTemplate.startTime}-{rs.shiftTemplate.endTime}）
-                        </p>
-                        <p className="text-xs text-ink-soft">
-                          {t('rosters.headcountLabel', {
-                            count: rs.headcount,
-                            responsibility: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
-                          })}
-                        </p>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <span className="text-xs font-medium text-ink-soft">{rows.length} {t('rosters.slotsSuffix')}</span>
-                      </td>
-                    </tr>
-                    {rows.map((row) => (
-                      <tr key={row.id} className="border-t border-tan/10">
-                        <td colSpan={3} className="px-5 py-3">
-                          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
-                            <select
-                              value={row.staffId ?? ''}
-                              onChange={(e) => updateAssignment(row.id, { staffId: e.target.value || null, unfilledTag: null })}
-                              aria-label={t('rosters.assignStaffAria')}
-                              className={`${inputBase} lg:w-64 lg:shrink-0`}
-                            >
-                              <option value="">{t('rosters.unassigned')}</option>
-                              {members.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                  {m.name}
-                                </option>
-                              ))}
-                            </select>
-                            {!row.staffId && (
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {TAG_OPTIONS.map((tag) => (
-                                  <button
-                                    type="button"
-                                    key={tag}
-                                    onClick={() => updateAssignment(row.id, { unfilledTag: tag })}
-                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                                      row.unfilledTag === tag
-                                        ? 'border-coral-deep bg-coral-deep text-white'
-                                        : 'border-tan/30 bg-white/70 text-ink-soft hover:border-coral/40'
-                                    }`}
-                                  >
-                                    {tag}
-                                  </button>
-                                ))}
-                                <input
-                                  placeholder={t('rosters.customTagPlaceholder')}
-                                  value={row.unfilledTag && !TAG_OPTIONS.includes(row.unfilledTag) ? row.unfilledTag : ''}
-                                  onChange={(e) => updateAssignment(row.id, { unfilledTag: e.target.value || null })}
-                                  className="w-32 rounded-full border border-tan/30 bg-white/70 px-3 py-1 text-xs text-ink outline-none transition focus:border-coral focus:ring-2 focus:ring-coral/30"
-                                />
-                              </div>
-                            )}
-                            {row.staffId && (
-                              <div className="flex shrink-0 items-center gap-3 text-xs">
-                                <button
-                                  type="button"
-                                  onClick={() => handleSendOne(row.staffId!)}
-                                  disabled={sendingStaffId === row.staffId}
-                                  className="inline-flex items-center gap-1.5 font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline disabled:no-underline disabled:opacity-60"
-                                >
-                                  {sendingStaffId === row.staffId && <Spinner className="h-3.5 w-3.5" />}
-                                  {t('rosters.sendToThem')}
-                                </button>
-                                <a href={api.rosters.exportUrl(roster.id, 'ics', row.staffId)} className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-                                  {t('rosters.personalIcs')}
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </Fragment>
+                  <div
+                    key={date}
+                    aria-hidden="true"
+                    className="min-h-[6.5rem] rounded-2xl border border-dashed border-tan/10 p-3 opacity-40"
+                  >
+                    <span className="text-xs text-ink-soft">{date.slice(8, 10)}</span>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              }
+              const groups = summarizeDate(date);
+              const isToday = date === today;
+              const hasUnfilled = dayHasUnfilled(date);
+              const cellContent = (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        isToday ? 'bg-coral-deep text-white' : 'bg-sand/70 text-ink'
+                      }`}
+                    >
+                      {date.slice(8, 10)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-ink">{weekdayLabel(date, weekdays)}</p>
+                      <p className="text-[11px] text-ink-soft/70">{formatDate(date)}</p>
+                    </div>
+                  </div>
+                  {groups.length === 0 ? (
+                    <p className="mt-2 text-xs text-ink-soft/60">{t('rosters.noShiftsScheduled')}</p>
+                  ) : (
+                    <ul className="mt-2 space-y-1.5">
+                      {groups.map((g) => (
+                        <li key={g.shiftTemplate.id} className="text-xs text-ink">
+                          <p className="font-medium">{g.shiftTemplate.name}</p>
+                          {g.roles.map((role) => (
+                            <p key={role.responsibilityId} className="text-ink-soft">
+                              {role.responsibilityName}
+                              {t('common.colon')}
+                              {role.filledNames.join(t('common.listSeparator'))}
+                              {role.unfilledCount > 0 && (
+                                <span className="ml-1 font-medium text-amber-700">
+                                  {t('rosters.unfilledCountBadge', { count: role.unfilledCount })}
+                                </span>
+                              )}
+                            </p>
+                          ))}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              );
+              if (groups.length === 0) {
+                return (
+                  <div
+                    key={date}
+                    className={`min-h-[6.5rem] rounded-2xl border p-3 text-left ${
+                      isToday ? 'border-coral-deep/50 bg-coral-deep/5 ring-1 ring-coral-deep/20' : 'border-tan/15 bg-white/40'
+                    }`}
+                  >
+                    {cellContent}
+                  </div>
+                );
+              }
+              return (
+                <button
+                  type="button"
+                  key={date}
+                  onClick={() => setEditingDate(date)}
+                  className={`min-h-[6.5rem] rounded-2xl border p-3 text-left transition hover:border-coral/40 hover:bg-white ${
+                    hasUnfilled
+                      ? 'border-amber-400/60 bg-amber-50/60'
+                      : isToday
+                      ? 'border-coral-deep/50 bg-coral-deep/5 ring-1 ring-coral-deep/20'
+                      : 'border-tan/15 bg-white/60'
+                  }`}
+                >
+                  {cellContent}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      <DayAssignmentDialog
+        open={editingDate !== null}
+        date={editingDate}
+        rosterId={roster.id}
+        dayRosterShifts={editingDayShifts}
+        assignments={assignments}
+        members={members}
+        responsibilities={responsibilities}
+        sendingStaffId={sendingStaffId}
+        onAssignmentChange={updateAssignment}
+        onSendOne={handleSendOne}
+        onClose={() => setEditingDate(null)}
+      />
     </AppShell>
   );
 }

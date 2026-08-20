@@ -280,6 +280,11 @@ export const zh = {
     assignStaffAria: '分配员工',
     loadFailedError: '加载排班表失败',
     createFailedError: '创建排班表失败',
+    noShiftsScheduled: '这天没有安排班次',
+    unfilledCountBadge: '⚠ {{count}} 人未分配',
+  },
+  dayAssignmentDialog: {
+    subtitle: '为每个班次分配员工',
   },
   dayShiftDialog: {
     subtitle: '设置这一天需要的班次、角色和人数',

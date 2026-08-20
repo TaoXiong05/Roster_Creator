@@ -284,6 +284,11 @@ export const en = {
     assignStaffAria: 'Assign staff',
     loadFailedError: 'Failed to load roster',
     createFailedError: 'Failed to create roster',
+    noShiftsScheduled: 'No shifts scheduled',
+    unfilledCountBadge: '⚠ {{count}} unfilled',
+  },
+  dayAssignmentDialog: {
+    subtitle: 'Assign staff to each shift',
   },
   dayShiftDialog: {
     subtitle: 'Set the shifts, roles, and headcounts needed this day',
