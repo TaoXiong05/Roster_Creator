@@ -45,3 +45,9 @@ export const tableHeaderRow = 'border-b border-tan/15 bg-sand/60 text-left text-
 export const tableHeaderCell = 'px-5 py-3.5';
 export const tableCell = 'px-5 py-3.5';
 export const tableRow = 'transition-colors hover:bg-sand/50';
+
+// Multi-select list pattern: header/row checkboxes plus the bar that appears
+// once at least one row is selected (Staff list, Group's available-staff list).
+export const checkboxBase = 'h-4 w-4 rounded border-tan/40 accent-coral cursor-pointer';
+export const bulkActionBar =
+  'flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-medium text-ink';

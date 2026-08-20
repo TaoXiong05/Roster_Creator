@@ -9,7 +9,20 @@ import { Spinner } from '../components/Spinner';
 import { UnavailableDatesDialog } from '../components/UnavailableDatesDialog';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate } from '../utils/date';
-import { btnDanger, btnSecondary, cardBase, tableRow } from '../styles/ui';
+import {
+  btnDanger,
+  btnPrimary,
+  btnSecondary,
+  bulkActionBar,
+  cardBase,
+  checkboxBase,
+  errorText,
+  tableCell,
+  tableHeaderCell,
+  tableHeaderRow,
+  tableRow,
+  tableShell,
+} from '../styles/ui';
 
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +34,9 @@ export function GroupDetailPage() {
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [removing, setRemoving] = useState(false);
   const [unavailabilityTarget, setUnavailabilityTarget] = useState<Staff | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAdding, setBulkAdding] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   const load = async () => {
     if (!id) return;
@@ -47,9 +63,42 @@ export function GroupDetailPage() {
     setPendingId(staffId);
     try {
       await api.groups.addMember(id, staffId);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(staffId);
+        return next;
+      });
       await load();
     } finally {
       setPendingId(null);
+    }
+  };
+
+  const toggleOne = (staffId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(staffId)) next.delete(staffId);
+      else next.add(staffId);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelectedIds((prev) => (prev.size === available.length ? new Set() : new Set(available.map((s) => s.id))));
+  };
+
+  const handleBulkAdd = async () => {
+    if (!id) return;
+    setBulkAdding(true);
+    setBulkError(null);
+    try {
+      await Promise.all([...selectedIds].map((staffId) => api.groups.addMember(id, staffId)));
+      setSelectedIds(new Set());
+      await load();
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : t('groups.bulkAddError'));
+    } finally {
+      setBulkAdding(false);
     }
   };
 
@@ -79,14 +128,21 @@ export function GroupDetailPage() {
           {members.length === 0 ? (
             <p className="text-sm text-ink-soft">{t('groups.noMembers')}</p>
           ) : (
-            <div className="overflow-hidden rounded-[24px] border border-tan/15">
+            <div className={tableShell}>
               <table className="w-full text-sm">
+                <thead>
+                  <tr className={tableHeaderRow}>
+                    <th className={tableHeaderCell}>{t('groups.nameHeader')}</th>
+                    <th className={`hidden ${tableHeaderCell} sm:table-cell`}>{t('groups.emailHeader')}</th>
+                    <th className={`${tableHeaderCell} text-right`}>{t('groups.actionsHeader')}</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-tan/10">
                   {members.map((m) => {
                     const unavailableRanges = m.preference?.unavailableDateRanges ?? [];
                     return (
                       <tr key={m.id} className={tableRow}>
-                        <td className="px-5 py-3 text-ink">
+                        <td className={`${tableCell} text-ink`}>
                           <p>{m.name}</p>
                           {unavailableRanges.length > 0 && (
                             <p className="mt-0.5 text-xs text-ink-soft">
@@ -94,7 +150,8 @@ export function GroupDetailPage() {
                             </p>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{m.email}</td>
+                        <td className={tableCell}>
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setUnavailabilityTarget(m)} className={btnSecondary}>
                               {t('groups.setUnavailableDates')}
@@ -118,22 +175,73 @@ export function GroupDetailPage() {
           {available.length === 0 ? (
             <p className="text-sm text-ink-soft">{t('groups.noAvailableStaff')}</p>
           ) : (
-            <div className="overflow-hidden rounded-[24px] border border-tan/15">
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-tan/10">
-                  {available.map((s) => (
-                    <tr key={s.id} className={tableRow}>
-                      <td className="px-5 py-3 text-ink">{s.name}</td>
-                      <td className="px-5 py-3 text-right">
-                        <button onClick={() => handleAdd(s.id)} disabled={pendingId === s.id} className={`gap-2 ${btnSecondary}`}>
-                          {pendingId === s.id && <Spinner className="h-4 w-4" />}
-                          {t('groups.join')}
-                        </button>
-                      </td>
+            <div className="space-y-3">
+              {selectedIds.size > 0 && (
+                <div className={bulkActionBar}>
+                  <span>{t('common.selectedCount', { count: selectedIds.size })}</span>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setSelectedIds(new Set())} className={btnSecondary}>
+                      {t('common.clearSelection')}
+                    </button>
+                    <button type="button" onClick={handleBulkAdd} disabled={bulkAdding} className={`gap-2 ${btnPrimary}`}>
+                      {bulkAdding && <Spinner className="h-4 w-4" />}
+                      {t('groups.bulkAddButton')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {bulkError && (
+                <p role="alert" className={errorText}>
+                  {bulkError}
+                </p>
+              )}
+
+              <div className={tableShell}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className={tableHeaderRow}>
+                      <th className={`${tableHeaderCell} w-10`}>
+                        <input
+                          type="checkbox"
+                          checked={available.length > 0 && selectedIds.size === available.length}
+                          onChange={toggleAll}
+                          aria-label={t('common.selectAllAria')}
+                          className={checkboxBase}
+                        />
+                      </th>
+                      <th className={tableHeaderCell}>{t('groups.nameHeader')}</th>
+                      <th className={`hidden ${tableHeaderCell} sm:table-cell`}>{t('groups.emailHeader')}</th>
+                      <th className={`${tableHeaderCell} text-right`}>{t('groups.actionsHeader')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-tan/10">
+                    {available.map((s) => (
+                      <tr key={s.id} className={tableRow}>
+                        <td className={tableCell}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(s.id)}
+                            onChange={() => toggleOne(s.id)}
+                            aria-label={t('common.selectRowAria', { name: s.name })}
+                            className={checkboxBase}
+                          />
+                        </td>
+                        <td className={`${tableCell} text-ink`}>{s.name}</td>
+                        <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{s.email}</td>
+                        <td className={tableCell}>
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => handleAdd(s.id)} disabled={pendingId === s.id} className={`gap-2 ${btnSecondary}`}>
+                              {pendingId === s.id && <Spinner className="h-4 w-4" />}
+                              {t('groups.join')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

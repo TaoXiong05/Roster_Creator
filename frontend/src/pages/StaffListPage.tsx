@@ -10,7 +10,19 @@ import { PageSkeleton } from '../components/Skeleton';
 import { UnavailableDatesDialog } from '../components/UnavailableDatesDialog';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate } from '../utils/date';
-import { btnPrimary, btnDanger, btnSecondary, tableShell, tableHeaderRow, tableHeaderCell, tableCell, tableRow } from '../styles/ui';
+import {
+  btnPrimary,
+  btnDanger,
+  btnSecondary,
+  bulkActionBar,
+  checkboxBase,
+  errorText,
+  tableShell,
+  tableHeaderRow,
+  tableHeaderCell,
+  tableCell,
+  tableRow,
+} from '../styles/ui';
 
 export function StaffListPage() {
   const { t } = useLanguage();
@@ -19,6 +31,11 @@ export function StaffListPage() {
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [unavailabilityTarget, setUnavailabilityTarget] = useState<Staff | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [bulkTargetCount, setBulkTargetCount] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -38,12 +55,53 @@ export function StaffListPage() {
     setDeleting(true);
     try {
       await api.staff.remove(confirmTarget.id);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(confirmTarget.id);
+        return next;
+      });
       setConfirmTarget(null);
       await load();
     } finally {
       setDeleting(false);
     }
   };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelectedIds((prev) => (prev.size === staff.length ? new Set() : new Set(staff.map((s) => s.id))));
+  };
+
+  const openBulkConfirm = () => {
+    setBulkTargetCount(selectedIds.size);
+    setBulkError(null);
+    setBulkConfirmOpen(true);
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    setBulkError(null);
+    try {
+      await Promise.all([...selectedIds].map((id) => api.staff.remove(id)));
+      setSelectedIds(new Set());
+      setBulkConfirmOpen(false);
+      await load();
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : t('staff.bulkDeleteError'));
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const allSelected = staff.length > 0 && selectedIds.size === staff.length;
 
   return (
     <AppShell width="wide">
@@ -72,48 +130,82 @@ export function StaffListPage() {
             }
           />
         ) : (
-          <div className={tableShell}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className={tableHeaderRow}>
-                  <th className={tableHeaderCell}>{t('staff.nameHeader')}</th>
-                  <th className={`hidden ${tableHeaderCell} sm:table-cell`}>{t('staff.emailHeader')}</th>
-                  <th className={`${tableHeaderCell} text-right`}>{t('staff.actionsHeader')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-tan/10">
-                {staff.map((s) => {
-                  const unavailableRanges = s.preference?.unavailableDateRanges ?? [];
-                  return (
-                    <tr key={s.id} className={tableRow}>
-                      <td className={`${tableCell} font-medium text-ink`}>
-                        <p>{s.name}</p>
-                        {unavailableRanges.length > 0 && (
-                          <p className="mt-0.5 text-xs text-ink-soft">
-                            {t('staff.unavailablePrefix')}
-                            {unavailableRanges.map((r) => `${formatDate(r.start)}~${formatDate(r.end)}`).join(t('common.listSeparator'))}
-                          </p>
-                        )}
-                      </td>
-                      <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{s.email}</td>
-                      <td className={tableCell}>
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setUnavailabilityTarget(s)} className={btnSecondary}>
-                            {t('staff.setUnavailableDates')}
-                          </button>
-                          <Link to={`/staff/${s.id}`} className={btnSecondary}>
-                            {t('common.edit')}
-                          </Link>
-                          <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
-                            {t('common.delete')}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {selectedIds.size > 0 && (
+              <div className={bulkActionBar}>
+                <span>{t('common.selectedCount', { count: selectedIds.size })}</span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setSelectedIds(new Set())} className={btnSecondary}>
+                    {t('common.clearSelection')}
+                  </button>
+                  <button type="button" onClick={openBulkConfirm} className={btnDanger}>
+                    {t('staff.bulkDeleteButton')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className={tableShell}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={tableHeaderRow}>
+                    <th className={`${tableHeaderCell} w-10`}>
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleAll}
+                        aria-label={t('common.selectAllAria')}
+                        className={checkboxBase}
+                      />
+                    </th>
+                    <th className={tableHeaderCell}>{t('staff.nameHeader')}</th>
+                    <th className={`hidden ${tableHeaderCell} sm:table-cell`}>{t('staff.emailHeader')}</th>
+                    <th className={`${tableHeaderCell} text-right`}>{t('staff.actionsHeader')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-tan/10">
+                  {staff.map((s) => {
+                    const unavailableRanges = s.preference?.unavailableDateRanges ?? [];
+                    return (
+                      <tr key={s.id} className={tableRow}>
+                        <td className={tableCell}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(s.id)}
+                            onChange={() => toggleOne(s.id)}
+                            aria-label={t('common.selectRowAria', { name: s.name })}
+                            className={checkboxBase}
+                          />
+                        </td>
+                        <td className={`${tableCell} font-medium text-ink`}>
+                          <p>{s.name}</p>
+                          {unavailableRanges.length > 0 && (
+                            <p className="mt-0.5 text-xs text-ink-soft">
+                              {t('staff.unavailablePrefix')}
+                              {unavailableRanges.map((r) => `${formatDate(r.start)}~${formatDate(r.end)}`).join(t('common.listSeparator'))}
+                            </p>
+                          )}
+                        </td>
+                        <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{s.email}</td>
+                        <td className={tableCell}>
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setUnavailabilityTarget(s)} className={btnSecondary}>
+                              {t('staff.setUnavailableDates')}
+                            </button>
+                            <Link to={`/staff/${s.id}`} className={btnSecondary}>
+                              {t('common.edit')}
+                            </Link>
+                            <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
+                              {t('common.delete')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -126,6 +218,21 @@ export function StaffListPage() {
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}
       />
+
+      <ConfirmDialog
+        open={bulkConfirmOpen}
+        title={t('staff.deleteTitle')}
+        message={t('staff.bulkDeleteMessage', { count: bulkTargetCount })}
+        loading={bulkDeleting}
+        onCancel={() => setBulkConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+      />
+
+      {bulkError && (
+        <p role="alert" className={`fixed bottom-6 right-6 z-40 ${errorText}`}>
+          {bulkError}
+        </p>
+      )}
 
       <UnavailableDatesDialog
         open={!!unavailabilityTarget}
