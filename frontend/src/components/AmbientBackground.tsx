@@ -29,7 +29,7 @@ function GumLeaf({ className, style }: { className: string; style: CSSProperties
  */
 export function AmbientBackground({ subtle = false }: { subtle?: boolean }) {
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden print:hidden">
       <div
         className={`absolute -left-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-coral/15 blur-3xl ${
           subtle ? 'opacity-40' : 'motion-safe:animate-blob-drift'

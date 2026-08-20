@@ -170,12 +170,12 @@ export function AppShell({
       <AmbientBackground subtle />
 
       {/* desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-tan/15 bg-sand/60 px-5 py-7 md:block">
+      <aside className="hidden w-64 shrink-0 border-r border-tan/15 bg-sand/60 px-5 py-7 print:hidden md:block">
         <SidebarContent />
       </aside>
 
       {/* mobile top bar */}
-      <div className="flex items-center justify-between border-b border-tan/15 bg-sand/90 px-5 py-3.5 backdrop-blur md:hidden">
+      <div className="flex items-center justify-between border-b border-tan/15 bg-sand/90 px-5 py-3.5 backdrop-blur print:hidden md:hidden">
         <Link to="/dashboard" className="flex items-center gap-2">
           <KangarooMascot variant="badge" animated={false} className="h-8 w-8" />
           <span className="font-display text-base font-semibold text-ink">Roster Creator</span>
@@ -224,8 +224,8 @@ export function AppShell({
         </div>
       )}
 
-      <main className="flex-1 px-4 py-8 sm:px-6 md:px-10 md:py-10">
-        <div className={`mx-auto ${containerWidth}`}>{children}</div>
+      <main className="flex-1 px-4 py-8 sm:px-6 md:px-10 md:py-10 print:p-0">
+        <div className={`mx-auto ${containerWidth} print:max-w-none`}>{children}</div>
       </main>
     </div>
   );

@@ -287,6 +287,11 @@ export const zh = {
     createFailedError: '创建排班表失败',
     noShiftsScheduled: '这天没有安排班次',
     unfilledCountBadge: '⚠ {{count}} 人未分配',
+    tabCalendar: '日历视图',
+    tabUnfilled: '未分配',
+    dayFullyStaffed: '已排满',
+    exportUnfilledOnlyHint: '当前导出仅包含未分配班次。',
+    printButton: '打印',
   },
   dayAssignmentDialog: {
     subtitle: '为每个班次分配员工',

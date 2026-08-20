@@ -291,6 +291,11 @@ export const en = {
     createFailedError: 'Failed to create roster',
     noShiftsScheduled: 'No shifts scheduled',
     unfilledCountBadge: '⚠ {{count}} unfilled',
+    tabCalendar: 'Calendar',
+    tabUnfilled: 'Unfilled',
+    dayFullyStaffed: 'Fully staffed',
+    exportUnfilledOnlyHint: 'Exporting only unfilled shifts.',
+    printButton: 'Print',
   },
   dayAssignmentDialog: {
     subtitle: 'Assign staff to each shift',

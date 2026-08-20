@@ -46,6 +46,7 @@ export function RosterDetailPage() {
   const [viewLength, setViewLength] = useState<ViewLength>('weekly');
   const [pageIndex, setPageIndex] = useState(0);
   const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'calendar' | 'unfilled'>('calendar');
 
   const loadRoster = async () => {
     if (!id) return;
@@ -148,6 +149,10 @@ export function RosterDetailPage() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleSendOne = async (staffId: string) => {
     if (!id) return;
     setEmailStatus(null);
@@ -171,6 +176,12 @@ export function RosterDetailPage() {
   const dateRangeEnd = roster.dateRangeEnd.slice(0, 10);
   const availableDates = datesBetween(dateRangeStart, dateRangeEnd);
   const availableDatesSet = new Set(availableDates);
+  // Printing renders the whole roster (not just whatever page is currently on screen), chunked into
+  // 7-day weeks with a page break between them — same "one week per page" convention as the PDF export.
+  const printWeeks: string[][] = [];
+  for (let i = 0; i < availableDates.length; i += 7) {
+    printWeeks.push(availableDates.slice(i, i + 7));
+  }
   const months = monthsInRange(dateRangeStart, dateRangeEnd);
   const isMonthly = viewLength === 'monthly';
   const daysPerPage = DAYS_PER_PAGE[viewLength];
@@ -189,7 +200,9 @@ export function RosterDetailPage() {
     rosterShiftsByDate.set(date, list);
   }
 
-  const summarizeDate = (date: string): ShiftGroupSummary[] => {
+  // unfilledOnly narrows each day's roles down to the ones still missing staff — used to drive the
+  // Unfilled tab, which reuses this exact same grid/pagination rather than a separate layout.
+  const summarizeDate = (date: string, unfilledOnly = false): ShiftGroupSummary[] => {
     const dayShifts = rosterShiftsByDate.get(date) ?? [];
     const byTemplate = new Map<string, RosterShift[]>();
     for (const rs of dayShifts) {
@@ -197,18 +210,22 @@ export function RosterDetailPage() {
       list.push(rs);
       byTemplate.set(rs.shiftTemplate.id, list);
     }
-    return Array.from(byTemplate.values()).map((group) => ({
-      shiftTemplate: group[0].shiftTemplate,
-      roles: group.map((rs) => {
-        const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
-        return {
-          responsibilityId: rs.responsibilityId,
-          responsibilityName: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
-          filledNames: rows.filter((r) => r.staffId).map((r) => members.find((m) => m.id === r.staffId)?.name ?? r.staff?.name ?? '?'),
-          unfilledCount: rows.filter((r) => !r.staffId).length,
-        };
-      }),
-    }));
+    return Array.from(byTemplate.values())
+      .map((group) => ({
+        shiftTemplate: group[0].shiftTemplate,
+        roles: group
+          .map((rs) => {
+            const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
+            return {
+              responsibilityId: rs.responsibilityId,
+              responsibilityName: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
+              filledNames: rows.filter((r) => r.staffId).map((r) => members.find((m) => m.id === r.staffId)?.name ?? r.staff?.name ?? '?'),
+              unfilledCount: rows.filter((r) => !r.staffId).length,
+            };
+          })
+          .filter((role) => !unfilledOnly || role.unfilledCount > 0),
+      }))
+      .filter((group) => group.roles.length > 0);
   };
 
   const dayHasUnfilled = (date: string): boolean =>
@@ -216,11 +233,15 @@ export function RosterDetailPage() {
 
   const editingDayShifts = editingDate ? rosterShiftsByDate.get(editingDate) ?? [] : [];
 
+  const totalUnfilledCount = assignments.filter((a) => !a.staffId).length;
+
   return (
     <AppShell width="wide">
       <div className="space-y-6">
-        <BackLink to="/rosters" label={t('rosters.backToRosters')} />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="print:hidden">
+          <BackLink to="/rosters" label={t('rosters.backToRosters')} />
+        </div>
+        <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-display text-2xl font-semibold text-ink">{roster.name}</h1>
@@ -259,26 +280,31 @@ export function RosterDetailPage() {
               {sendingAll && <Spinner className="h-4 w-4" />}
               {t('rosters.sendAllButton')}
             </button>
+            <button type="button" onClick={handlePrint} className={`gap-2 ${btnSecondary}`}>
+              {t('rosters.printButton')}
+            </button>
           </div>
         </div>
 
-        {generating && <p className="text-sm text-ink-soft">{t('rosters.generateHint')}</p>}
+        {generating && <p className="text-sm text-ink-soft print:hidden">{t('rosters.generateHint')}</p>}
 
         {error && (
-          <p role="alert" className={errorText}>
+          <p role="alert" className={`${errorText} print:hidden`}>
             {error}
           </p>
         )}
-        {emailStatus && <p className={successText}>{emailStatus}</p>}
+        {emailStatus && <p className={`${successText} print:hidden`}>{emailStatus}</p>}
 
-        {roster.status !== 'published' && <p className="text-sm text-ink-soft">{t('rosters.sendExportRequiresPublishHint')}</p>}
+        {roster.status !== 'published' && (
+          <p className="text-sm text-ink-soft print:hidden">{t('rosters.sendExportRequiresPublishHint')}</p>
+        )}
 
-        <div className="flex flex-wrap gap-4 text-sm">
+        <div className="flex flex-wrap gap-4 text-sm print:hidden">
           {(['ics', 'csv', 'pdf'] as const).map((format) =>
             roster.status === 'published' ? (
               <a
                 key={format}
-                href={api.rosters.exportUrl(roster.id, format)}
+                href={api.rosters.exportUrl(roster.id, format, undefined, activeTab === 'unfilled')}
                 className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
               >
                 {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
@@ -291,7 +317,36 @@ export function RosterDetailPage() {
           )}
         </div>
 
-        <div className={`${cardBase} space-y-3`}>
+        {activeTab === 'unfilled' && roster.status === 'published' && (
+          <p className="text-sm text-ink-soft print:hidden">{t('rosters.exportUnfilledOnlyHint')}</p>
+        )}
+
+        <div className="flex gap-1.5 print:hidden">
+          <button
+            type="button"
+            onClick={() => setActiveTab('calendar')}
+            className={activeTab === 'calendar' ? btnPillActive : btnPillInactive}
+          >
+            {t('rosters.tabCalendar')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('unfilled')}
+            className={activeTab === 'unfilled' ? btnPillActive : btnPillInactive}
+          >
+            {t('rosters.tabUnfilled')}
+            {totalUnfilledCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800"
+              >
+                {totalUnfilledCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className={`${cardBase} space-y-3 print:hidden`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex gap-1.5">
               <button
@@ -360,9 +415,12 @@ export function RosterDetailPage() {
                   </div>
                 );
               }
-              const groups = summarizeDate(date);
+              const groups = summarizeDate(date, activeTab === 'unfilled');
               const isToday = date === today;
               const hasUnfilled = dayHasUnfilled(date);
+              const dayHasAnyShifts = (rosterShiftsByDate.get(date) ?? []).length > 0;
+              const emptyMessage =
+                activeTab === 'unfilled' && dayHasAnyShifts ? t('rosters.dayFullyStaffed') : t('rosters.noShiftsScheduled');
               const cellContent = (
                 <>
                   <div className="flex items-center gap-2">
@@ -379,7 +437,7 @@ export function RosterDetailPage() {
                     </div>
                   </div>
                   {groups.length === 0 ? (
-                    <p className="mt-2 text-xs text-ink-soft/60">{t('rosters.noShiftsScheduled')}</p>
+                    <p className="mt-2 text-xs text-ink-soft/60">{emptyMessage}</p>
                   ) : (
                     <ul className="mt-2 space-y-1.5">
                       {groups.map((g) => (
@@ -433,6 +491,45 @@ export function RosterDetailPage() {
               );
             })}
           </div>
+        </div>
+
+        <div className="hidden print:block">
+          <h1 className="text-xl font-semibold text-ink">
+            {roster.name}
+            {activeTab === 'unfilled' ? ` — ${t('rosters.tabUnfilled')}` : ''}
+          </h1>
+          <p className="mb-4 mt-1 text-sm text-ink-soft">
+            {formatDate(roster.dateRangeStart)} ~ {formatDate(roster.dateRangeEnd)}
+          </p>
+          {printWeeks.map((week, weekIndex) => (
+            <div key={week[0]} style={weekIndex > 0 ? { breakBefore: 'page' } : undefined}>
+              <h2 className="mb-2 mt-4 text-sm font-semibold text-ink">
+                {formatDate(week[0])} ~ {formatDate(week[week.length - 1])}
+              </h2>
+              {week.map((date) => {
+                const groups = summarizeDate(date, activeTab === 'unfilled');
+                if (groups.length === 0) return null;
+                return (
+                  <div key={date} className="mb-3">
+                    <p className="text-sm font-medium text-ink">
+                      {formatDate(date)} ({weekdayLabel(date, weekdays)})
+                    </p>
+                    {groups.map((g) => (
+                      <div key={g.shiftTemplate.id} className="pl-3">
+                        {g.roles.map((role) => (
+                          <p key={role.responsibilityId} className="text-sm text-ink-soft">
+                            {g.shiftTemplate.name} · {role.responsibilityName} ({g.shiftTemplate.startTime}-{g.shiftTemplate.endTime}) —{' '}
+                            {role.filledNames.join(t('common.listSeparator')) || t('rosters.unassigned')}
+                            {role.unfilledCount > 0 && ` (${t('rosters.unfilledCountBadge', { count: role.unfilledCount })})`}
+                          </p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

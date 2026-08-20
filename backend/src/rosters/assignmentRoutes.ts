@@ -142,7 +142,7 @@ assignmentRouter.put('/:id/assignments', async (req: AuthedRequest, res) => {
     }
   }
 
-  await Promise.all(
+  await prisma.$transaction(
     assignments.map((a) =>
       prisma.assignment.update({
         where: { id: a.id },

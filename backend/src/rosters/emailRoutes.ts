@@ -48,37 +48,41 @@ emailRouter.post('/:id/send-emails', async (req: AuthedRequest, res) => {
     }
   }
 
-  const sentTo: string[] = [];
-  const failed: string[] = [];
-  for (const [staffId, entry] of shiftsByStaff) {
-    const ics = buildIcs(
-      entry.rows.map((row, index) => ({
-        uid: `${roster.id}-${staffId}-${index}@roster-creator`,
-        summary: row.shiftName,
-        startDate: row.date,
-        startTime: row.startTime,
-        endTime: row.endTime,
-      }))
-    );
-    const html = [
-      `<p>你好 ${entry.name}，以下是你在「${roster.name}」的排班：</p>`,
-      '<ul>',
-      ...entry.rows.map((row) => `<li>${row.date} ${row.shiftName}（${row.startTime}-${row.endTime}）</li>`),
-      '</ul>',
-    ].join('');
+  const entries = Array.from(shiftsByStaff.entries());
+  const results = await Promise.allSettled(
+    entries.map(async ([staffId, entry]) => {
+      const ics = buildIcs(
+        entry.rows.map((row, index) => ({
+          uid: `${roster.id}-${staffId}-${index}@roster-creator`,
+          summary: row.shiftName,
+          startDate: row.date,
+          startTime: row.startTime,
+          endTime: row.endTime,
+        }))
+      );
+      const html = [
+        `<p>你好 ${entry.name}，以下是你在「${roster.name}」的排班：</p>`,
+        '<ul>',
+        ...entry.rows.map((row) => `<li>${row.date} ${row.shiftName}（${row.startTime}-${row.endTime}）</li>`),
+        '</ul>',
+      ].join('');
 
-    try {
       await sendEmail({
         to: entry.email,
         subject: `你的排班表：${roster.name}`,
         html,
         attachments: [{ filename: `${roster.name}.ics`, content: Buffer.from(ics).toString('base64') }],
       });
-      sentTo.push(entry.email);
-    } catch {
-      failed.push(entry.email);
-    }
-  }
+    })
+  );
+
+  const sentTo: string[] = [];
+  const failed: string[] = [];
+  results.forEach((result, i) => {
+    const email = entries[i][1].email;
+    if (result.status === 'fulfilled') sentTo.push(email);
+    else failed.push(email);
+  });
 
   res.json({ sentTo, failed });
 });

@@ -216,9 +216,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ staffIds }),
       }),
-    exportUrl: (id: string, format: 'ics' | 'csv' | 'pdf', staffId?: string): string => {
+    exportUrl: (id: string, format: 'ics' | 'csv' | 'pdf', staffId?: string, unfilledOnly?: boolean): string => {
       const base = `${API_BASE}/rosters/${id}/export/${format}`;
-      return staffId ? `${base}?staffId=${staffId}` : base;
+      const params = new URLSearchParams();
+      if (staffId) params.set('staffId', staffId);
+      if (unfilledOnly) params.set('unfilledOnly', 'true');
+      const qs = params.toString();
+      return qs ? `${base}?${qs}` : base;
     },
     remove: (id: string) => apiRequest<void>(`/rosters/${id}`, { method: 'DELETE' }),
   },
