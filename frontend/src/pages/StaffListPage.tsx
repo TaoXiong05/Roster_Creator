@@ -7,7 +7,9 @@ import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
 import { KangarooMascot } from '../components/KangarooMascot';
 import { PageSkeleton } from '../components/Skeleton';
+import { UnavailableDatesDialog } from '../components/UnavailableDatesDialog';
 import { useLanguage } from '../i18n/LanguageContext';
+import { formatDate } from '../utils/date';
 import { btnPrimary, btnDanger, btnSecondary, tableShell, tableHeaderRow, tableHeaderCell, tableCell, tableRow } from '../styles/ui';
 
 export function StaffListPage() {
@@ -16,6 +18,7 @@ export function StaffListPage() {
   const [loading, setLoading] = useState(true);
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [unavailabilityTarget, setUnavailabilityTarget] = useState<Staff | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -79,22 +82,36 @@ export function StaffListPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
-                {staff.map((s) => (
-                  <tr key={s.id} className={tableRow}>
-                    <td className={`${tableCell} font-medium text-ink`}>{s.name}</td>
-                    <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{s.email}</td>
-                    <td className={tableCell}>
-                      <div className="flex justify-end gap-2">
-                        <Link to={`/staff/${s.id}`} className={btnSecondary}>
-                          {t('common.edit')}
-                        </Link>
-                        <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
-                          {t('common.delete')}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {staff.map((s) => {
+                  const unavailableRanges = s.preference?.unavailableDateRanges ?? [];
+                  return (
+                    <tr key={s.id} className={tableRow}>
+                      <td className={`${tableCell} font-medium text-ink`}>
+                        <p>{s.name}</p>
+                        {unavailableRanges.length > 0 && (
+                          <p className="mt-0.5 text-xs text-ink-soft">
+                            {t('staff.unavailablePrefix')}
+                            {unavailableRanges.map((r) => `${formatDate(r.start)}~${formatDate(r.end)}`).join(t('common.listSeparator'))}
+                          </p>
+                        )}
+                      </td>
+                      <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{s.email}</td>
+                      <td className={tableCell}>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setUnavailabilityTarget(s)} className={btnSecondary}>
+                            {t('staff.setUnavailableDates')}
+                          </button>
+                          <Link to={`/staff/${s.id}`} className={btnSecondary}>
+                            {t('common.edit')}
+                          </Link>
+                          <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
+                            {t('common.delete')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -108,6 +125,13 @@ export function StaffListPage() {
         loading={deleting}
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirmDelete}
+      />
+
+      <UnavailableDatesDialog
+        open={!!unavailabilityTarget}
+        staff={unavailabilityTarget}
+        onClose={() => setUnavailabilityTarget(null)}
+        onSaved={(updated) => setStaff((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))}
       />
     </AppShell>
   );

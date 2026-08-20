@@ -104,6 +104,8 @@ export const en = {
     deleteTitle: 'Delete Staff',
     deleteMessage:
       'Are you sure you want to delete "{{name}}"? This can’t be undone, and their assignments on any rosters will also be removed.',
+    setUnavailableDates: 'Set Unavailable Dates',
+    unavailablePrefix: 'Unavailable: ',
     createPageTitle: 'Add Staff',
     createPageDescription: 'Record name, email, roles, and availability',
     editPageTitle: 'Edit Staff',

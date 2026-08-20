@@ -103,6 +103,8 @@ export const zh = {
     actionsHeader: '操作',
     deleteTitle: '删除员工',
     deleteMessage: '确定要删除「{{name}}」吗？此操作不可撤销，TA 在排班表中的分配记录也会一并移除。',
+    setUnavailableDates: '设置不可用日期',
+    unavailablePrefix: '不可用：',
     createPageTitle: '创建员工',
     createPageDescription: '记录姓名、邮箱、角色和可安排时间',
     editPageTitle: '编辑员工',
