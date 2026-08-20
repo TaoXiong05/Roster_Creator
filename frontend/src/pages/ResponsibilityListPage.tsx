@@ -8,7 +8,7 @@ import { PageHeader } from '../components/PageHeader';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
 import { useLanguage } from '../i18n/LanguageContext';
-import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase } from '../styles/ui';
+import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, tableShell, tableHeaderRow, tableHeaderCell, tableCell, tableRow } from '../styles/ui';
 
 export function ResponsibilityListPage() {
   const { t } = useLanguage();
@@ -108,12 +108,12 @@ export function ResponsibilityListPage() {
             description={t('responsibilities.emptyDescription')}
           />
         ) : (
-          <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
+          <div className={tableShell}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">{t('responsibilities.nameHeader')}</th>
-                  <th className="px-5 py-3 text-right">{t('responsibilities.actionsHeader')}</th>
+                <tr className={tableHeaderRow}>
+                  <th className={tableHeaderCell}>{t('responsibilities.nameHeader')}</th>
+                  <th className={`${tableHeaderCell} text-right`}>{t('responsibilities.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
@@ -147,9 +147,9 @@ export function ResponsibilityListPage() {
                       </td>
                     </tr>
                   ) : (
-                    <tr key={r.id} className="transition-colors hover:bg-sand/70">
-                      <td className="px-5 py-3 font-medium text-ink">{r.name}</td>
-                      <td className="px-5 py-3">
+                    <tr key={r.id} className={tableRow}>
+                      <td className={`${tableCell} font-medium text-ink`}>{r.name}</td>
+                      <td className={tableCell}>
                         <div className="flex justify-end gap-2">
                           <button onClick={() => startEdit(r)} className={btnSecondary}>
                             {t('common.edit')}

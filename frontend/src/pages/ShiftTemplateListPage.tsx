@@ -9,7 +9,7 @@ import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
 import { TimeInput } from '../components/TimeInput';
 import { useLanguage } from '../i18n/LanguageContext';
-import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase } from '../styles/ui';
+import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, tableShell, tableHeaderRow, tableHeaderCell, tableCell, tableRow } from '../styles/ui';
 
 export function ShiftTemplateListPage() {
   const { t } = useLanguage();
@@ -130,14 +130,14 @@ export function ShiftTemplateListPage() {
             description={t('shiftTemplates.emptyDescription')}
           />
         ) : (
-          <div className="overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm">
+          <div className={tableShell}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-tan/15 bg-sand text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <th className="px-5 py-3">{t('shiftTemplates.nameHeader')}</th>
-                  <th className="px-5 py-3">{t('shiftTemplates.startHeader')}</th>
-                  <th className="px-5 py-3">{t('shiftTemplates.endHeader')}</th>
-                  <th className="px-5 py-3 text-right">{t('shiftTemplates.actionsHeader')}</th>
+                <tr className={tableHeaderRow}>
+                  <th className={tableHeaderCell}>{t('shiftTemplates.nameHeader')}</th>
+                  <th className={tableHeaderCell}>{t('shiftTemplates.startHeader')}</th>
+                  <th className={tableHeaderCell}>{t('shiftTemplates.endHeader')}</th>
+                  <th className={`${tableHeaderCell} text-right`}>{t('shiftTemplates.actionsHeader')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
@@ -185,11 +185,11 @@ export function ShiftTemplateListPage() {
                       </td>
                     </tr>
                   ) : (
-                    <tr key={tpl.id} className="transition-colors hover:bg-sand/70">
-                      <td className="px-5 py-3 font-medium text-ink">{tpl.name}</td>
-                      <td className="px-5 py-3 font-mono text-ink-soft">{tpl.startTime}</td>
-                      <td className="px-5 py-3 font-mono text-ink-soft">{tpl.endTime}</td>
-                      <td className="px-5 py-3">
+                    <tr key={tpl.id} className={tableRow}>
+                      <td className={`${tableCell} font-medium text-ink`}>{tpl.name}</td>
+                      <td className={`${tableCell} font-mono text-ink-soft`}>{tpl.startTime}</td>
+                      <td className={`${tableCell} font-mono text-ink-soft`}>{tpl.endTime}</td>
+                      <td className={tableCell}>
                         <div className="flex justify-end gap-2">
                           <button onClick={() => startEdit(tpl)} className={btnSecondary}>
                             {t('common.edit')}
