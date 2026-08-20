@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { KangarooMascot } from '../components/KangarooMascot';
 import { AppShell } from '../components/AppShell';
+import { StatCard } from '../components/StatCard';
+import { api } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const iconProps = {
@@ -18,7 +20,7 @@ const iconProps = {
 const cards = [
   {
     to: '/staff',
-    cardKey: 'staff',
+    cardKey: 'staff' as const,
     accentBg: 'bg-coral/15',
     accentText: 'text-coral-deep',
     accentLine: 'via-coral/50',
@@ -32,7 +34,7 @@ const cards = [
   },
   {
     to: '/groups',
-    cardKey: 'groups',
+    cardKey: 'groups' as const,
     accentBg: 'bg-eucalyptus/15',
     accentText: 'text-eucalyptus-dark',
     accentLine: 'via-eucalyptus/50',
@@ -48,7 +50,7 @@ const cards = [
   },
   {
     to: '/shift-templates',
-    cardKey: 'shiftTemplates',
+    cardKey: 'shiftTemplates' as const,
     accentBg: 'bg-tan/20',
     accentText: 'text-tan',
     accentLine: 'via-tan/50',
@@ -62,7 +64,7 @@ const cards = [
   },
   {
     to: '/rosters',
-    cardKey: 'rosters',
+    cardKey: 'rosters' as const,
     accentBg: 'bg-dusk/15',
     accentText: 'text-dusk',
     accentLine: 'via-dusk/50',
@@ -82,6 +84,19 @@ export function DashboardPage() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const name = user?.email ? user.email.split('@')[0] : '';
+  const [counts, setCounts] = useState<Record<string, number | null>>({
+    staff: null,
+    groups: null,
+    shiftTemplates: null,
+    rosters: null,
+  });
+
+  useEffect(() => {
+    api.staff.list().then((list) => setCounts((prev) => ({ ...prev, staff: list.length })));
+    api.groups.list().then((list) => setCounts((prev) => ({ ...prev, groups: list.length })));
+    api.shiftTemplates.list().then((list) => setCounts((prev) => ({ ...prev, shiftTemplates: list.length })));
+    api.rosters.list().then((list) => setCounts((prev) => ({ ...prev, rosters: list.length })));
+  }, []);
 
   return (
     <AppShell>
@@ -111,23 +126,18 @@ export function DashboardPage() {
 
       <nav className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card, i) => (
-          <Link
-            key={card.to}
-            to={card.to}
-            className={`group relative flex flex-col gap-3 rounded-t-[28px] rounded-b-[18px] border ${card.border} bg-white/70 p-6 shadow-warm-sm transition-all hover:-translate-y-1 hover:shadow-warm motion-safe:animate-rise-in`}
-            style={{ animationDelay: `${480 + i * 80}ms` }}
-          >
-            <span className={`pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent ${card.accentLine} to-transparent`} />
-            <span
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl ${card.accentBg} ${card.accentText} transition-transform group-hover:-translate-y-0.5`}
-            >
-              {card.icon}
-            </span>
-            <div>
-              <h2 className="font-display text-lg font-semibold text-ink">{t(`dashboard.cards.${card.cardKey}.title`)}</h2>
-              <p className="mt-1 text-sm text-ink-soft">{t(`dashboard.cards.${card.cardKey}.description`)}</p>
-            </div>
-          </Link>
+          <div key={card.to} className="motion-safe:animate-rise-in" style={{ animationDelay: `${480 + i * 80}ms` }}>
+            <StatCard
+              to={card.to}
+              icon={card.icon}
+              label={t(`dashboard.cards.${card.cardKey}.title`)}
+              value={counts[card.cardKey] ?? '—'}
+              accentBg={card.accentBg}
+              accentText={card.accentText}
+              accentLine={card.accentLine}
+              border={card.border}
+            />
+          </div>
         ))}
       </nav>
     </AppShell>
