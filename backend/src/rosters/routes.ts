@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Router } from 'express';
 import { prisma } from '../db';
 import { requireAuth, AuthedRequest } from '../auth/middleware';
@@ -112,34 +113,39 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
     }
   }
 
-  const roster = await prisma.roster.create({
-    data: {
-      userId: req.userId!,
-      name,
-      dateRangeStart: new Date(dateRangeStart),
-      dateRangeEnd: new Date(dateRangeEnd),
-      groupId,
-      hoursPerShift: hoursPerShift ?? 8,
-      rosterShifts: {
-        create: shifts.flatMap((shift) =>
-          shift.dates.flatMap((date) =>
-            shift.requirements.map((requirement) => ({
-              shiftTemplateId: shift.shiftTemplateId,
-              date: new Date(date),
-              headcount: requirement.headcount,
-              responsibilityId: requirement.responsibilityId,
-              assignments: {
-                create: Array.from({ length: requirement.headcount }, () => ({
-                  staffId: null,
-                  unfilledTag: null,
-                })),
-              },
-            }))
-          )
-        ),
+  const roster = await prisma.$transaction(async (tx) => {
+    const created = await tx.roster.create({
+      data: {
+        userId: req.userId!,
+        name,
+        dateRangeStart: new Date(dateRangeStart),
+        dateRangeEnd: new Date(dateRangeEnd),
+        groupId,
+        hoursPerShift: hoursPerShift ?? 8,
       },
-    },
-    include: { rosterShifts: true },
+    });
+
+    const rosterShiftRows = shifts.flatMap((shift) =>
+      shift.dates.flatMap((date) =>
+        shift.requirements.map((requirement) => ({
+          id: randomUUID(),
+          rosterId: created.id,
+          shiftTemplateId: shift.shiftTemplateId,
+          date: new Date(date),
+          headcount: requirement.headcount,
+          responsibilityId: requirement.responsibilityId,
+        }))
+      )
+    );
+    if (rosterShiftRows.length > 0) {
+      await tx.rosterShift.createMany({ data: rosterShiftRows });
+      await tx.assignment.createMany({
+        data: rosterShiftRows.flatMap((rs) =>
+          Array.from({ length: rs.headcount }, () => ({ rosterShiftId: rs.id, staffId: null, unfilledTag: null }))
+        ),
+      });
+    }
+    return { ...created, rosterShifts: rosterShiftRows };
   });
 
   res.status(201).json(roster);
@@ -221,26 +227,26 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
       },
     });
     await tx.rosterShift.deleteMany({ where: { rosterId: existing.id } });
-    for (const shift of shifts) {
-      for (const date of shift.dates) {
-        for (const requirement of shift.requirements) {
-          await tx.rosterShift.create({
-            data: {
-              rosterId: existing.id,
-              shiftTemplateId: shift.shiftTemplateId,
-              date: new Date(date),
-              headcount: requirement.headcount,
-              responsibilityId: requirement.responsibilityId,
-              assignments: {
-                create: Array.from({ length: requirement.headcount }, () => ({
-                  staffId: null,
-                  unfilledTag: null,
-                })),
-              },
-            },
-          });
-        }
-      }
+
+    const rosterShiftRows = shifts.flatMap((shift) =>
+      shift.dates.flatMap((date) =>
+        shift.requirements.map((requirement) => ({
+          id: randomUUID(),
+          rosterId: existing.id,
+          shiftTemplateId: shift.shiftTemplateId,
+          date: new Date(date),
+          headcount: requirement.headcount,
+          responsibilityId: requirement.responsibilityId,
+        }))
+      )
+    );
+    if (rosterShiftRows.length > 0) {
+      await tx.rosterShift.createMany({ data: rosterShiftRows });
+      await tx.assignment.createMany({
+        data: rosterShiftRows.flatMap((rs) =>
+          Array.from({ length: rs.headcount }, () => ({ rosterShiftId: rs.id, staffId: null, unfilledTag: null }))
+        ),
+      });
     }
     return roster;
   });

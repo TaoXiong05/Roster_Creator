@@ -49,17 +49,17 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
         linkLabel: 'Go to Responsibility Templates',
       },
       {
+        title: 'Build a group',
+        description: 'Put staff who’ll be rostered together into the same group — you’ll pick a group when creating a roster.',
+        to: '/groups',
+        linkLabel: 'Go to Groups',
+      },
+      {
         title: 'Add staff',
         description:
           'Record name, email, and at least one responsibility. Hour limits and preferred shifts can be filled in later.',
         to: '/staff',
         linkLabel: 'Go to Staff',
-      },
-      {
-        title: 'Build a group',
-        description: 'Put staff who’ll be rostered together into the same group — you’ll pick a group when creating a roster.',
-        to: '/groups',
-        linkLabel: 'Go to Groups',
       },
       {
         title: 'Set up shift templates',
@@ -159,16 +159,16 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
         linkLabel: '去职责模板',
       },
       {
-        title: '添加员工',
-        description: '记录姓名、邮箱，并至少勾选一个职责；工时上下限、偏好班次都可以之后再补。',
-        to: '/staff',
-        linkLabel: '去员工管理',
-      },
-      {
         title: '建立小组',
         description: '把要一起排班的员工分到同一个小组，创建排班表时按组选人。',
         to: '/groups',
         linkLabel: '去小组管理',
+      },
+      {
+        title: '添加员工',
+        description: '记录姓名、邮箱，并至少勾选一个职责；工时上下限、偏好班次都可以之后再补。',
+        to: '/staff',
+        linkLabel: '去员工管理',
       },
       {
         title: '设置班次模板',

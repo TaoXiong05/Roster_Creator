@@ -4,7 +4,8 @@ import request from 'supertest';
 vi.mock('../../db', () => ({
   prisma: {
     roster: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    rosterShift: { deleteMany: vi.fn(), create: vi.fn() },
+    rosterShift: { deleteMany: vi.fn(), create: vi.fn(), createMany: vi.fn() },
+    assignment: { createMany: vi.fn() },
     staffGroup: { findUnique: vi.fn() },
     shiftTemplate: { findUnique: vi.fn() },
     $transaction: vi.fn(async (fn: (tx: any) => Promise<unknown>) => fn(prisma)),
@@ -155,9 +156,9 @@ describe('POST /rosters', () => {
       });
 
     expect(res.status).toBe(201);
-    const callArg = (prisma.roster.create as any).mock.calls[0][0];
-    expect(callArg.data.rosterShifts.create).toHaveLength(2);
-    expect(callArg.data.rosterShifts.create[0]).toMatchObject({
+    const rows = (prisma.rosterShift.createMany as any).mock.calls[0][0].data;
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
       shiftTemplateId: 'template-1',
       headcount: 3,
       responsibilityId: 'resp-1',
@@ -190,9 +191,9 @@ describe('POST /rosters', () => {
       });
 
     expect(res.status).toBe(201);
-    const callArg = (prisma.roster.create as any).mock.calls[0][0];
-    expect(callArg.data.rosterShifts.create).toHaveLength(2);
-    expect(callArg.data.rosterShifts.create).toEqual(
+    const rows = (prisma.rosterShift.createMany as any).mock.calls[0][0].data;
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ responsibilityId: 'resp-cashier', headcount: 2 }),
         expect.objectContaining({ responsibilityId: 'resp-cleaning', headcount: 1 }),
@@ -256,13 +257,12 @@ describe('POST /rosters', () => {
         shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-17'], requirements: [{ responsibilityId: 'resp-1', headcount: 3 }] }],
       });
 
-    const callArg = (prisma.roster.create as any).mock.calls[0][0];
-    const shiftAssignments = callArg.data.rosterShifts.create[0].assignments.create;
-    expect(shiftAssignments).toHaveLength(3);
-    expect(shiftAssignments).toEqual([
-      { staffId: null, unfilledTag: null },
-      { staffId: null, unfilledTag: null },
-      { staffId: null, unfilledTag: null },
+    const assignmentRows = (prisma.assignment.createMany as any).mock.calls[0][0].data;
+    expect(assignmentRows).toHaveLength(3);
+    expect(assignmentRows).toEqual([
+      expect.objectContaining({ staffId: null, unfilledTag: null }),
+      expect.objectContaining({ staffId: null, unfilledTag: null }),
+      expect.objectContaining({ staffId: null, unfilledTag: null }),
     ]);
   });
 
@@ -399,7 +399,8 @@ describe("PUT /rosters/:id", () => {
     (prisma.shiftTemplate.findUnique as any).mockResolvedValue({ id: 'template-1', userId: 'user-1' });
     (prisma.roster.update as any).mockResolvedValue({ id: 'roster-1', name: 'Week 35' });
     (prisma.rosterShift.deleteMany as any).mockResolvedValue({ count: 0 });
-    (prisma.rosterShift.create as any).mockResolvedValue({ id: 'rs-new' });
+    (prisma.rosterShift.createMany as any).mockResolvedValue({ count: 1 });
+    (prisma.assignment.createMany as any).mockResolvedValue({ count: 2 });
 
     const res = await request(app).put('/rosters/roster-1').set('Cookie', authCookie).send({
       name: 'Week 35',
@@ -423,15 +424,22 @@ describe("PUT /rosters/:id", () => {
       }),
     });
     expect(prisma.rosterShift.deleteMany).toHaveBeenCalledWith({ where: { rosterId: 'roster-1' } });
-    expect(prisma.rosterShift.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
+    expect(prisma.rosterShift.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
           rosterId: 'roster-1',
           shiftTemplateId: 'template-1',
+          responsibilityId: 'resp-1',
           headcount: 2,
         }),
-      })
-    );
+      ],
+    });
+    expect(prisma.assignment.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({ staffId: null, unfilledTag: null }),
+        expect.objectContaining({ staffId: null, unfilledTag: null }),
+      ],
+    });
   });
 });
 
