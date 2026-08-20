@@ -26,7 +26,7 @@ export const inputBase =
 
 export const labelBase = 'mb-1.5 block text-xs font-semibold text-ink';
 
-export const cardBase = 'rounded-[24px] border border-tan/15 bg-white/85 p-5 shadow-warm-sm';
+export const cardBase = 'rounded-[24px] border border-tan/15 bg-white/85 p-6 shadow-warm-sm';
 
 export const listRow =
   'flex flex-col gap-3 rounded-2xl border border-tan/15 bg-white/80 p-4 transition hover:bg-white sm:flex-row sm:items-center sm:justify-between';
@@ -37,3 +37,11 @@ export const successText = 'rounded-xl border border-eucalyptus/30 bg-eucalyptus
 export const inputError =
   'w-full rounded-2xl border border-red-400 bg-red-50/60 px-4 py-2.5 text-[15px] text-ink placeholder:text-ink-soft/45 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-200';
 export const fieldErrorText = 'mt-1.5 text-xs font-medium text-red-600';
+
+// Shared table shell used by every list page (Staff/Groups/Shift Templates/
+// Responsibilities/Rosters) so the visual refresh only has to be defined once.
+export const tableShell = 'overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm';
+export const tableHeaderRow = 'border-b border-tan/15 bg-sand/60 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-soft';
+export const tableHeaderCell = 'px-5 py-3.5';
+export const tableCell = 'px-5 py-3.5';
+export const tableRow = 'transition-colors hover:bg-sand/50';
