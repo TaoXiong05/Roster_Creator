@@ -29,7 +29,7 @@ export function StaffCreatePage() {
   const [email, setEmail] = useState('');
   const [responsibilityIds, setResponsibilityIds] = useState<string[]>([]);
   const [minHours, setMinHours] = useState(0);
-  const [maxHours, setMaxHours] = useState(40);
+  const [maxHours, setMaxHours] = useState(0);
   const [hoursPeriod, setHoursPeriod] = useState<HoursPeriod>('weekly');
   const [hoursUnit, setHoursUnit] = useState<HoursUnit>('hours');
   const [preferredShifts, setPreferredShifts] = useState<PreferredShift[]>([]);

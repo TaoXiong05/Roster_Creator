@@ -7,13 +7,16 @@ import { api } from '../../api/client';
 
 vi.mock('../../api/client', () => ({
   api: {
-    groups: { listMembers: vi.fn(), addMember: vi.fn(), removeMember: vi.fn() },
+    groups: { list: vi.fn(), listMembers: vi.fn(), addMember: vi.fn(), removeMember: vi.fn() },
     staff: { list: vi.fn(), updatePreference: vi.fn() },
   },
 }));
 
 describe('GroupDetailPage', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Night Shift' }]);
+  });
 
   it('shows members and staff available to add, and can add a member', async () => {
     (api.groups.listMembers as any).mockResolvedValue([{ id: 'staff-1', name: 'Alice' }]);
@@ -31,6 +34,7 @@ describe('GroupDetailPage', () => {
       </MemoryRouter>
     );
 
+    await waitFor(() => expect(screen.getByText('Group Night Shift')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
     expect(screen.getByText('Bob')).toBeInTheDocument();
 

@@ -16,6 +16,7 @@ export function GroupDetailPage() {
   const { t } = useLanguage();
   const [members, setMembers] = useState<Staff[]>([]);
   const [allStaff, setAllStaff] = useState<Staff[]>([]);
+  const [groupName, setGroupName] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -23,9 +24,15 @@ export function GroupDetailPage() {
 
   const load = async () => {
     if (!id) return;
-    const [memberList, staffList] = await Promise.all([api.groups.listMembers(id), api.staff.list()]);
+    const [memberList, staffList, groupList] = await Promise.all([
+      api.groups.listMembers(id),
+      api.staff.list(),
+      api.groups.list(),
+    ]);
     setMembers(memberList);
     setAllStaff(staffList);
+    const current = groupList.find((g) => g.id === id);
+    setGroupName(current?.name ?? '');
   };
 
   useEffect(() => {
@@ -62,7 +69,10 @@ export function GroupDetailPage() {
     <AppShell width="wide">
       <div className="space-y-6">
         <BackLink to="/groups" label={t('groups.backToGroups')} />
-        <PageHeader title={t('groups.detailTitle')} description={t('groups.detailDescription')} />
+        <PageHeader
+          title={groupName ? t('groups.detailTitleWithName', { name: groupName }) : t('groups.detailTitle')}
+          description={t('groups.detailDescription')}
+        />
 
         <div className={`${cardBase} space-y-3`}>
           <h2 className="font-display text-base font-semibold text-ink">{t('groups.membersHeading')}</h2>
