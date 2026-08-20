@@ -92,9 +92,12 @@ rosterRouter.post('/', async (req: AuthedRequest, res) => {
     return res.status(404).json({ error: 'Group not found' });
   }
 
+  const templateIds = [...new Set(shifts.map((s) => s.shiftTemplateId))];
+  const templates = await prisma.shiftTemplate.findMany({ where: { id: { in: templateIds } } });
+  const ownedTemplateIds = new Set(templates.filter((t) => t.userId === req.userId).map((t) => t.id));
+
   for (const shift of shifts) {
-    const template = await prisma.shiftTemplate.findUnique({ where: { id: shift.shiftTemplateId } });
-    if (!template || template.userId !== req.userId) {
+    if (!ownedTemplateIds.has(shift.shiftTemplateId)) {
       return res.status(404).json({ error: `Shift template ${shift.shiftTemplateId} not found` });
     }
     if (!shift.dates || shift.dates.length === 0) {
@@ -197,9 +200,12 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
     return res.status(404).json({ error: 'Group not found' });
   }
 
+  const templateIds = [...new Set(shifts.map((s) => s.shiftTemplateId))];
+  const templates = await prisma.shiftTemplate.findMany({ where: { id: { in: templateIds } } });
+  const ownedTemplateIds = new Set(templates.filter((t) => t.userId === req.userId).map((t) => t.id));
+
   for (const shift of shifts) {
-    const template = await prisma.shiftTemplate.findUnique({ where: { id: shift.shiftTemplateId } });
-    if (!template || template.userId !== req.userId) {
+    if (!ownedTemplateIds.has(shift.shiftTemplateId)) {
       return res.status(404).json({ error: `Shift template ${shift.shiftTemplateId} not found` });
     }
     if (!shift.dates || shift.dates.length === 0) {
@@ -218,6 +224,12 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
     }
   }
 
+  // A RosterShift is identified by (shiftTemplateId, date, responsibilityId). Rows whose identity
+  // is unchanged keep their id and existing assignments (so staffing survives an unrelated edit);
+  // only rows that were actually added, removed, or resized touch the database.
+  const shiftKey = (shiftTemplateId: string, date: string, responsibilityId: string) =>
+    `${shiftTemplateId}|${date}|${responsibilityId}`;
+
   const updated = await prisma.$transaction(async (tx) => {
     const roster = await tx.roster.update({
       where: { id: existing.id },
@@ -230,28 +242,123 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
         status: 'draft',
       },
     });
-    await tx.rosterShift.deleteMany({ where: { rosterId: existing.id } });
 
-    const rosterShiftRows = shifts.flatMap((shift) =>
-      shift.dates.flatMap((date) =>
-        shift.requirements.map((requirement) => ({
-          id: randomUUID(),
-          rosterId: existing.id,
-          shiftTemplateId: shift.shiftTemplateId,
-          date: new Date(date),
-          headcount: requirement.headcount,
-          responsibilityId: requirement.responsibilityId,
-        }))
-      )
-    );
-    if (rosterShiftRows.length > 0) {
-      await tx.rosterShift.createMany({ data: rosterShiftRows });
-      await tx.assignment.createMany({
-        data: rosterShiftRows.flatMap((rs) =>
-          Array.from({ length: rs.headcount }, () => ({ rosterShiftId: rs.id, staffId: null, unfilledTag: null }))
-        ),
-      });
+    const existingShifts = await tx.rosterShift.findMany({
+      where: { rosterId: existing.id },
+      include: { assignments: { select: { id: true, staffId: true } } },
+    });
+
+    const existingByKey = new Map<string, typeof existingShifts>();
+    for (const rs of existingShifts) {
+      const key = shiftKey(rs.shiftTemplateId, rs.date.toISOString().slice(0, 10), rs.responsibilityId);
+      const list = existingByKey.get(key) ?? [];
+      list.push(rs);
+      existingByKey.set(key, list);
     }
+
+    const desiredByKey = new Map<
+      string,
+      { shiftTemplateId: string; date: string; responsibilityId: string; headcount: number }[]
+    >();
+    for (const shift of shifts) {
+      for (const date of shift.dates) {
+        // Normalize to YYYY-MM-DD so the key matches existing rows' normalization below,
+        // even if the client sends a full ISO timestamp instead of a bare date string.
+        const normalizedDate = new Date(date).toISOString().slice(0, 10);
+        for (const requirement of shift.requirements) {
+          const key = shiftKey(shift.shiftTemplateId, normalizedDate, requirement.responsibilityId);
+          const list = desiredByKey.get(key) ?? [];
+          list.push({
+            shiftTemplateId: shift.shiftTemplateId,
+            date: normalizedDate,
+            responsibilityId: requirement.responsibilityId,
+            headcount: requirement.headcount,
+          });
+          desiredByKey.set(key, list);
+        }
+      }
+    }
+
+    const rosterShiftIdsToDelete: string[] = [];
+    const headcountUpdates: { id: string; headcount: number }[] = [];
+    const assignmentIdsToDelete: string[] = [];
+    const assignmentRowsToAdd: { rosterShiftId: string; staffId: null; unfilledTag: null }[] = [];
+    const newRosterShiftRows: {
+      id: string;
+      rosterId: string;
+      shiftTemplateId: string;
+      date: Date;
+      headcount: number;
+      responsibilityId: string;
+    }[] = [];
+    const newAssignmentRows: { rosterShiftId: string; staffId: null; unfilledTag: null }[] = [];
+
+    for (const key of new Set([...existingByKey.keys(), ...desiredByKey.keys()])) {
+      const existingList = existingByKey.get(key) ?? [];
+      const desiredList = desiredByKey.get(key) ?? [];
+      const pairCount = Math.min(existingList.length, desiredList.length);
+
+      for (let i = 0; i < pairCount; i++) {
+        const existingRow = existingList[i];
+        const desiredRow = desiredList[i];
+        if (existingRow.headcount !== desiredRow.headcount) {
+          headcountUpdates.push({ id: existingRow.id, headcount: desiredRow.headcount });
+        }
+        const currentSlots = existingRow.assignments.length;
+        if (desiredRow.headcount > currentSlots) {
+          for (let j = 0; j < desiredRow.headcount - currentSlots; j++) {
+            assignmentRowsToAdd.push({ rosterShiftId: existingRow.id, staffId: null, unfilledTag: null });
+          }
+        } else if (desiredRow.headcount < currentSlots) {
+          // Free unfilled slots first so shrinking headcount doesn't discard a staff assignment
+          // unless there aren't enough empty slots left to make up the difference.
+          const removable = [...existingRow.assignments].sort((a, b) => (a.staffId ? 1 : 0) - (b.staffId ? 1 : 0));
+          for (let j = 0; j < currentSlots - desiredRow.headcount; j++) {
+            assignmentIdsToDelete.push(removable[j].id);
+          }
+        }
+      }
+
+      for (let i = pairCount; i < existingList.length; i++) {
+        rosterShiftIdsToDelete.push(existingList[i].id);
+      }
+
+      for (let i = pairCount; i < desiredList.length; i++) {
+        const desiredRow = desiredList[i];
+        const newId = randomUUID();
+        newRosterShiftRows.push({
+          id: newId,
+          rosterId: existing.id,
+          shiftTemplateId: desiredRow.shiftTemplateId,
+          date: new Date(desiredRow.date),
+          headcount: desiredRow.headcount,
+          responsibilityId: desiredRow.responsibilityId,
+        });
+        for (let j = 0; j < desiredRow.headcount; j++) {
+          newAssignmentRows.push({ rosterShiftId: newId, staffId: null, unfilledTag: null });
+        }
+      }
+    }
+
+    if (rosterShiftIdsToDelete.length > 0) {
+      await tx.rosterShift.deleteMany({ where: { id: { in: rosterShiftIdsToDelete } } });
+    }
+    if (assignmentIdsToDelete.length > 0) {
+      await tx.assignment.deleteMany({ where: { id: { in: assignmentIdsToDelete } } });
+    }
+    if (headcountUpdates.length > 0) {
+      await Promise.all(
+        headcountUpdates.map((u) => tx.rosterShift.update({ where: { id: u.id }, data: { headcount: u.headcount } }))
+      );
+    }
+    if (assignmentRowsToAdd.length > 0) {
+      await tx.assignment.createMany({ data: assignmentRowsToAdd });
+    }
+    if (newRosterShiftRows.length > 0) {
+      await tx.rosterShift.createMany({ data: newRosterShiftRows });
+      await tx.assignment.createMany({ data: newAssignmentRows });
+    }
+
     return roster;
   });
 
