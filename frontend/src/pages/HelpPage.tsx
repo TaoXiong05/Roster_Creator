@@ -258,7 +258,7 @@ export function HelpPage() {
           <h2 className="font-display text-lg font-semibold text-ink">{content.quickStartHeading}</h2>
           <ol className="space-y-5">
             {content.steps.map((step, i) => (
-              <li key={step.title} className="flex gap-4">
+              <li key={step.title} className="flex gap-5">
                 <div className="flex flex-col items-center">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral-deep/10 font-display text-sm font-semibold text-coral-deep">
                     {i + 1}
