@@ -1,0 +1,76 @@
+/* ============================================================
+   Roster Creator — Redesign Design Tokens
+   ============================================================
+   brandPrefix: rc
+   Direction : Modern professional SaaS workbench
+   Primary   : Indigo (professional, trustworthy, energetic)
+   Neutrals  : Cool slate with a hint of blue
+   Radius    : Generous rounded corners (friendly, approachable)
+   Motion    : Subtle, purposeful micro-interactions
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ============ Brand: Indigo ============ */
+  --rc-primary-50: #eef1ff;
+  --rc-primary-100: #e0e5ff;
+  --rc-primary-200: #c7cdff;
+  --rc-primary-300: #a5a9ff;
+  --rc-primary-400: #8884fb;
+  --rc-primary-500: #6d63f0;
+  --rc-primary-600: #5a49e0;
+  --rc-primary-700: #4a38c2;
+  --rc-primary-800: #3c2f9c;
+  --rc-primary-900: #312a78;
+
+  /* ============ Semantic surface (light) ============ */
+  --rc-background: #f4f5fb;
+  --rc-foreground: #191c2e;
+  --rc-card: #ffffff;
+  --rc-card-foreground: #191c2e;
+  --rc-popover: #ffffff;
+  --rc-popover-foreground: #191c2e;
+  --rc-muted: #eceef7;
+  --rc-muted-foreground: #6a7089;
+  --rc-border: #e6e8f2;
+  --rc-input: #e0e3f0;
+  --rc-ring: #8884fb;
+  --rc-primary: #4a38c2;
+  --rc-primary-foreground: #ffffff;
+  --rc-link: #4a38c2;
+
+  /* ============ Support hues ============ */
+  --rc-success: #12b981;
+  --rc-success-soft: #e7f8f1;
+  --rc-warning: #f59e0b;
+  --rc-warning-soft: #fef5e5;
+  --rc-danger: #ef4444;
+  --rc-danger-soft: #fdeaea;
+  --rc-info: #0ea5e9;
+  --rc-info-soft: #e7f4fd;
+
+  /* ============ Typography ============ */
+  --rc-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --rc-font-display: 'Sora', 'Inter', 'Segoe UI', system-ui, -apple-system,
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --rc-font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+
+  /* ============ Radius (generous) ============ */
+  --rc-radius-sm: 10px;
+  --rc-radius-md: 14px;
+  --rc-radius-lg: 20px;
+  --rc-radius-xl: 28px;
+  --rc-radius-full: 9999px;
+
+  /* ============ Elevation ============ */
+  --rc-shadow-sm: 0 1px 2px rgba(16, 18, 44, 0.05);
+  --rc-shadow-md: 0 4px 16px -2px rgba(30, 27, 75, 0.08);
+  --rc-shadow-lg: 0 16px 40px -12px rgba(30, 27, 75, 0.18);
+  --rc-shadow-glow: 0 8px 28px -6px rgba(109, 99, 240, 0.55);
+
+  /* ============ Layout ============ */
+  --rc-sidebar-width: 264px;
+  --rc-header-height: 72px;
+}

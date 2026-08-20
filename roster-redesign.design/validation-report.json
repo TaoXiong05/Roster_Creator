@@ -1,0 +1,218 @@
+{
+  "success": false,
+  "outcome": "validation_failed",
+  "repairable": true,
+  "terminalViolations": [],
+  "terminalBlockingSummary": null,
+  "skillProvenance": {
+    "name": "solo-design",
+    "version": null,
+    "version_source": "unknown",
+    "runtime_skill_dir": null,
+    "recorded_at": null,
+    "expected_version": "2026.08.06.19.15.08",
+    "status": "observed_unknown",
+    "read_status": "unknown"
+  },
+  "operatingMode": "free-explore",
+  "renderBlockingErrorCount": 1,
+  "softWarningCount": 8,
+  "renderBlockingErrors": [
+    "[design-file] Validation failed for .design file batch: ========================================\n[FAIL] Validation failed\n----------------------------------------\nFound 26 issues:\n\n  1. [data[0].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  2. [data[0].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  3. [data[1].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  4. [data[1].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  5. [data[2].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  6. [data[2].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  7. [data[2].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  8. [data[3].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  9. [data[3].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  10. [data[3].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  11. [data[4].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  12. [data[4].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  13. [data[4].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  14. [data[0].devMetadata.interactions[0].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  15. [data[0].devMetadata.interactions[1].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  16. [data[1].devMetadata.interactions[0].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  17. [data[1].devMetadata.interactions[1].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  18. [data[2].devMetadata.interactions[0].domId] domId \"roster:tab:week\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:week\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  19. [data[2].devMetadata.interactions[1].domId] domId \"roster:tab:month\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:month\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  20. [data[2].devMetadata.interactions[2].domId] domId \"roster:swap:shift\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:swap:shift\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  21. [data[3].devMetadata.interactions[0].domId] domId \"staff:new\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:new\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  22. [data[3].devMetadata.interactions[1].domId] domId \"staff:tab:all\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:tab:all\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  23. [data[3].devMetadata.interactions[2].domId] domId \"staff:row:action\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:row:action\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  24. [data[4].devMetadata.interactions[0].domId] domId \"staff-new:step:back\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:back\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  25. [data[4].devMetadata.interactions[1].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  26. [data[4].devMetadata.interactions[2].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n\n========================================\n"
+  ],
+  "errorSignatures": [
+    {
+      "errorClass": "artifact-readiness",
+      "normalized": "[design-file] Validation failed for .design file batch: ======================================== [FAIL] Validation failed ---------------------------------------- Found 26 issues: 1. [data[0].devMetadata.interactions[0].targetPageId] must be a non-empty string 2. [data[0].devMetadata.interactions[1].targetPageId] must be a non-empty string 3. [data[1].devMetadata.interactions[0].targetPageId] must be a non-empty string 4. [data[1].devMetadata.interactions[1].targetPageId] must be a non-empty string 5. [data[2].devMetadata.interactions[0].targetPageId] must be a non-empty string 6. [data[2].devMetadata.interactions[1].targetPageId] must be a non-empty string 7. [data[2].devMetadata.interactions[2].targetPageId] must be a non-empty string 8. [data[3].devMetadata.interactions[0].targetPageId] must be a non-empty string 9. [data[3].devMetadata.interactions[1].targetPageId] must be a non-empty string 10. [data[3].devMetadata.interactions[2].targetPageId] must be a non-empty string 11. [data[4].devMetadata.interactions[0].targetPageId] must be a non-empty string 12. [data[4].devMetadata.interactions[1].targetPageId] must be a non-empty string 13. [data[4].devMetadata.interactions[2].targetPageId] must be a non-empty string 14. [data[0].devMetadata.interactions[0].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 15. [data[0].devMetadata.interactions[1].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 16. [data[1].devMetadata.interactions[0].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 17. [data[1].devMetadata.interactions[1].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 18. [data[2].devMetadata.interactions[0].domId] domId \"roster:tab:week\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:week\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 19. [data[2].devMetadata.interactions[1].domId] domId \"roster:tab:month\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:month\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 20. [data[2].devMetadata.interactions[2].domId] domId \"roster:swap:shift\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:swap:shift\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 21. [data[3].devMetadata.interactions[0].domId] domId \"staff:new\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:new\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 22. [data[3].devMetadata.interactions[1].domId] domId \"staff:tab:all\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:tab:all\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 23. [data[3].devMetadata.interactions[2].domId] domId \"staff:row:action\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:row:action\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 24. [data[4].devMetadata.interactions[0].domId] domId \"staff-new:step:back\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:back\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 25. [data[4].devMetadata.interactions[1].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. 26. [data[4].devMetadata.interactions[2].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists. ========================================",
+      "signature": "3cd4b35909338265c8d068161b2a4d4a6b49e71af9d9d5ee04b405b04a18d3b0"
+    }
+  ],
+  "softWarnings": [
+    "[orchestration-summary] runtime-orchestration-summary.json is missing skillProvenance.name/version/version_source. Version provenance will be reported as observed_unknown by external evaluators.",
+    "[html-quality] colors_and_type.css: free-explore radius tokens must stay within the restrained 2/4/8/12/16px scale; oversized or forbidden radius tokens found (--rc-radius-xl: 28px, --rc-radius-lg: 20px). Do not use 20px+ radii unless the user explicitly requested large rounded shapes.",
+    "[html-quality] colors_and_type.css: ordinary/static shadow tokens must keep every shadow alpha <= 0.05; deeper shadows are allowed only for floating-layer tokens such as modal/popover/dropdown/drawer/overlay (--rc-shadow-md: 0 4px 16px -2px rgba(30, 27, 75, 0.08), --rc-shadow-lg: 0 16px 40px -12px rgba(30, 27, 75, 0.18), --rc-shadow-glow: 0 8px 28px -6px rgba(109, 99, 240, 0.55)).",
+    "[html-quality] dashboard.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] login.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] roster.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] staff-new.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] staff.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference."
+  ],
+  "repairPlanHints": [
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "dashboard.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    },
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "login.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    },
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "roster.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    },
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "staff-new.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    },
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "staff.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    }
+  ],
+  "repairActionTable": [
+    {
+      "error": "[design-file] Validation failed for .design file batch: ========================================\n[FAIL] Validation failed\n----------------------------------------\nFound 26 issues:\n\n  1. [data[0].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  2. [data[0].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  3. [data[1].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  4. [data[1].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  5. [data[2].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  6. [data[2].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  7. [data[2].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  8. [data[3].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  9. [data[3].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  10. [data[3].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  11. [data[4].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  12. [data[4].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  13. [data[4].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  14. [data[0].devMetadata.interactions[0].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  15. [data[0].devMetadata.interactions[1].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  16. [data[1].devMetadata.interactions[0].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  17. [data[1].devMetadata.interactions[1].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  18. [data[2].devMetadata.interactions[0].domId] domId \"roster:tab:week\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:week\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  19. [data[2].devMetadata.interactions[1].domId] domId \"roster:tab:month\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:month\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  20. [data[2].devMetadata.interactions[2].domId] domId \"roster:swap:shift\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:swap:shift\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  21. [data[3].devMetadata.interactions[0].domId] domId \"staff:new\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:new\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  22. [data[3].devMetadata.interactions[1].domId] domId \"staff:tab:all\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:tab:all\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  23. [data[3].devMetadata.interactions[2].domId] domId \"staff:row:action\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:row:action\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  24. [data[4].devMetadata.interactions[0].domId] domId \"staff-new:step:back\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:back\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  25. [data[4].devMetadata.interactions[1].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  26. [data[4].devMetadata.interactions[2].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n\n========================================\n",
+      "errorClass": "artifact-readiness",
+      "severity": "blocking",
+      "action": "repair_design_registration_or_file_reference_only",
+      "owner": "main-agent",
+      "sourceReadPolicy": "read .design and affected file metadata only"
+    }
+  ],
+  "errorCount": 1,
+  "warningCount": 8,
+  "errors": [
+    "[design-file] Validation failed for .design file batch: ========================================\n[FAIL] Validation failed\n----------------------------------------\nFound 26 issues:\n\n  1. [data[0].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  2. [data[0].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  3. [data[1].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  4. [data[1].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  5. [data[2].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  6. [data[2].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  7. [data[2].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  8. [data[3].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  9. [data[3].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  10. [data[3].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  11. [data[4].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  12. [data[4].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  13. [data[4].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  14. [data[0].devMetadata.interactions[0].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  15. [data[0].devMetadata.interactions[1].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  16. [data[1].devMetadata.interactions[0].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  17. [data[1].devMetadata.interactions[1].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  18. [data[2].devMetadata.interactions[0].domId] domId \"roster:tab:week\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:week\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  19. [data[2].devMetadata.interactions[1].domId] domId \"roster:tab:month\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:month\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  20. [data[2].devMetadata.interactions[2].domId] domId \"roster:swap:shift\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:swap:shift\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  21. [data[3].devMetadata.interactions[0].domId] domId \"staff:new\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:new\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  22. [data[3].devMetadata.interactions[1].domId] domId \"staff:tab:all\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:tab:all\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  23. [data[3].devMetadata.interactions[2].domId] domId \"staff:row:action\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:row:action\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  24. [data[4].devMetadata.interactions[0].domId] domId \"staff-new:step:back\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:back\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  25. [data[4].devMetadata.interactions[1].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  26. [data[4].devMetadata.interactions[2].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n\n========================================\n"
+  ],
+  "warnings": [
+    "[orchestration-summary] runtime-orchestration-summary.json is missing skillProvenance.name/version/version_source. Version provenance will be reported as observed_unknown by external evaluators.",
+    "[html-quality] colors_and_type.css: free-explore radius tokens must stay within the restrained 2/4/8/12/16px scale; oversized or forbidden radius tokens found (--rc-radius-xl: 28px, --rc-radius-lg: 20px). Do not use 20px+ radii unless the user explicitly requested large rounded shapes.",
+    "[html-quality] colors_and_type.css: ordinary/static shadow tokens must keep every shadow alpha <= 0.05; deeper shadows are allowed only for floating-layer tokens such as modal/popover/dropdown/drawer/overlay (--rc-shadow-md: 0 4px 16px -2px rgba(30, 27, 75, 0.08), --rc-shadow-lg: 0 16px 40px -12px rgba(30, 27, 75, 0.18), --rc-shadow-glow: 0 8px 28px -6px rgba(109, 99, 240, 0.55)).",
+    "[html-quality] dashboard.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] login.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] roster.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] staff-new.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] staff.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference."
+  ],
+  "validationRunDisciplineStatus": {
+    "declared": true,
+    "restoreMode": false,
+    "maxFullValidationRuns": 2,
+    "validationHistoryCount": 0,
+    "repairLedgerCount": 0,
+    "softWarningsTriggerRepair": false,
+    "terminalState": null,
+    "nextAction": null,
+    "violations": [],
+    "success": true
+  },
+  "terminalState": null,
+  "nextCheck": {
+    "type": "full",
+    "command": "node \"c:\\Users\\xt263\\.trae\\builtin\\design\\default\\skills\\solo-design\\shared-runtime\\deterministic-tooling\\validate-design-workspace.mjs\" \"d:\\claude\\projects\\Roster_Creator\\roster-redesign.design\" --report-json=\"d:\\claude\\projects\\Roster_Creator\\roster-redesign.design\\validation-report.json\"",
+    "fullValidationAllowed": true,
+    "reason": "no narrower deterministic targeted check is available for the current failure class"
+  },
+  "repairBatch": [
+    {
+      "error": "[design-file] Validation failed for .design file batch: ========================================\n[FAIL] Validation failed\n----------------------------------------\nFound 26 issues:\n\n  1. [data[0].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  2. [data[0].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  3. [data[1].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  4. [data[1].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  5. [data[2].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  6. [data[2].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  7. [data[2].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  8. [data[3].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  9. [data[3].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  10. [data[3].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  11. [data[4].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  12. [data[4].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  13. [data[4].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  14. [data[0].devMetadata.interactions[0].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  15. [data[0].devMetadata.interactions[1].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  16. [data[1].devMetadata.interactions[0].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  17. [data[1].devMetadata.interactions[1].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  18. [data[2].devMetadata.interactions[0].domId] domId \"roster:tab:week\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:week\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  19. [data[2].devMetadata.interactions[1].domId] domId \"roster:tab:month\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:month\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  20. [data[2].devMetadata.interactions[2].domId] domId \"roster:swap:shift\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:swap:shift\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  21. [data[3].devMetadata.interactions[0].domId] domId \"staff:new\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:new\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  22. [data[3].devMetadata.interactions[1].domId] domId \"staff:tab:all\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:tab:all\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  23. [data[3].devMetadata.interactions[2].domId] domId \"staff:row:action\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:row:action\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  24. [data[4].devMetadata.interactions[0].domId] domId \"staff-new:step:back\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:back\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  25. [data[4].devMetadata.interactions[1].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  26. [data[4].devMetadata.interactions[2].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n\n========================================\n",
+      "errorClass": "artifact-readiness",
+      "severity": "blocking",
+      "action": "repair_design_registration_or_file_reference_only",
+      "owner": "main-agent",
+      "sourceReadPolicy": "read .design and affected file metadata only"
+    }
+  ],
+  "repairContextPacket": {
+    "schema_version": "1.0",
+    "purpose": "small-context repair packet; read this before full validation-report.json",
+    "success": false,
+    "terminalState": null,
+    "skillProvenance": {
+      "name": "solo-design",
+      "version": null,
+      "version_source": "unknown",
+      "runtime_skill_dir": null,
+      "recorded_at": null,
+      "expected_version": "2026.08.06.19.15.08",
+      "status": "observed_unknown",
+      "read_status": "unknown"
+    },
+    "renderBlockingErrorCount": 1,
+    "softWarningCount": 8,
+    "renderBlockingErrors": [
+      "[design-file] Validation failed for .design file batch: ========================================\n[FAIL] Validation failed\n----------------------------------------\nFound 26 issues:\n\n  1. [data[0].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  2. [data[0].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  3. [data[1].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  4. [data[1].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  5. [data[2].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  6. [data[2].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  7. [data[2].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  8. [data[3].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  9. [data[3].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  10. [data[3].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  11. [data[4].devMetadata.interactions[0].targetPageId] must be a non-empty string\n  12. [data[4].devMetadata.interactions[1].targetPageId] must be a non-empty string\n  13. [data[4].devMetadata.interactions[2].targetPageId] must be a non-empty string\n  14. [data[0].devMetadata.interactions[0].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  15. [data[0].devMetadata.interactions[1].domId] domId \"login:login.html\" is registered in .design but not found in HTML file \"pages/login.html\". Fix: add data-dom-id=\"login:login.html\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  16. [data[1].devMetadata.interactions[0].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  17. [data[1].devMetadata.interactions[1].domId] domId \"dashboard:nav:roster\" is registered in .design but not found in HTML file \"pages/dashboard.html\". Fix: add data-dom-id=\"dashboard:nav:roster\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  18. [data[2].devMetadata.interactions[0].domId] domId \"roster:tab:week\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:week\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  19. [data[2].devMetadata.interactions[1].domId] domId \"roster:tab:month\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:tab:month\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  20. [data[2].devMetadata.interactions[2].domId] domId \"roster:swap:shift\" is registered in .design but not found in HTML file \"pages/roster.html\". Fix: add data-dom-id=\"roster:swap:shift\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  21. [data[3].devMetadata.interactions[0].domId] domId \"staff:new\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:new\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  22. [data[3].devMetadata.interactions[1].domId] domId \"staff:tab:all\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:tab:all\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  23. [data[3].devMetadata.interactions[2].domId] domId \"staff:row:action\" is registered in .design but not found in HTML file \"pages/staff.html\". Fix: add data-dom-id=\"staff:row:action\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  24. [data[4].devMetadata.interactions[0].domId] domId \"staff-new:step:back\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:back\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  25. [data[4].devMetadata.interactions[1].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n  26. [data[4].devMetadata.interactions[2].domId] domId \"staff-new:step:next\" is registered in .design but not found in HTML file \"pages/staff-new.html\". Fix: add data-dom-id=\"staff-new:step:next\" to the corresponding element in the HTML file, or remove this interaction entry if the link no longer exists.\n\n========================================\n"
+    ],
+    "repairActionTable": [
+      {
+        "errorClass": "artifact-readiness",
+        "owner": "main-agent",
+        "severity": "blocking",
+        "action": "repair_design_registration_or_file_reference_only",
+        "affectedFiles": [],
+        "sourceReadPolicy": "read .design and affected file metadata only"
+      }
+    ],
+    "nextCheck": {
+      "type": "full",
+      "command": "node \"c:\\Users\\xt263\\.trae\\builtin\\design\\default\\skills\\solo-design\\shared-runtime\\deterministic-tooling\\validate-design-workspace.mjs\" \"d:\\claude\\projects\\Roster_Creator\\roster-redesign.design\" --report-json=\"d:\\claude\\projects\\Roster_Creator\\roster-redesign.design\\validation-report.json\"",
+      "fullValidationAllowed": true,
+      "reason": "no narrower deterministic targeted check is available for the current failure class"
+    },
+    "forbidden": [
+      "do not read validator source",
+      "do not rerun full validation when nextCheck.fullValidationAllowed=false",
+      "do not start preview/browser unless user explicitly asks",
+      "do not hand-edit repair ledger fields"
+    ]
+  },
+  "projectFileHashes": {
+    ".design": "bbdbd7c0bffb0e4d0580c740f2277b9134ab1fd0e7f80774e4e0d439c172f2dd",
+    "colors_and_type.css": "76aaf670736cf2f7a0f07a21027d7e2993900b1510ad5337ee35c5e38d1d7323",
+    "runtime-orchestration-summary.json": "b406115a5c36dad642db3967c08457c5065628c064d581d54b08ab5cab03704e",
+    "pages/dashboard.html": "7fb49b060cf558bf726cd47b58d6d5d1252f00852c1314dab67bb8c574eda2dc",
+    "pages/login.html": "e51fd2d07103e86cbe4e791a227a6d900f92179f7cf33aff9e8b7fd6653c51e5",
+    "pages/roster.html": "41be7f7fc148027d373079097a0a4ee8e2fa50c4f14e315faa99d3d4ae74292e",
+    "pages/staff-new.html": "9ac5525843e3416a442380e14f330b40b678a598676f4f04f08105ec6860d26c",
+    "pages/staff.html": "75363f29cb6c022c47e10d37ff80162a52cdf3c55f5dac45c5f48c8495a3e0bc"
+  },
+  "designDir": "d:\\claude\\projects\\Roster_Creator\\roster-redesign.design",
+  "expectedPages": null,
+  "requireInteractions": null,
+  "checkedAt": "2026-08-20T03:40:48.472Z"
+}

@@ -1,0 +1,194 @@
+{
+  "data": [
+    {
+      "id": "page-login",
+      "title": "登录",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787193829586,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-9e90fa01",
+          "measuredAt": 1787195052729
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/login.html",
+        "interactions": [
+          {
+            "type": "click",
+            "domId": "login:login.html",
+            "flow": "none"
+          },
+          {
+            "type": "hover",
+            "domId": "login:login.html",
+            "flow": "none"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-dashboard",
+      "title": "数据看板",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787193829586,
+      "canvasData": {
+        "x": 480,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-6ee1bd49",
+          "measuredAt": 1787195052729
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/dashboard.html",
+        "interactions": [
+          {
+            "type": "click",
+            "domId": "dashboard:nav:roster",
+            "flow": "none"
+          },
+          {
+            "type": "hover",
+            "domId": "dashboard:nav:roster",
+            "flow": "none"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-roster",
+      "title": "排班表",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787193829586,
+      "canvasData": {
+        "x": 960,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-8913ccec",
+          "measuredAt": 1787195052729
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/roster.html",
+        "interactions": [
+          {
+            "type": "click",
+            "domId": "roster:tab:week",
+            "flow": "none"
+          },
+          {
+            "type": "click",
+            "domId": "roster:tab:month",
+            "flow": "none"
+          },
+          {
+            "type": "hover",
+            "domId": "roster:swap:shift",
+            "flow": "none"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-staff",
+      "title": "员工管理",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787193829586,
+      "canvasData": {
+        "x": 1440,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-c57e7971",
+          "measuredAt": 1787195052729
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/staff.html",
+        "interactions": [
+          {
+            "type": "click",
+            "domId": "staff:new",
+            "flow": "none"
+          },
+          {
+            "type": "click",
+            "domId": "staff:tab:all",
+            "flow": "none"
+          },
+          {
+            "type": "hover",
+            "domId": "staff:row:action",
+            "flow": "none"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-staff-new",
+      "title": "新建员工（分步）",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1787193829586,
+      "canvasData": {
+        "x": 1920,
+        "y": 0,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 1440,
+          "sourceHash": "fnv1a-b474c96a",
+          "measuredAt": 1787195052729
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/staff-new.html",
+        "interactions": [
+          {
+            "type": "click",
+            "domId": "staff-new:step:back",
+            "flow": "none"
+          },
+          {
+            "type": "click",
+            "domId": "staff-new:step:next",
+            "flow": "none"
+          },
+          {
+            "type": "hover",
+            "domId": "staff-new:step:next",
+            "flow": "none"
+          }
+        ]
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "desktop",
+    "projectName": "Roster Creator 后台重设计"
+  }
+}

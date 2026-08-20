@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>员工管理 - Roster Creator</title>
+    <style id="theme-vars">
+/* ============================================================
+   Roster Creator — Redesign Design Tokens
+   ============================================================
+   brandPrefix: rc
+   Direction : Modern professional SaaS workbench
+   Primary   : Indigo (professional, trustworthy, energetic)
+   Neutrals  : Cool slate with a hint of blue
+   Radius    : Generous rounded corners (friendly, approachable)
+   Motion    : Subtle, purposeful micro-interactions
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ============ Brand: Indigo ============ */
+  --rc-primary-50: #eef1ff;
+  --rc-primary-100: #e0e5ff;
+  --rc-primary-200: #c7cdff;
+  --rc-primary-300: #a5a9ff;
+  --rc-primary-400: #8884fb;
+  --rc-primary-500: #6d63f0;
+  --rc-primary-600: #5a49e0;
+  --rc-primary-700: #4a38c2;
+  --rc-primary-800: #3c2f9c;
+  --rc-primary-900: #312a78;
+
+  /* ============ Semantic surface (light) ============ */
+  --rc-background: #f4f5fb;
+  --rc-foreground: #191c2e;
+  --rc-card: #ffffff;
+  --rc-card-foreground: #191c2e;
+  --rc-popover: #ffffff;
+  --rc-popover-foreground: #191c2e;
+  --rc-muted: #eceef7;
+  --rc-muted-foreground: #6a7089;
+  --rc-border: #e6e8f2;
+  --rc-input: #e0e3f0;
+  --rc-ring: #8884fb;
+  --rc-primary: #4a38c2;
+  --rc-primary-foreground: #ffffff;
+  --rc-link: #4a38c2;
+
+  /* ============ Support hues ============ */
+  --rc-success: #12b981;
+  --rc-success-soft: #e7f8f1;
+  --rc-warning: #f59e0b;
+  --rc-warning-soft: #fef5e5;
+  --rc-danger: #ef4444;
+  --rc-danger-soft: #fdeaea;
+  --rc-info: #0ea5e9;
+  --rc-info-soft: #e7f4fd;
+
+  /* ============ Typography ============ */
+  --rc-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --rc-font-display: 'Sora', 'Inter', 'Segoe UI', system-ui, -apple-system,
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --rc-font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+
+  /* ============ Radius (generous) ============ */
+  --rc-radius-sm: 10px;
+  --rc-radius-md: 14px;
+  --rc-radius-lg: 20px;
+  --rc-radius-xl: 28px;
+  --rc-radius-full: 9999px;
+
+  /* ============ Elevation ============ */
+  --rc-shadow-sm: 0 1px 2px rgba(16, 18, 44, 0.05);
+  --rc-shadow-md: 0 4px 16px -2px rgba(30, 27, 75, 0.08);
+  --rc-shadow-lg: 0 16px 40px -12px rgba(30, 27, 75, 0.18);
+  --rc-shadow-glow: 0 8px 28px -6px rgba(109, 99, 240, 0.55);
+
+  /* ============ Layout ============ */
+  --rc-sidebar-width: 264px;
+  --rc-header-height: 72px;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--rc-background);
+    --color-foreground: var(--rc-foreground);
+    --color-card: var(--rc-card);
+    --color-card-foreground: var(--rc-card-foreground);
+    --color-popover: var(--rc-popover);
+    --color-popover-foreground: var(--rc-popover-foreground);
+    --color-primary: var(--rc-primary);
+    --color-primary-foreground: var(--rc-primary-foreground);
+    --color-muted: var(--rc-muted);
+    --color-muted-foreground: var(--rc-muted-foreground);
+    --color-border: var(--rc-border);
+    --color-input: var(--rc-input);
+    --color-ring: var(--rc-ring);
+    --radius-sm: var(--rc-radius-sm);
+    --radius-md: var(--rc-radius-md);
+    --radius-lg: var(--rc-radius-lg);
+    --radius-xl: var(--rc-radius-xl);
+  }
+  @layer base {
+    body { background: var(--rc-background); color: var(--rc-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--rc-background); }
+      .text-background { color: var(--rc-background); }
+      .border-background { border-color: var(--rc-background); }
+      .ring-background { --tw-ring-color: var(--rc-background); }
+      .bg-foreground { background-color: var(--rc-foreground); }
+      .text-foreground { color: var(--rc-foreground); }
+      .border-foreground { border-color: var(--rc-foreground); }
+      .ring-foreground { --tw-ring-color: var(--rc-foreground); }
+      .bg-card { background-color: var(--rc-card); }
+      .text-card { color: var(--rc-card); }
+      .border-card { border-color: var(--rc-card); }
+      .ring-card { --tw-ring-color: var(--rc-card); }
+      .bg-card-foreground { background-color: var(--rc-card-foreground); }
+      .text-card-foreground { color: var(--rc-card-foreground); }
+      .border-card-foreground { border-color: var(--rc-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--rc-card-foreground); }
+      .bg-popover { background-color: var(--rc-popover); }
+      .text-popover { color: var(--rc-popover); }
+      .border-popover { border-color: var(--rc-popover); }
+      .ring-popover { --tw-ring-color: var(--rc-popover); }
+      .bg-popover-foreground { background-color: var(--rc-popover-foreground); }
+      .text-popover-foreground { color: var(--rc-popover-foreground); }
+      .border-popover-foreground { border-color: var(--rc-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--rc-popover-foreground); }
+      .bg-primary { background-color: var(--rc-primary); }
+      .text-primary { color: var(--rc-primary); }
+      .border-primary { border-color: var(--rc-primary); }
+      .ring-primary { --tw-ring-color: var(--rc-primary); }
+      .bg-primary-foreground { background-color: var(--rc-primary-foreground); }
+      .text-primary-foreground { color: var(--rc-primary-foreground); }
+      .border-primary-foreground { border-color: var(--rc-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--rc-primary-foreground); }
+      .bg-muted { background-color: var(--rc-muted); }
+      .text-muted { color: var(--rc-muted); }
+      .border-muted { border-color: var(--rc-muted); }
+      .ring-muted { --tw-ring-color: var(--rc-muted); }
+      .bg-muted-foreground { background-color: var(--rc-muted-foreground); }
+      .text-muted-foreground { color: var(--rc-muted-foreground); }
+      .border-muted-foreground { border-color: var(--rc-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--rc-muted-foreground); }
+      .bg-border { background-color: var(--rc-border); }
+      .text-border { color: var(--rc-border); }
+      .border-border { border-color: var(--rc-border); }
+      .ring-border { --tw-ring-color: var(--rc-border); }
+      .bg-input { background-color: var(--rc-input); }
+      .text-input { color: var(--rc-input); }
+      .border-input { border-color: var(--rc-input); }
+      .ring-input { --tw-ring-color: var(--rc-input); }
+      .bg-ring { background-color: var(--rc-ring); }
+      .text-ring { color: var(--rc-ring); }
+      .border-ring { border-color: var(--rc-ring); }
+      .ring-ring { --tw-ring-color: var(--rc-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+<main>
+
+<style>
+  /* ============ 基础重置 ============ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: var(--rc-font-sans); background: var(--rc-background); color: var(--rc-foreground); }
+
+  /* ============ 无障碍焦点样式 ============ */
+  :focus-visible {
+    outline: 2px solid var(--rc-primary);
+    outline-offset: 2px;
+  }
+
+  /* ============ 布局 ============ */
+  .rc-app {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+  }
+  .rc-sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--rc-sidebar-width);
+    background: #171a2c;
+    color: #c7cbdf;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+  }
+  .rc-main {
+    margin-left: var(--rc-sidebar-width);
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - var(--rc-sidebar-width));
+  }
+  .rc-header {
+    height: var(--rc-header-height);
+    background: var(--rc-card);
+    border-bottom: 1px solid var(--rc-border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .rc-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px 32px;
+    animation: rc-fade-up .35s ease both;
+  }
+  @keyframes rc-fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ 侧边栏 ============ */
+  .rc-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 22px;
+  }
+  .rc-brand-logo {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--rc-primary-500), var(--rc-primary-700));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .rc-brand-name {
+    font-family: var(--rc-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .rc-brand-tag {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+  }
+  .rc-nav-label {
+    padding: 10px 16px 4px;
+    font-size: 11px;
+    color: rgba(199,203,223,0.4);
+    letter-spacing: 1px;
+  }
+  .rc-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 16px;
+    margin: 2px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #c7cbdf;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: left;
+  }
+  .rc-nav-item:hover {
+    background: rgba(255,255,255,0.06);
+    color: #eef0fa;
+  }
+  .rc-nav-item.rc-active {
+    background: linear-gradient(135deg, rgba(109,99,240,0.85), rgba(74,56,194,0.9));
+    color: #fff;
+    box-shadow: 0 4px 14px -4px rgba(109,99,240,0.45);
+  }
+  .rc-nav-item .rc-nav-icon { width: 20px; height: 20px; }
+  .rc-nav-badge {
+    margin-left: auto;
+    background: var(--rc-primary-200);
+    color: var(--rc-primary-900);
+    font-size: 11px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    font-weight: 700;
+  }
+  .rc-sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin: 0 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+  }
+  .rc-sidebar-user .rc-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #ef8352);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .rc-sidebar-user .rc-uinfo { min-width: 0; }
+  .rc-sidebar-user .rc-uname { color: #fff; font-weight: 600; font-size: 13px; }
+  .rc-sidebar-user .rc-urole { color: rgba(199,203,223,0.6); font-size: 11px; }
+
+  /* ============ 顶栏 ============ */
+  .rc-header-title {
+    font-family: var(--rc-font-display);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--rc-foreground);
+    letter-spacing: -0.3px;
+  }
+  .rc-header-sub {
+    font-size: 13px;
+    color: var(--rc-muted-foreground);
+    margin-left: 8px;
+  }
+  .rc-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+  }
+  .rc-header-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 10px;
+    background: var(--rc-primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 4px 14px -4px rgba(90,73,224,0.45);
+    transition: all .2s ease;
+  }
+  .rc-header-btn:hover {
+    background: var(--rc-primary-600);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px rgba(90,73,224,0.5);
+  }
+  .rc-header-btn svg { width: 18px; height: 18px; }
+
+  /* ============ 通用按钮 ============ */
+  .rc-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    background: var(--rc-card);
+    border: 1px solid var(--rc-border);
+    color: var(--rc-foreground);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .rc-btn-secondary:hover {
+    border-color: var(--rc-primary-300);
+    background: var(--rc-primary-50);
+    color: var(--rc-primary-700);
+  }
+  .rc-btn-secondary svg { width: 16px; height: 16px; }
+
+  /* ============ 内容卡片 ============ */
+  .rc-card {
+    background: var(--rc-card);
+    border: 1px solid var(--rc-border);
+    border-radius: var(--rc-radius-lg);
+    box-shadow: var(--rc-shadow-md);
+    padding: 24px;
+  }
+  .rc-card-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .rc-search {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+    max-width: 360px;
+  }
+  .rc-search svg {
+    position: absolute;
+    left: 13px; top: 50%;
+    transform: translateY(-50%);
+    width: 17px; height: 17px;
+    color: var(--rc-muted-foreground);
+    pointer-events: none;
+  }
+  .rc-search input {
+    width: 100%;
+    height: 40px;
+    padding: 0 14px 0 40px;
+    border-radius: 10px;
+    border: 1px solid var(--rc-border);
+    background: var(--rc-card);
+    color: var(--rc-foreground);
+    font-size: 14px;
+    transition: all .2s ease;
+  }
+  .rc-search input::placeholder { color: var(--rc-muted-foreground); }
+  .rc-search input:focus {
+    border-color: var(--rc-primary);
+    box-shadow: 0 0 0 4px rgba(109,99,240,0.16);
+    outline-offset: 0;
+  }
+  .rc-select {
+    height: 40px;
+    padding: 0 34px 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--rc-border);
+    background: var(--rc-card);
+    color: var(--rc-foreground);
+    font-size: 13px;
+    font-weight: 500;
+    appearance: none;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .rc-select:hover { border-color: var(--rc-primary-300); }
+  .rc-select:focus {
+    border-color: var(--rc-primary);
+    box-shadow: 0 0 0 3px rgba(99,99,240,0.18);
+  }
+  .rc-select-wrap { position: relative; }
+  .rc-select-wrap svg {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    color: var(--rc-muted-foreground);
+    pointer-events: none;
+  }
+
+  /* ============ 表格 ============ */
+  .rc-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+  }
+  .rc-thead {
+    background: var(--rc-muted);
+  }
+  .rc-thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rc-muted-foreground);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+  }
+  .rc-thead th:first-child, .rc-tbody td:first-child {
+    width: 44px;
+    text-align: center;
+  }
+  .rc-tbody tr {
+    border-bottom: 1px solid var(--rc-border);
+    transition: all .2s ease;
+  }
+  .rc-tbody tr:hover {
+    background: var(--rc-primary-50);
+  }
+  .rc-tbody td {
+    padding: 14px 16px;
+    vertical-align: middle;
+  }
+  .rc-check {
+    width: 18px; height: 18px;
+    accent-color: var(--rc-primary-600);
+    cursor: pointer;
+  }
+  .rc-staff {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .rc-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .rc-staff-name { font-weight: 600; color: var(--rc-foreground); }
+  .rc-staff-id  { font-size: 12px; color: var(--rc-muted-foreground); }
+  .rc-cell-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .rc-phone {
+    font-family: var(--rc-font-mono);
+    font-size: 13px;
+    color: var(--rc-muted-foreground);
+    white-space: nowrap;
+  }
+  .rc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: var(--rc-radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .rc-badge .rc-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .rc-grey-badge { background: var(--rc-muted); color: var(--rc-muted-foreground); }
+  .rc-status-ok {
+    background: var(--rc-success-soft);
+    color: var(--rc-success);
+  }
+  .rc-status-warn {
+    background: var(--rc-warning-soft);
+    color: var(--rc-warning);
+  }
+  .rc-status-red {
+    background: var(--rc-danger-soft);
+    color: var(--rc-danger);
+  }
+  .rc-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .rc-icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    border: 0;
+    background: transparent;
+    color: var(--rc-muted-foreground);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .2s ease;
+    position: relative;
+  }
+  .rc-icon-btn:hover {
+    background: var(--rc-primary-100);
+    color: var(--rc-primary-700);
+  }
+  .rc-icon-btn svg { width: 17px; height: 17px; }
+  .rc-icon-btn[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    background: var(--rc-foreground);
+    color: #fff;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .15s ease;
+    z-index: 30;
+  }
+  .rc-icon-btn[data-tip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ============ 分页 ============ */
+  .rc-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 20px;
+    gap: 16px;
+  }
+  .rc-pg-info { font-size: 13px; color: var(--rc-muted-foreground); }
+  .rc-pg-pages { display: flex; align-items: center; gap: 6px; }
+  .rc-pg-btn {
+    min-width: 36px; height: 36px;
+    padding: 0 10px;
+    border-radius: 9px;
+    border: 1px solid var(--rc-border);
+    background: var(--rc-card);
+    color: var(--rc-foreground);
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .rc-pg-btn:hover:not(.rc-pg-current):not(:disabled) {
+    border-color: var(--rc-primary-300);
+    color: var(--rc-primary-700);
+    background: var(--rc-primary-50);
+  }
+  .rc-pg-current {
+    background: var(--rc-primary);
+    color: #fff;
+    border-color: var(--rc-primary);
+    box-shadow: 0 4px 12px -4px rgba(90,73,224,0.4);
+  }
+  .rc-pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .rc-pg-total { font-size: 13px; color: var(--rc-muted-foreground); }
+
+  /* ============ 图标变量 (inline SVG) ============ */
+  .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  @media (max-width: 1024px) {
+    .rc-sidebar { width: 224px; }
+    .rc-main { margin-left: 224px; width: calc(100% - 224px); }
+  }
+</style>
+
+<!-- ==================== 侧边栏 ==================== -->
+<aside class="rc-sidebar">
+  <div class="rc-brand">
+    <div class="rc-brand-logo">
+      <svg class="ic" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M4 6h16v2h-10M6 10h14M8 14h12M10 18h10"/></svg>
+    </div>
+    <div class="rc-brand-name">Roster Creator<br><span class="rc-brand-tag">Workforce</span></div>
+  </div>
+
+  <div class="rc-nav-label">工作区</div>
+  <button class="rc-nav-item">
+    <svg class="ic" style="width:20px;height:20px" viewBox="0 0 24 24"><path d="M3 4.5h18v.5h-18M3 9v12l9-4v-8M21 5v14l-9 4v-10"/></svg>
+    <span>仪表板</span>
+  </button>
+  <button class="rc-nav-item">
+    <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="3" y="10" width="6" height="4" rx="1"/><rect x="14" y="10" width="6" height="4" rx="1"/></svg>
+    <span>排班管理</span>
+  </button>
+  <button class="rc-nav-item rc-active">
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.5"/><path d="M12 12.5h7M12 12.5c0-8 0-6 0-7"/><path d="M12 12.5c0-8-2-6-1-3-1"/><path d="M12 18h7M12 18c0-8-5-3-4-1"/><path d="M12 18c0-8-2-6-1-3-1"/></svg>
+    <span>员工管理</span>
+  </button>
+  <button class="rc-nav-item">
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 13l8 3M12 13l-8 3"/><path d="M12 13l0-5"/></svg>
+    <span>考勤打卡</span>
+  </button>
+
+  <div class="rc-nav-label">协作</div>
+  <button class="rc-nav-item">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v.6h-16M4 5v.6h-16M4 9h16v.6h-16M4 9v3h-8v2h-8"/><path d="M20 14a2 2 0 0 1 1 0 0 1M20 14a2.3.5 0 0 1"/></svg>
+    <span>消息</span>
+    <span class="rc-nav-badge">3</span>
+  </button>
+  <button class="rc-nav-item">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M8 4h8v5M8 4v5l4 2"/><path d="M16 4v5M16 4v5l4 2"/><canvas/></svg>
+    <span>团队</span>
+  </button>
+  <button class="rc-nav-item">
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 8v6M7 12h10"/></svg>
+    <span>设置</span>
+  </button>
+
+  <div class="rc-sidebar-user">
+    <div class="rc-avatar">李</div>
+    <div class="rc-uinfo">
+      <div class="rc-uname">李经理</div>
+      <div class="rc-urole">系统管理员</div>
+    </div>
+    <svg class="ic" style="margin-left:auto;width:16px;height:16px;color:rgba(195,203,223,.6)" viewBox="0 0 24 24"><path d="M6 6l6 6 6-6"/></svg>
+  </div>
+</aside>
+
+<!-- ==================== 主区 ==================== -->
+<div class="rc-main">
+  <!-- 顶栏 (备用分隔) -->
+  <header class="rc-header">
+    <div style="line-height:1">
+      <h1 class="rc-header-title">员工管理</h1>
+      <span class="rc-header-sub">共 24 名员工</span>
+    </div>
+    <div class="rc-header-actions">
+      <button class="rc-header-btn">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M12 9.5h0M12 9.5l-4 0 8 0"/></svg>
+        <span>＋ 新建员工</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 内容区 -->
+  <div class="rc-content">
+    <div class="rc-card">
+      <!-- 工具栏 -->
+      <div class="rc-card-head">
+        <div class="rc-search">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="4.5"/><path d="M11 15.5v5M8 20h5"/></svg>
+          <input type="text" placeholder="搜索姓名 / 手机号 / 邮箱…">
+        </div>
+
+        <div class="rc-select-wrap">
+          <select class="rc-select">
+            <option>全部状态</option>
+            <option>在职</option>
+            <option>休假</option>
+            <option>离职</option>
+          </select>
+          <svg class="ic" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+
+        <div class="rc-select-wrap">
+          <select class="rc-select">
+            <option>全部部门</option>
+            <option>前厅</option>
+            <option>后厨</option>
+            <option>值班经理</option>
+            <option>后勤</option>
+          </select>
+          <svg class="ic" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <button class="rc-btn-secondary">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M8 4h2v6M6 8h6M8 10l2 1M8 4v4"/></svg>
+          <span>批量操作</span>
+        </button>
+        <button class="rc-btn-secondary">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 4v16M12 4v5M12 12h3M12 12v5M12 4h3v1M12 5.5h3v2h-7"/></svg>
+          <span>导出</span>
+        </button>
+      </div>
+
+      <!-- 表格 -->
+      <div style="margin-top:24px; overflow:hidden;">
+        <table class="rc-table">
+          <thead class="rc-thead">
+            <tr>
+              <th><input type="checkbox" class="rc-check"></th>
+              <th>员工</th>
+              <th>手机号</th>
+              <th>职位</th>
+              <th>入职日期</th>
+              <th>状态</th>
+              <th style="text-align:right">操作</th>
+            </tr>
+          </thead>
+          <tbody class="rc-tbody">
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#5a49e0">林</div>
+                  <div>
+                    <div class="rc-name">林晓雯</div>
+                    <div class="rc-id">RC-1008</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0491 270 335</span></td>
+              <td><span class="rc-grey-badge">值班经理</span></td>
+              <td>2022-03-14</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h7v2h-7M5 4h4M5 4h7v2M3 8l6 7 6-7"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#12b981">陈</div>
+                  <div><div class="rc-name">陈雨桐</div><div class="rc-id">RC-1021</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0433 782 901</span></td>
+              <td><span class="rc-grey-badge">前厅主管</span></td>
+              <td>2021-11-02</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h7v16h-7M16 8h5M16 11l3 2M19 10l-2 3"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#f59e0b">王</div>
+                  <div><div class="rc-name">王浩然</div><div class="rc-id">RC-1015</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0421 655 208</span></td>
+              <td><span class="rc-grey-badge">后厨厨师</span></td>
+              <td>2022-07-19</td>
+              <td><span class="rc-badge rc-status-warn"><span class="dot" style="background:var(--rc-warning)"></span>休假</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h7v16h-7M16 3h5M3 8h6M7 11l2 2"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#0ea5e9">赵</div>
+                  <div><div class="rc-name">赵婉婷</div><div class="rc-id">RC-1024</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0455 019 664</span></td>
+              <td><span class="rc-grey-badge">服务员</span></td>
+              <td>2023-06-30</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h7v16h-7M16 3h5M5 8h7M5 11zM3 8v3"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#ef4444">张</div>
+                  <div><div class="rc-name">张启航</div><div class="rc-id">RC-1002</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0411 546 783</span></td>
+              <td><span class="rc-grey-badge">值班经理</span></td>
+              <td>2020-11-05</td>
+              <td><span class="rc-badge rc-status-red"><span class="dot" style="background:var(--rc-danger)"></span>离职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h7v16H12M5 4v2M5 8v3h7M12 8h5"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#7c3aed">李</div>
+                  <div><div class="rc-name">李慧敏</div><div class="rc-id">RC-1031</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0450 342 519</span></td>
+              <td><span class="rc-grey-badge">服务员</span></td>
+              <td>2023-12-18</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h7v6M20 19l-5 1M4 8l2 3M3 8h4"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#f97316">周</div>
+                  <div><div class="rc-name">周明远</div><div class="rc-id">RC-1019</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0428 194 760</span></td>
+              <td><span class="rc-grey-badge">后厨厨师</span></td>
+              <td>2022-07-11</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h9v10H14M8 8M12 10M3 9l6v5M16 5v4h-7"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#10b981">刘</div>
+                  <div><div class="rc-name">刘思萌</div><div class="rc-id">RC-1027</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0441 528 937</span></td>
+              <td><span class="rc-grey-badge">收银员</span></td>
+              <td>2023-04-22</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h6v4M16 3h4M3 10h5M20 7h-6M9 12l3 2"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#d946ef">吴</div>
+                  <div><div class="rc-name">吴锦鸿</div><div class="rc-id">RC-1005</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0402 116 458</span></td>
+              <td><span class="rc-grey-badge">后勤员工</span></td>
+              <td>2021-07-09</td>
+              <td><span class="rc-badge rc-status-warn"><span class="dot" style="background:var(--rc-warning)"></span>休假</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 3h7M12 8l6 1M5 8l3 4M4 13h16M19 8l3 1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" class="rc-check"></td>
+              <td>
+                <div class="rc-staff">
+                  <div class="rc-avatar" style="background:#6366f1">郑</div>
+                  <div><div class="rc-name">郑依琳</div><div class="rc-id">RC-1035</div></div>
+                </div>
+              </td>
+              <td><span class="rc-phone">0458 260 374</span></td>
+              <td><span class="rc-grey-badge">服务员</span></td>
+              <td>2024-02-08</td>
+              <td><span class="rc-badge rc-status-ok"><span class="dot" style="background:var(--rc-success)"></span>在职</span></td>
+              <td class="rc-actions">
+                <button class="rc-icon-btn" data-tip="编辑"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h6v3M14 4h6v3M4 10h9M3 13h15"/></svg></button>
+                <button class="rc-icon-btn" data-tip="排班"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="4" rx="1"/><rect x="14" y="4" width="6" height="4" rx="1"/><rect x="4" y="11" width="6" height="4" rx="1"/><rect x="14" y="11" width="6" height="4" rx="1"/></svg></button>
+                <button class="rc-icon-btn" data-tip="更多"><svg class="ic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/></svg></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 分页 -->
+      <div class="rc-pagination">
+        <span class="rc-pg-info">共 24 条 · 每页 10 条</span>
+        <div class="rc-pg-pages">
+          <button class="rc-pg-btn" aria-label="上一页"><svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-6 6 6-6"/></svg></button>
+          <button class="rc-pg-btn rc-pg-current">1</button>
+          <button class="rc-pg-btn">2</button>
+          <button class="rc-pg-btn">3</button>
+          <button class="rc-pg-btn" aria-label="下一页"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5l6 6-6 6"/></svg></button>
+        </div>
+        <span class="rc-pg-total">共 3 页</span>
+      </div>
+    </div>
+
+    <p style="height:120px"></p>
+  </div>
+</div>
+
+</main>
+</body>
+</html>

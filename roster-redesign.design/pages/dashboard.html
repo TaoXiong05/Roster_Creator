@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据看板 - Roster Creator</title>
+    <style id="theme-vars">
+/* ============================================================
+   Roster Creator — Redesign Design Tokens
+   ============================================================
+   brandPrefix: rc
+   Direction : Modern professional SaaS workbench
+   Primary   : Indigo (professional, trustworthy, energetic)
+   Neutrals  : Cool slate with a hint of blue
+   Radius    : Generous rounded corners (friendly, approachable)
+   Motion    : Subtle, purposeful micro-interactions
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ============ Brand: Indigo ============ */
+  --rc-primary-50: #eef1ff;
+  --rc-primary-100: #e0e5ff;
+  --rc-primary-200: #c7cdff;
+  --rc-primary-300: #a5a9ff;
+  --rc-primary-400: #8884fb;
+  --rc-primary-500: #6d63f0;
+  --rc-primary-600: #5a49e0;
+  --rc-primary-700: #4a38c2;
+  --rc-primary-800: #3c2f9c;
+  --rc-primary-900: #312a78;
+
+  /* ============ Semantic surface (light) ============ */
+  --rc-background: #f4f5fb;
+  --rc-foreground: #191c2e;
+  --rc-card: #ffffff;
+  --rc-card-foreground: #191c2e;
+  --rc-popover: #ffffff;
+  --rc-popover-foreground: #191c2e;
+  --rc-muted: #eceef7;
+  --rc-muted-foreground: #6a7089;
+  --rc-border: #e6e8f2;
+  --rc-input: #e0e3f0;
+  --rc-ring: #8884fb;
+  --rc-primary: #4a38c2;
+  --rc-primary-foreground: #ffffff;
+  --rc-link: #4a38c2;
+
+  /* ============ Support hues ============ */
+  --rc-success: #12b981;
+  --rc-success-soft: #e7f8f1;
+  --rc-warning: #f59e0b;
+  --rc-warning-soft: #fef5e5;
+  --rc-danger: #ef4444;
+  --rc-danger-soft: #fdeaea;
+  --rc-info: #0ea5e9;
+  --rc-info-soft: #e7f4fd;
+
+  /* ============ Typography ============ */
+  --rc-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --rc-font-display: 'Sora', 'Inter', 'Segoe UI', system-ui, -apple-system,
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --rc-font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+
+  /* ============ Radius (generous) ============ */
+  --rc-radius-sm: 10px;
+  --rc-radius-md: 14px;
+  --rc-radius-lg: 20px;
+  --rc-radius-xl: 28px;
+  --rc-radius-full: 9999px;
+
+  /* ============ Elevation ============ */
+  --rc-shadow-sm: 0 1px 2px rgba(16, 18, 44, 0.05);
+  --rc-shadow-md: 0 4px 16px -2px rgba(30, 27, 75, 0.08);
+  --rc-shadow-lg: 0 16px 40px -12px rgba(30, 27, 75, 0.18);
+  --rc-shadow-glow: 0 8px 28px -6px rgba(109, 99, 240, 0.55);
+
+  /* ============ Layout ============ */
+  --rc-sidebar-width: 264px;
+  --rc-header-height: 72px;
+}
+
+    
+.avatar-btn{display:inline-flex!important;align-items:center;justify-content:center;background-size:cover!important}
+.avatar-btn .avatar-letter,.avatar-letter{font-size:14px;color:#fff;font-weight:700;line-height:1}
+.ui-avatar{display:inline-flex;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6d63f0,#8884fb);color:#fff;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:none}
+</style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--rc-background);
+    --color-foreground: var(--rc-foreground);
+    --color-card: var(--rc-card);
+    --color-card-foreground: var(--rc-card-foreground);
+    --color-popover: var(--rc-popover);
+    --color-popover-foreground: var(--rc-popover-foreground);
+    --color-primary: var(--rc-primary);
+    --color-primary-foreground: var(--rc-primary-foreground);
+    --color-muted: var(--rc-muted);
+    --color-muted-foreground: var(--rc-muted-foreground);
+    --color-border: var(--rc-border);
+    --color-input: var(--rc-input);
+    --color-ring: var(--rc-ring);
+    --radius-sm: var(--rc-radius-sm);
+    --radius-md: var(--rc-radius-md);
+    --radius-lg: var(--rc-radius-lg);
+    --radius-xl: var(--rc-radius-xl);
+  }
+  @layer base {
+    body { background: var(--rc-background); color: var(--rc-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--rc-background); }
+      .text-background { color: var(--rc-background); }
+      .border-background { border-color: var(--rc-background); }
+      .ring-background { --tw-ring-color: var(--rc-background); }
+      .bg-foreground { background-color: var(--rc-foreground); }
+      .text-foreground { color: var(--rc-foreground); }
+      .border-foreground { border-color: var(--rc-foreground); }
+      .ring-foreground { --tw-ring-color: var(--rc-foreground); }
+      .bg-card { background-color: var(--rc-card); }
+      .text-card { color: var(--rc-card); }
+      .border-card { border-color: var(--rc-card); }
+      .ring-card { --tw-ring-color: var(--rc-card); }
+      .bg-card-foreground { background-color: var(--rc-card-foreground); }
+      .text-card-foreground { color: var(--rc-card-foreground); }
+      .border-card-foreground { border-color: var(--rc-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--rc-card-foreground); }
+      .bg-popover { background-color: var(--rc-popover); }
+      .text-popover { color: var(--rc-popover); }
+      .border-popover { border-color: var(--rc-popover); }
+      .ring-popover { --tw-ring-color: var(--rc-popover); }
+      .bg-popover-foreground { background-color: var(--rc-popover-foreground); }
+      .text-popover-foreground { color: var(--rc-popover-foreground); }
+      .border-popover-foreground { border-color: var(--rc-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--rc-popover-foreground); }
+      .bg-primary { background-color: var(--rc-primary); }
+      .text-primary { color: var(--rc-primary); }
+      .border-primary { border-color: var(--rc-primary); }
+      .ring-primary { --tw-ring-color: var(--rc-primary); }
+      .bg-primary-foreground { background-color: var(--rc-primary-foreground); }
+      .text-primary-foreground { color: var(--rc-primary-foreground); }
+      .border-primary-foreground { border-color: var(--rc-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--rc-primary-foreground); }
+      .bg-muted { background-color: var(--rc-muted); }
+      .text-muted { color: var(--rc-muted); }
+      .border-muted { border-color: var(--rc-muted); }
+      .ring-muted { --tw-ring-color: var(--rc-muted); }
+      .bg-muted-foreground { background-color: var(--rc-muted-foreground); }
+      .text-muted-foreground { color: var(--rc-muted-foreground); }
+      .border-muted-foreground { border-color: var(--rc-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--rc-muted-foreground); }
+      .bg-border { background-color: var(--rc-border); }
+      .text-border { color: var(--rc-border); }
+      .border-border { border-color: var(--rc-border); }
+      .ring-border { --tw-ring-color: var(--rc-border); }
+      .bg-input { background-color: var(--rc-input); }
+      .text-input { color: var(--rc-input); }
+      .border-input { border-color: var(--rc-input); }
+      .ring-input { --tw-ring-color: var(--rc-input); }
+      .bg-ring { background-color: var(--rc-ring); }
+      .text-ring { color: var(--rc-ring); }
+      .border-ring { border-color: var(--rc-ring); }
+      .ring-ring { --tw-ring-color: var(--rc-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <div class="app">
+      <!-- ==================== SIDEBAR ==================== -->
+      <aside class="sidebar" aria-label="主导航">
+        <div class="brand">
+          <button class="brand-mark" type="button" aria-label="Roster Creator 首页">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="17" height="2" rx="1"/><rect x="3" y="11" width="11" height="7" rx="1.2"/><path d="M17 11h4v7H14M20 18l1-4-5 4-2 4z"/><path d="M7 3v2M9 3v2M11 3v2"/><circle cx="7" cy="7" r=".7"/><circle cx="9" cy="7" r=".7"/><circle cx="11" cy="7" r=".7"/></svg>
+          </button>
+          <span class="brand-text">
+            <div class="brand-name">Roster Creator</div>
+            <div class="brand-sub">排班工作台</div>
+          </span>
+        </div>
+
+        <div class="nav-group-label">工作区</div>
+        <nav class="nav-group" aria-label="工作区">
+          <button class="nav-item active" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M4 3h16v2M9 14h2v4M14 7h2v6M4 8h7v2M12 10h6v2M4 16h8v2M15 15h5v2"/></svg>
+            <span class="nav-label">概览</span>
+          </button>
+          <button class="nav-item" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><rect x="4" y="16" width="8" height="3" rx="1"/><rect x="16" y="16" width="4" height="3" rx="1"/><path d="M3 8h7v3M3 11h5v2M12 8h7v3M12 11h5v2"/></svg>
+            <span class="nav-label">排班管理</span>
+          </button>
+          <button class="nav-item" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.2"/><circle cx="17" cy="7" r="4.2"/><path d="M7 11h10v2M3 115h7vUz"/><path d="M7 11a2 2 0 1-16 7"/></svg>
+            <span class="nav-label">员工管理</span>
+          </button>
+          <button class="nav-item" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="4"/><path d="M12 9l-3.5 4h7z"/><path d="M12 13h-2.5v3M12 16h5v2M9 14v2M4 5h5v14M15 3h6v2"/></svg>
+            <span class="nav-label">考勤打卡</span>
+          </button>
+          <button class="nav-item" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13M4 14h9v3M13 4h8v10M4 6h4v2M17 16h3v2"/></svg>
+            <span class="nav-label">消息通知</span>
+            <span class="badge-dot">3</span>
+          </button>
+        </nav>
+
+        <div class="nav-group-label">团队</div>
+        <nav class="nav-group" aria-label="团队">
+          <button class="nav-item" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4.5"/><path d="M7 11h10v3M12 15h2.5v3M4 12v4M8 12v2M16 14h-2v5M20 12v4"/></svg>
+            <span class="nav-label">团队日历</span>
+          </button>
+          <button class="nav-item" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6-6M16 8l-4 6-6 4z"/><circle cx="5" cy="6" r="2.4"/><path d="M7 4h2v3M13 7h4v3M17 11h-2v5M4 12h4v4M12 12h6v2"/></svg>
+            <span class="nav-label">设置</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-user" role="button" tabindex="0">
+          <span class="ui-avatar" aria-hidden="true">S</span>
+          <span class="su-text">
+            <div class="su-name">Sara Chen</div>
+            <div class="su-role">门店管理者</div>
+          </span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </div>
+      </aside>
+
+      <!-- ==================== TOP BAR ==================== -->
+      <div class="content-wrap">
+        <header class="topbar">
+          <button class="hamburger" type="button" aria-label="展开菜单">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="crumb">
+            <span>管理后台</span><span class="sep">/</span>
+            <span class="current">概览</span>
+          </div>
+          <div class="page-title">概览 <span class="page-sub">· Today</span></div>
+
+          <div class="top-actions">
+            <label class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M18 9h4M15 14h6v2"/></svg>
+              <input class="ph" type="text" placeholder="搜索员工、班次…" aria-label="全局搜索">
+              <span class="kbd">⌘K</span>
+            </label>
+            <button class="icon-btn" type="button" aria-label="通知">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h-6 7-3M6 8l8 4 2"/><path d="M18 12h-3v-1h" /></svg>
+              <span class="icon-dot" aria-hidden="true"></span>
+            </button>
+            <button class="icon-btn" type="button" aria-label="消息">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7v13M4 7h-1M4 7h-1"/><path d="M3 6l7 4H3l7 7M13 6v13M13 6l-7 2"/></svg>
+              <span class="icon-count">5</span>
+            </button>
+            <button class="avatar-btn" type="button" aria-label="账户" style="background:linear-gradient(135deg,#5a49e0,#8884fb)"><span class="avatar-letter">S</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- ==================== CONTENT ==================== -->
+        <main class="main">
+          <div class="main-inner">
+            <!-- Welcome Banner -->
+            <section class="hero rise d1" aria-label="欢迎信息">
+              <div class="hero-visual" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M13 5l3 3M10 6h3v4M4 14h6v3"/></svg>
+              </div>
+              <div class="hero-text">
+                <h1>早上好，Sara ☀️</h1>
+                <p>这是你今天的排班安排 —— 16 名员工轮班，3 项待审批调整。</p>
+              </div>
+              <div class="hero-actions">
+                <button class="hero-btn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M12 5l-4 7M12 8l4-5M17 8l-7-3"/></svg>
+                  创建新排班
+                </button>
+                <button class="hero-btn ghost" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="3.2"/><circle cx="18" cy="9" r="3.2"/><path d="M9 12l-1 3M4 15h8v3M18 12l3-6M18 12v3"/></svg>
+                  邀请成员
+                </button>
+              </div>
+            </section>
+
+            <!-- KPI Cards -->
+            <section class="kpi-grid" aria-label="关键指标">
+              <article class="kpi-card rise d2">
+                <div class="kpi-top">
+                  <span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 9l-4-2M18 9l4-2M6 9v6M12 9v6M17 9v6M9 14M21 9v6"/></svg></span>
+                  <span class="kpi-title">本周总工时</span>
+                </div>
+                <div class="kpi-value">684<small style="font-size:14px">&nbsp;h</small></div>
+                <div class="kpi-delta up"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 17l5 5L12 15h-2M19 15l-2 5"/><path d="M4 22h16v-2M8 8v14h-6"/></svg>12%</div>
+                <small class="kpi-extra">较上周</small>
+              </article>
+              <article class="kpi-card rise d3">
+                <div class="kpi-top">
+                  <span class="kpi-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="3"/><circle cx="18" cy="9" r="3"/><path d="M9 12l3 5M18 12l3 5M6 15h8v2"/></svg></span>
+                  <span class="kpi-title">在岗员工</span>
+                </div>
+                <div class="kpi-value">128</div>
+                <div class="kpi-delta up"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 17l5 5 3 15z-2M19 15l5 5M4 22h16v-2M8 8v14h-6"/></svg>5%</div>
+                <small class="kpi-extra">较上周</small>
+              </article>
+              <article class="kpi-card rise d4">
+                <div class="kpi-top">
+                  <span class="kpi-ico amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="7" y="7" width="6" height="4" rx="1"/><rect x="15" y="7" width="4" height="4" rx="1"/><rect x="7" y="13" width="10" height="4" rx="1"/></svg></span>
+                  <span class="kpi-title">待处理排班</span>
+                </div>
+                <div class="kpi-value">17</div>
+                <div class="kpi-delta down"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 5h16v2M8 8v14h-6M4 11l5 4 3 15z-3M4 22l3-2"/></svg>3%</div>
+                <small class="kpi-extra">需确认</small>
+              </article>
+              <article class="kpi-card rise d5">
+                <div class="kpi-top">
+                  <span class="kpi-ico red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="10" r="7"/><path d="M12 17l-4 3M12 17h4v-3M6 13v4M9 7v4M14 5v7"/></svg></span>
+                  <span class="kpi-title">异常出勤</span>
+                </div>
+                <div class="kpi-value">3</div>
+                <div class="kpi-delta down"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 5h16v2h4M4 8l4 5z-3"/></svg>2%</div>
+                <small class="kpi-extra">本周</small>
+              </article>
+            </section>
+
+            <!-- Charts -->
+            <section class="charts-grid" aria-label="图表">
+              <!-- Line chart -->
+              <article class="chart-card rise d4">
+                <div class="chart-head">
+                  <div class="chart-titles">
+                    <div class="chart-title">本周工时趋势</div>
+                    <div class="chart-sub">实际 vs 目标 · 上周同期对比</div>
+                  </div>
+                  <div class="legend">
+                    <button class="legend-item" type="button">
+                      <span class="swatch" style="background:var(--rc-primary-600)"></span>实际
+                    </button>
+                    <button class="legend-item" type="button">
+                      <span class="swatch" style="background:#c7cdff"></span>目标
+                    </button>
+                  </div>
+                  <div class="chart-tabs">
+                    <button class="chart-tab active" type="button">按天</button>
+                    <button class="chart-tab" type="button">按周</button>
+                    <button class="chart-tab" type="button">按月</button>
+                  </div>
+                </div>
+                <svg viewBox="0 0 720 300" role="img" aria-label="本周工时趋势折线图" class="chart-canvas">
+                  <defs>
+                    <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#5a49e0" stop-opacity="0.28"/>
+                      <stop offset="1" stop-color="#5a49e0" stop-opacity="0.02"/>
+                    </linearGradient>
+                  </defs>
+                  <g stroke="var(--rc-border)" stroke-width="1">
+                    <line x1="60" y1="40" x2="690" y2="40"/><line x1="60" y1="90" x2="690" y2="90"/>
+                    <line x1="60" y1="140" x2="690" y2="140"/><line x1="60" y1="190" x2="690" y2="190"/>
+                    <line x1="60" y1="240" x2="690" y2="240"/>
+                  </g>
+                  <g font-size="11" fill="var(--rc-muted-foreground)">
+                    <text x="50" y="44" text-anchor="end">120</text>
+                    <text x="50" y="94" text-anchor="end">90</text>
+                    <text x="50" y="144" text-anchor="end">60</text>
+                    <text x="50" y="194" text-anchor="end">30</text>
+                    <text x="50" y="244" text-anchor="end">0</text>
+                  </g>
+                  <g font-size="12" fill="var(--rc-muted-foreground)" text-anchor="middle">
+                    <text x="96" y="262">周一</text><text x="200" y="262">周二</text>
+                    <text x="304" y="262">周三</text><text x="408" y="262">周四</text>
+                    <text x="512" y="262">周五</text><text x="616" y="262">周六</text>
+                    <text x="706" y="262">周日</text>
+                  </g>
+                  <!-- area under actual -->
+                  <path d="M96,150 L200,120 L304,96 L408,130 L512,70 L616,56 L706,40 L720,260 L96,260 Z" fill="url(#areaFill)"/>
+                  <!-- target dashed -->
+                  <polyline points="96,170 200,150 304,130 408,138 512,118 616,104 706,98" fill="none" stroke="#c7cdff" stroke-width="2.5" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- actual -->
+                  <polyline points="96,150 200,120 304,96 408,130 512,70 616,56 706,40" fill="none" stroke="var(--rc-primary-600)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- dots -->
+                  <g fill="var(--rc-primary-600)">
+                    <circle cx="96" cy="150" r="4"/><circle cx="200" cy="120" r="4"/><circle cx="304" cy="96" r="4"/>
+                    <circle cx="408" cy="130" r="4"/><circle cx="512" cy="84" r="6" stroke="var(--rc-card)"/><circle cx="616" cy="56" r="4"/><circle cx="704" cy="40" r="4"/>
+                  </g>
+                </svg>
+              </article>
+
+              <!-- Donut -->
+              <article class="chart-card rise d5">
+                <div class="chart-head">
+                  <div class="chart-titles">
+                    <div class="chart-title">排班完成度</div>
+                    <div class="chart-sub">本月排班进度</div>
+                  </div>
+                </div>
+                <div class="donut-wrap">
+                  <svg viewBox="0 0 200 200" class="donut-svg" role="img" aria-label="排班完成度 78%">
+                    <circle cx="100" cy="100" r="78" fill="none" stroke="var(--rc-muted)" stroke-width="16"/>
+                    <circle cx="100" cy="100" r="78" fill="none" stroke="var(--rc-primary-600)" stroke-width="16" stroke-linecap="round" stroke-dasharray="392 490" transform="rotate(-90 100 100)"/>
+                    <circle cx="100" cy="100" r="78" fill="none" stroke="#a78bfa" stroke-width="16" stroke-linecap="round" stroke-dasharray="98 490" stroke-dashoffset="-392" transform="rotate(-90 100 100)"/>
+                    <text x="100" y="96" text-anchor="middle" font-size="30" font-weight="800" fill="var(--rc-foreground)">78%</text>
+                    <text x="100" y="120" text-anchor="middle" font-size="12" fill="var(--rc-muted-foreground)">完成进度</text>
+                  </svg>
+                </div>
+                <div class="donut-legend">
+                  <span class="legend-item"><span class="swatch" style="background:var(--rc-primary-600)"></span>已排班 62%</span>
+                  <span class="legend-item"><span class="swatch" style="background:#a78bfa"></span>待确认 16%</span>
+                  <span class="legend-item"><span class="swatch" style="background:var(--rc-muted)"></span>未排 22%</span>
+                </div>
+              </article>
+            </section>
+
+            <!-- Second row -->
+            <section class="row2" aria-label="最近排班与待办">
+              <article class="table-card rise d6">
+                <div class="card-head">
+                  <div class="chart-titles">
+                    <div class="chart-title">最近排班</div>
+                    <div class="chart-sub">本周最新调整</div>
+                  </div>
+                  <button class="card-more" type="button">查看全部 <span class="arr">›</span></button>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr><th>ID</th><th>员工</th><th>日期</th><th>班次</th><th>状态</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td class="mono-id">RS-1042</td><td>Emily Wang</td><td>08-20</td><td class="shift-cell">早班 08:00-16:00</td><td><span class="status-badge status-ok">已确认</span></td></tr>
+                    <tr><td class="mono-id">RS-1041</td><td>Jack Li</td><td>08-20</td><td class="shift-cell">晚班 16:00-24:00</td><td><span class="status-badge status-warn">待确认</span></td></tr>
+                    <tr><td class="mono-id">RS-1040</td><td>Mia Zhao</td><td>08-21</td><td class="shift-cell">早班 08:00-16:00</td><td><span class="status-badge status-ok">已确认</span></td></tr>
+                    <tr><td class="mono-id">RS-1039</td><td>Leo Huang</td><td>08-21</td><td class="shift-cell">夜班 24:00-08:00</td><td><span class="status-badge status-danger">冲突</span></td></tr>
+                    <tr><td class="mono-id">RS-1038</td><td>Anna Kim</td><td>08-22</td><td class="shift-cell">下午班 12:00-20:00</td><td><span class="status-badge status-info">草稿</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="todo-card">
+                <div class="card-head">
+                  <div class="chart-titles">
+                    <div class="chart-title">待办事项</div>
+                    <div class="chart-sub">3 项今日待处理</div>
+                  </div>
+                </div>
+                <div class="todo-list">
+                  <button class="todo-item" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16v13M4 6h4v3M15 4l8-2M9 11v12M15 15l-6-3"/></svg>
+                    <span class="txt">确认 Jack 的晚班调整</span><span class="tag">排班</span><span class="todo-arrow">›</span>
+                  </button>
+                  <button class="todo-item" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="4.5"/><path d="M12 12l4 4M12 12h4-4M5 14h7v2M18 13h4v4M12 16v5"/></svg>
+                    <span class="txt">Leo 班次冲突需调整</span><span class="tag">重要</span><span class="todo-arrow">›</span>
+                  </button>
+                  <button class="todo-item" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 5h16v2M9 17v4M4 10h4v2M16 14h4v3"/></svg>
+                    <span class="txt">审批新员工排班请求</span><span class="tag">审批</span><span class="todo-arrow">›</span>
+                  </button>
+                  <button class="todo-item" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 9v6M8 12h8"/></svg>
+                    <span class="txt">更新门店节假日轮值</span><span class="tag">日历</span><span class="todo-arrow">›</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script>lucide.createIcons();</script>
+
+    <style>
+      /* ============ Page Base ============ */
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; padding: 0; }
+      body {
+        font-family: var(--rc-font-sans);
+        background: var(--rc-background);
+        color: var(--rc-foreground);
+        overflow: hidden;
+      }
+      :focus-visible { outline: 2px solid var(--rc-primary-500); outline-offset: 2px; }
+
+      /* Card entrance animation (staggered via .anim-delay) */
+      @keyframes riseIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .rise { animation: riseIn .5s ease both; }
+      .d1 { animation-delay: .05s; }
+      .d2 { animation-delay: .12s; }
+      .d3 { animation-delay: .19s; }
+      .d4 { animation-delay: .26s; }
+      .d5 { animation-delay: .33s; }
+      .d6 { animation-delay: .40s; }
+      .d7 { animation-delay: .47s; }
+
+      /* ============ Layout scaffolding ============ */
+      .app { display: flex; height: 100vh; }
+      .content-wrap { margin-left: var(--rc-sidebar-width); flex: 1; }
+
+      /* ============ Sidebar ============ */
+      .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: var(--rc-sidebar-width);
+        background: linear-gradient(160deg, #141a2e 0%, #1b2440 55%, #232e52 100%);
+        color: #cbd3e8;
+        padding: 22px 18px;
+        display: flex; flex-direction: column;
+        overflow-y: auto;
+        transition: all .2s ease;
+      }
+      .brand { display: flex; align-items: center; gap: 11px; }
+      .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+      .brand-mark {
+        width: 40px; height: 40px; border-radius: 12px; flex: none;
+        display: grid; place-items: center; padding: 0; border: 0;
+        background: linear-gradient(135deg, #5a49e0, #8884fb);
+        box-shadow: 0 0 22px rgba(109, 99, 240, .55);
+      }
+      .brand-mark svg { width: 22px; height: 22px; filter: drop-shadow(0 0 6px rgba(255,255,255,.7)); }
+      .brand-name {
+        font-family: var(--rc-font-display);
+        font-weight: 700; font-size: 15px; color: #fff;
+        letter-spacing: .2px;
+        text-shadow: 0 0 14px rgba(255,255,255,.25);
+      }
+      .brand-sub { font-size: 11.5px; color: rgba(203,213,232,.7); }
+      .brand:hover .brand-mark { transform: scale(1.06); }
+
+      .nav-group-label {
+        font-size: 11px; letter-spacing: .14em;
+        color: rgba(160,174,205,.55);
+        margin: 22px 0 8px; font-weight: 600;
+      }
+      .nav-group { display: flex; flex-direction: column; gap: 4px; }
+      .nav-item {
+        display: flex; align-items: center; gap: 12px;
+        width: 100%; padding: 11px 14px; border: 0; background: transparent;
+        border-radius: 10px; color: #c6cede; font-size: 14px; font-weight: 500;
+        text-align: left; cursor: pointer;
+        position: relative; transition: all .2s ease;
+      }
+      .nav-item svg { width: 19px; height: 19px; flex: none; opacity: .8; }
+      .nav-item .nav-label { flex: 1; text-align: left; }
+      .nav-item .nav-caret { font-size: 11px; opacity: .7; }
+      .nav-item:hover {
+        background: rgba(109,99,240,.14);
+        color: #fff;
+        box-shadow: inset 3px 0 0 var(--rc-primary-500);
+      }
+      .nav-item:hover svg { opacity: 1; transform: translateX(1px); }
+      .nav-item.active {
+        background: linear-gradient(90deg, rgba(109,99,240,.28), rgba(109,99,240,.1));
+        color: #fff; font-weight: 600;
+        box-shadow: inset 3px 0 0 #8b7cff, 0 0 14px rgba(109,99,240,.25);
+      }
+      .nav-item.active svg { color: var(--rc-primary-400); }
+      .nav-item:active { transform: scale(.98); }
+      .badge-dot {
+        min-width: 19px; height: 19px; border-radius: 999px; flex: none;
+        display: grid; place-items: center;
+        font-size: 10.5px; font-weight: 700; color: #fff;
+        background: linear-gradient(135deg, #ff5c5c, #ef4444);
+        box-shadow: 0 0 10px rgba(239,68,68,.45);
+      }
+
+      .sidebar-user {
+        margin-top: auto;
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 12px; cursor: pointer;
+        background: rgba(255,255,255,.05);
+        border: 1px solid rgba(255,255,255,.08);
+        transition: all .2s ease;
+      }
+      .sidebar-user img {
+        width: 34px; height: 34px; border-radius: 999px; object-fit: cover;
+      }
+      .sidebar-user .su-name { font-size: 13.5px; color: #fff; font-weight: 600; }
+      .sidebar-user .su-role { font-size: 11px; color: rgba(203,213,228,.7); }
+      .sidebar-user .chev { font-size: 12px; color: rgba(203,213,228,.75); }
+      .sidebar-user:hover { background: rgba(109,99,240,.16); transform: translateY(-1px); box-shadow: 0 4px 16px -4px rgba(109,99,240,.4); }
+
+      /* ============ Top bar ============ */
+      .topbar {
+        position: sticky; top: 0; z-index: 40;
+        height: var(--rc-header-height);
+        background: var(--rc-card);
+        border-bottom: 1px solid var(--rc-border);
+        display: flex; align-items: center; gap: 18px;
+        padding: 0 26px;
+      }
+      .hamburger {
+        width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--rc-border);
+        background: var(--rc-card); display: grid; place-items: center; cursor: pointer;
+        transition: all .2s ease;
+      }
+      .hamburger:hover { background: var(--rc-muted); box-shadow: var(--rc-shadow-sm); transform: translateY(-1px); }
+      .hamburger:active { transform: scale(.96); }
+      .hamburger svg { width: 20px; height: 20px; color: var(--rc-muted-foreground); }
+
+      .crumb { display: flex; align-items: center; gap: 6px; color: var(--rc-muted-foreground); font-size: 13.5px; }
+      .crumb .sep { color: var(--rc-border); }
+      .crumb .current { color: var(--rc-foreground); font-weight: 600; }
+      .page-title { font-family: var(--rc-font-display); font-size: 17px; font-weight: 700; color: var(--rc-foreground); }
+      .page-sub { font-size: 12px; color: var(--rc-muted-foreground); }
+
+      .top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+      .search-box {
+        position: relative;
+        width: 220px; height: 38px; border-radius: 12px;
+        border: 1px solid var(--rc-border); background: var(--rc-card);
+        display: flex; align-items: center; gap: 8px; padding: 0 12px;
+        cursor: text; transition: all .2s ease;
+      }
+      .search-box svg { width: 16px; height: 16px; color: var(--rc-muted-foreground); flex: none; }
+      .search-box .ph { border: 0; outline: none; background: transparent; flex: 1; font-size: 13px; color: var(--rc-foreground); }
+      .search-box .kbd { font-family: var(--rc-font-mono); font-size: 10.5px; color: var(--rc-muted-foreground); border: 1px solid var(--rc-border); border-radius: 6px; padding: 1px 5px; }
+      .search-box:hover, .search-box:focus-within { border-color: var(--rc-primary-500); box-shadow: 0 0 0 3px rgba(109,99,240,.15); transform: translateY(-1px); }
+
+      .icon-btn {
+        position: relative; width: 38px; height: 38px; flex: none;
+        border-radius: 11px; border: 1px solid var(--rc-border);
+        background: var(--rc-card); color: var(--rc-muted-foreground);
+        display: grid; place-items: center; cursor: pointer;
+        transition: all .2s ease;
+      }
+      .icon-btn svg { width: 19px; height: 19px; }
+      .icon-btn:hover { background: var(--rc-muted); color: var(--rc-foreground); transform: translateY(-1px); box-shadow: var(--rc-shadow-sm); }
+      .icon-btn:active { transform: scale(.92); }
+      .icon-dot {
+        position: absolute; top: 7px; right: 8px;
+        width: 9px; height: 9px; border-radius: 999px; background: var(--rc-danger);
+        box-shadow: 0 0 0 2px var(--rc-card);
+      }
+      .icon-count {
+        position: absolute; top: -4px; right: -4px;
+        min-width: 17px; height: 17px; border-radius: 999px;
+        font-size: 10px; font-weight: 700; color: #fff;
+        background: var(--rc-danger); display: grid; place-items: center;
+        box-shadow: 0 0 0 2px var(--rc-card);
+      }
+      .avatar-btn {
+        width: 38px; height: 38px; border-radius: 999px; padding: 0;
+        background-size: cover; cursor: pointer; transition: all .2s ease;
+      }
+      .avatar-btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 3px var(--rc-primary-300), var(--rc-shadow-md); }
+
+      /* ============ Main content ============ */
+      .main { padding: 28px 30px 44px; }
+      .main-inner { display: flex; flex-direction: column; gap: 24px; max-width: 1440px; margin: 0 auto; }
+
+      /* Welcome banner */
+      .hero {
+        position: relative; overflow: hidden;
+        border-radius: var(--rc-radius-xl);
+        background: linear-gradient(120deg, var(--rc-primary-600), #7c54ee 55%, #a78bfa);
+        color: #fff; padding: 30px 34px;
+        display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        box-shadow: var(--rc-shadow-lg);
+      }
+      .hero::before {
+        content: ""; position: absolute; width: 320px; height: 320px; border-radius: 50%;
+        background: rgba(255,255,255,.08); top: -120px; right: -60px;
+      }
+      .hero::after {
+        content: ""; position: absolute; width: 200px; height: 200px; border-radius: 50%;
+        background: rgba(255,255,255,.05); bottom: -80px; left: 180px;
+      }
+      .hero-visual { position: absolute; right: 14px; top: 8px; opacity: .18; width: 130px; height: 130px; }
+      .hero-text h1 { font-family: var(--rc-font-display); font-size: 26px; font-weight: 800; margin: 0; text-shadow: 0 2px 18px rgba(255,255,255,.18); }
+      .hero-text p { font-size: 14px; margin: 6px 0 0; color: rgba(255,255,255,.85); }
+      .hero-actions { display: flex; gap: 12px; align-items: center; }
+      .hero-btn {
+        padding: 11px 18px; border-radius: 12px; cursor: pointer;
+        border: 1px solid rgba(255,255,255,.4); color: #fff;
+        background: rgba(255,255,255,.16); backdrop-filter: blur(6px);
+        font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
+        transition: all .2s ease;
+      }
+      .hero-btn svg { width: 16px; height: 16px; }
+      .hero-btn:hover { background: #fff; color: var(--rc-primary-700); box-shadow: var(--rc-shadow-glow); transform: translateY(-1px); }
+      .hero-btn:active { transform: scale(.97); }
+      .hero-btn.ghost { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.26); }
+      .hero-btn.ghost:hover { background: rgba(255,255,255,.9); color: var(--rc-primary-700); }
+      .hero-btn.ghost:active { transform: scale(.97); }
+
+      /* KPI cards */
+      .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+      .kpi-card {
+        background: var(--rc-card); border: 1px solid var(--rc-border);
+        border-radius: var(--rc-radius-lg); padding: 22px 22px;
+        box-shadow: var(--rc-shadow-sm); transition: all .2s ease;
+      }
+      .kpi-card:hover { transform: translateY(-3px); box-shadow: var(--rc-shadow-lg); border-color: var(--rc-primary-200); }
+      .kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+      .kpi-ico {
+        width: 38px; height: 38px; border-radius: 11px; flex: none;
+        display: grid; place-items: center; color: var(--rc-primary-600);
+        background: var(--rc-primary-50);
+      }
+      .kpi-ico.green { background: var(--rc-success-soft); color: var(--rc-success); }
+      .kpi-ico.amber { background: var(--rc-warning-soft); color: var(--rc-warning); }
+      .kpi-ico.red { background: var(--rc-danger-soft); color: var(--rc-danger); }
+      .kpi-ico svg { width: 20px; height: 20px; }
+      .kpi-title { font-size: 13px; color: var(--rc-muted-foreground); font-weight: 500; }
+      .kpi-value { font-family: var(--rc-font-display); font-size: 30px; font-weight: 800; color: var(--rc-foreground); letter-spacing: .5px; }
+      .kpi-delta { font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+      .kpi-delta.up { color: var(--rc-success); }
+      .kpi-delta.down { color: var(--rc-danger); }
+      .kpi-delta svg { width: 13px; height: 13px; }
+      .kpi-extra { font-size: 12px; color: var(--rc-muted-foreground); }
+
+      /* Chart cards */
+      .charts-grid { display: grid; grid-template-columns: 7fr 3fr; gap: 20px; }
+      .chart-card {
+        background: var(--rc-card); border: 1px solid var(--rc-border);
+        border-radius: var(--rc-radius-lg); padding: 22px 24px;
+        box-shadow: var(--rc-shadow-sm); transition: all .2s ease;
+      }
+      .chart-card:hover { box-shadow: var(--rc-shadow-md); }
+      .chart-head { display: flex; align-items: center; gap: 14px; }
+      .chart-title { font-size: 15px; font-weight: 700; color: var(--rc-foreground); }
+      .chart-sub { font-size: 12px; color: var(--rc-muted-foreground); }
+      .chart-tabs { display: flex; gap: 6px; }
+      .chart-tab {
+        padding: 6px 12px; border-radius: 9px; font-size: 12.5px; font-weight: 500;
+        border: 1px solid var(--rc-border); background: var(--rc-card); color: var(--rc-muted-foreground);
+        cursor: pointer; transition: all .2s ease;
+      }
+      .chart-tab:hover { background: var(--rc-muted); color: var(--rc-foreground); }
+      .chart-tab.active { background: var(--rc-primary-600); color: #fff; border-color: transparent; box-shadow: 0 2px 10px -2px var(--rc-primary-500); }
+      .chart-tab:active { transform: scale(.96); }
+      .legend { display: flex; align-items: center; gap: 10px; }
+      .legend-item {
+        display: inline-flex; align-items: center; gap: 7px; font-size: 12px; cursor: pointer;
+        padding: 5px 10px; border-radius: 999px; border: 1px solid transparent;
+        transition: all .2s ease;
+      }
+      .legend-item:hover { background: var(--rc-muted); }
+      .legend-item.off { opacity: .45; text-decoration: line-through; }
+      .legend-item .swatch { width: 9px; height: 9px; border-radius: 999px; }
+
+      /* Second row */
+      .row2 { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+      .table-card, .todo-card { background: var(--rc-card); border: 1px solid var(--rc-border); border-radius: var(--rc-radius-lg); padding: 22px 24px; box-shadow: var(--rc-shadow-sm); transition: all .2s ease; }
+      .table-card:hover, .todo-card:hover { box-shadow: var(--rc-shadow-md); }
+
+      .data-table { width: 100%; border-collapse: collapse; }
+      .data-table th {
+        text-align: left; font-size: 12px; color: var(--rc-muted-foreground);
+        font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--rc-border); white-space: nowrap;
+      }
+      .data-table td { font-size: 13px; padding: 12px 12px; border-bottom: 1px solid var(--rc-border); color: var(--rc-foreground); }
+      .data-table tbody tr { transition: all .15s ease; }
+      .data-table tbody tr:hover { background: var(--rc-primary-50); }
+      .mono-id { font-family: var(--rc-font-mono); font-size: 12px; color: var(--rc-muted-foreground); }
+      .shift-cell { font-weight: 600; }
+      .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+      .status-badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+      .status-ok { background: var(--rc-success-soft); color: var(--rc-success); }
+      .status-warn { background: var(--rc-warning-soft); color: var(--rc-warning); }
+      .status-danger { background: var(--rc-danger-soft); color: var(--rc-danger); }
+      .status-info { background: var(--rc-info-soft); color: var(--rc-info); }
+
+      .todo-item {
+        display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+        border-radius: 12px; border: 1px solid transparent; cursor: pointer;
+        transition: all .2s ease;
+      }
+      .todo-item svg { width: 18px; height: 18px; flex: none; color: var(--rc-info); }
+      .todo-item .txt { flex: 1; font-size: 13px; color: var(--rc-foreground); }
+      .todo-item .tag { font-size: 11px; color: var(--rc-muted-foreground); background: var(--rc-muted); padding: 2px 8px; border-radius: 999px; }
+      .todo-item:hover { background: var(--rc-primary-50); border-color: var(--rc-primary-200); transform: translateX(2px); box-shadow: var(--rc-shadow-sm); }
+      .todo-item:active { transform: scale(.98); }
+      .todo-arrow { font-size: 12px; color: var(--rc-muted-foreground); }
+
+      .card-more { font-size: 12.5px; color: var(--rc-primary-600); font-weight: 600; cursor: pointer; }
+      .card-more:hover { color: var(--rc-primary-700); text-decoration: underline; }
+      .card-more .arr { transition: transform .2s ease; }
+      .card-more:hover .arr { transform: translateX(3px); }
+
+      /* ============ Misc helpers referenced in markup ============ */
+      .su-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; flex: 1; }
+      .su-text div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .chart-titles { display: flex; flex-direction: column; line-height: 1.2; gap: 1px; }
+      .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+      .chart-canvas { display: block; width: 100%; height: auto; margin-top: 18px; }
+      .donut-wrap { display: grid; place-items: center; margin-top: 14px; }
+      .donut-svg { display: block; width: 170px; height: 170px; }
+      .donut-legend { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+      .donut-legend .legend-item { cursor: default; }
+      .todo-list { display: flex; flex-direction: column; gap: 10px; }
+    </style>
+</body>
+</html>

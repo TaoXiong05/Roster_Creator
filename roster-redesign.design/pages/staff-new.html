@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建员工 - Roster Creator</title>
+    <style id="theme-vars">
+/* ============================================================
+   Roster Creator — Redesign Design Tokens
+   ============================================================
+   brandPrefix: rc
+   Direction : Modern professional SaaS workbench
+   Primary   : Indigo (professional, trustworthy, energetic)
+   Neutrals  : Cool slate with a hint of blue
+   Radius    : Generous rounded corners (friendly, approachable)
+   Motion    : Subtle, purposeful micro-interactions
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ============ Brand: Indigo ============ */
+  --rc-primary-50: #eef1ff;
+  --rc-primary-100: #e0e5ff;
+  --rc-primary-200: #c7cdff;
+  --rc-primary-300: #a5a9ff;
+  --rc-primary-400: #8884fb;
+  --rc-primary-500: #6d63f0;
+  --rc-primary-600: #5a49e0;
+  --rc-primary-700: #4a38c2;
+  --rc-primary-800: #3c2f9c;
+  --rc-primary-900: #312a78;
+
+  /* ============ Semantic surface (light) ============ */
+  --rc-background: #f4f5fb;
+  --rc-foreground: #191c2e;
+  --rc-card: #ffffff;
+  --rc-card-foreground: #191c2e;
+  --rc-popover: #ffffff;
+  --rc-popover-foreground: #191c2e;
+  --rc-muted: #eceef7;
+  --rc-muted-foreground: #6a7089;
+  --rc-border: #e6e8f2;
+  --rc-input: #e0e3f0;
+  --rc-ring: #8884fb;
+  --rc-primary: #4a38c2;
+  --rc-primary-foreground: #ffffff;
+  --rc-link: #4a38c2;
+
+  /* ============ Support hues ============ */
+  --rc-success: #12b981;
+  --rc-success-soft: #e7f8f1;
+  --rc-warning: #f59e0b;
+  --rc-warning-soft: #fef5e5;
+  --rc-danger: #ef4444;
+  --rc-danger-soft: #fdeaea;
+  --rc-info: #0ea5e9;
+  --rc-info-soft: #e7f4fd;
+
+  /* ============ Typography ============ */
+  --rc-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --rc-font-display: 'Sora', 'Inter', 'Segoe UI', system-ui, -apple-system,
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --rc-font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+
+  /* ============ Radius (generous) ============ */
+  --rc-radius-sm: 10px;
+  --rc-radius-md: 14px;
+  --rc-radius-lg: 20px;
+  --rc-radius-xl: 28px;
+  --rc-radius-full: 9999px;
+
+  /* ============ Elevation ============ */
+  --rc-shadow-sm: 0 1px 2px rgba(16, 18, 44, 0.05);
+  --rc-shadow-md: 0 4px 16px -2px rgba(30, 27, 75, 0.08);
+  --rc-shadow-lg: 0 16px 40px -12px rgba(30, 27, 75, 0.18);
+  --rc-shadow-glow: 0 8px 28px -6px rgba(109, 99, 240, 0.55);
+
+  /* ============ Layout ============ */
+  --rc-sidebar-width: 264px;
+  --rc-header-height: 72px;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--rc-background);
+    --color-foreground: var(--rc-foreground);
+    --color-card: var(--rc-card);
+    --color-card-foreground: var(--rc-card-foreground);
+    --color-popover: var(--rc-popover);
+    --color-popover-foreground: var(--rc-popover-foreground);
+    --color-primary: var(--rc-primary);
+    --color-primary-foreground: var(--rc-primary-foreground);
+    --color-muted: var(--rc-muted);
+    --color-muted-foreground: var(--rc-muted-foreground);
+    --color-border: var(--rc-border);
+    --color-input: var(--rc-input);
+    --color-ring: var(--rc-ring);
+    --radius-sm: var(--rc-radius-sm);
+    --radius-md: var(--rc-radius-md);
+    --radius-lg: var(--rc-radius-lg);
+    --radius-xl: var(--rc-radius-xl);
+  }
+  @layer base {
+    body { background: var(--rc-background); color: var(--rc-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--rc-background); }
+      .text-background { color: var(--rc-background); }
+      .border-background { border-color: var(--rc-background); }
+      .ring-background { --tw-ring-color: var(--rc-background); }
+      .bg-foreground { background-color: var(--rc-foreground); }
+      .text-foreground { color: var(--rc-foreground); }
+      .border-foreground { border-color: var(--rc-foreground); }
+      .ring-foreground { --tw-ring-color: var(--rc-foreground); }
+      .bg-card { background-color: var(--rc-card); }
+      .text-card { color: var(--rc-card); }
+      .border-card { border-color: var(--rc-card); }
+      .ring-card { --tw-ring-color: var(--rc-card); }
+      .bg-card-foreground { background-color: var(--rc-card-foreground); }
+      .text-card-foreground { color: var(--rc-card-foreground); }
+      .border-card-foreground { border-color: var(--rc-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--rc-card-foreground); }
+      .bg-popover { background-color: var(--rc-popover); }
+      .text-popover { color: var(--rc-popover); }
+      .border-popover { border-color: var(--rc-popover); }
+      .ring-popover { --tw-ring-color: var(--rc-popover); }
+      .bg-popover-foreground { background-color: var(--rc-popover-foreground); }
+      .text-popover-foreground { color: var(--rc-popover-foreground); }
+      .border-popover-foreground { border-color: var(--rc-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--rc-popover-foreground); }
+      .bg-primary { background-color: var(--rc-primary); }
+      .text-primary { color: var(--rc-primary); }
+      .border-primary { border-color: var(--rc-primary); }
+      .ring-primary { --tw-ring-color: var(--rc-primary); }
+      .bg-primary-foreground { background-color: var(--rc-primary-foreground); }
+      .text-primary-foreground { color: var(--rc-primary-foreground); }
+      .border-primary-foreground { border-color: var(--rc-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--rc-primary-foreground); }
+      .bg-muted { background-color: var(--rc-muted); }
+      .text-muted { color: var(--rc-muted); }
+      .border-muted { border-color: var(--rc-muted); }
+      .ring-muted { --tw-ring-color: var(--rc-muted); }
+      .bg-muted-foreground { background-color: var(--rc-muted-foreground); }
+      .text-muted-foreground { color: var(--rc-muted-foreground); }
+      .border-muted-foreground { border-color: var(--rc-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--rc-muted-foreground); }
+      .bg-border { background-color: var(--rc-border); }
+      .text-border { color: var(--rc-border); }
+      .border-border { border-color: var(--rc-border); }
+      .ring-border { --tw-ring-color: var(--rc-border); }
+      .bg-input { background-color: var(--rc-input); }
+      .text-input { color: var(--rc-input); }
+      .border-input { border-color: var(--rc-input); }
+      .ring-input { --tw-ring-color: var(--rc-input); }
+      .bg-ring { background-color: var(--rc-ring); }
+      .text-ring { color: var(--rc-ring); }
+      .border-ring { border-color: var(--rc-ring); }
+      .ring-ring { --tw-ring-color: var(--rc-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+
+  <main class="wc-shell">
+    <header class="wc-header wc-head">
+      <div class="wc-brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="5" height="11" rx="2"/><rect x="9" y="4" width="5" height="14" rx="2"/><rect x="15" y="2" width="5" height="16" rx="2"/></svg>
+        Roster Creator · 员工管理
+      </div>
+      <h1 class="wc-title">新建员工</h1>
+      <p class="wc-sub">分步填写员工档案，约 2 分钟即可完成，信息可稍后补充。</p>
+    </header>
+
+    <!-- ============================ 步骤条 ============================ -->
+    <nav class="stepper" aria-label="新建员工进度">
+      <div class="step" data-i="0">
+        <button class="step-dot" data-step="1" aria-label="第 1 步 基本信息">1</button>
+        <span class="step-label">基本信息</span>
+      </div>
+      <div class="step-bridge" aria-hidden="true"></div>
+      <div class="step" data-i="1">
+        <button class="step-dot" data-step="2" aria-label="第 2 步 联系方式">2</button>
+        <span class="step-label">联系方式</span>
+      </div>
+      <div class="step-bridge" aria-hidden="true"></div>
+      <div class="step" data-i="2">
+        <button class="step-dot" data-step="3" aria-label="第 3 步 工作信息">3</button>
+        <span class="step-label">工作信息</span>
+      </div>
+      <div class="step-bridge" aria-hidden="true"></div>
+      <div class="step" data-i="3">
+        <button class="step-dot" data-step="4" aria-label="第 4 步 确认">4</button>
+        <span class="step-label">确认</span>
+      </div>
+    </nav>
+
+    <!-- ============================ 向导卡片 ============================ -->
+    <section class="w-card" id="wizard" aria-label="员工新建分步表单">
+      <form id="staffForm" novalidate>
+
+        <!-- 步骤 1 · 基本信息 -->
+        <div class="panel show" data-step="0">
+          <h2 class="panel-title">基本信息</h2>
+          <p class="panel-desc">填写员工的个人身份信息。</p>
+          <p class="req-hint"><span class="ast">*</span> 为必填项</p>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="fName">姓名 <span class="ast">*</span></label>
+              <input class="f-ctrl" id="fName" name="name" type="text" required placeholder="请输入员工姓名" autocomplete="name">
+              <span class="f-msg" id="errName"></span>
+              <span class="check-flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 18 6"/></svg></span>
+            </div>
+            <div class="field">
+              <span class="field-label">性别 <span class="ast">*</span></span>
+              <div class="choice-row" role="radiogroup" aria-label="性别">
+                <div class="choice">
+                  <input type="radio" id="gM" name="gender" value="男">
+                  <label for="gM"><span class="radio-dot"></span>男</label>
+                </div>
+                <div class="choice">
+                  <input type="radio" id="gF" name="gender" value="女">
+                  <label for="gF"><span class="radio-dot"></span>女</label>
+                </div>
+              </div>
+              <span class="f-msg" id="errGender"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fBirth">出生日期 <span class="ast">*</span></label>
+              <input class="f-ctrl" id="fBirth" name="birth" type="date" required>
+              <span class="f-msg" id="errBirth"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fId">身份证 / 护照号</label>
+              <input class="f-ctrl" id="fId" name="idnum" type="text" placeholder="可选，留空亦可">
+              <span class="f-msg" id="errId"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fNation">国籍 <span class="ast">*</span></label>
+              <select class="f-ctrl" id="fNation" name="nation" required>
+                <option value="" disabled selected>请选择国籍</option>
+                <option>中国大陆</option>
+                <option>印度</option>
+                <option>澳大利亚</option>
+                <option>新西兰</option>
+                <option>其他国家</option>
+              </select>
+              <span class="f-msg" id="errNation"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fAddr">现住址</label>
+              <input class="f-ctrl" id="fAddr" name="address" type="text" placeholder="街道 / 门牌号 / 城市">
+              <span class="f-msg" id="errAddr"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 步骤 2 · 联系方式 -->
+        <div class="panel" data-step="1">
+          <h2 class="panel-title">联系方式</h2>
+          <p class="panel-desc">用于排班通知与紧急联系。</p>
+          <p class="req-hint"><span class="ast">*</span> 为必填项</p>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="fPhone">手机号 <span class="ast">*</span></label>
+              <input class="f-ctrl" id="fPhone" name="phone" type="tel" required placeholder="如 0412 345 678">
+              <span class="f-msg" id="errPhone"></span>
+              <span class="check-flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 18 6"/></svg></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fEmergName">紧急联系人姓名</label>
+              <input class="f-ctrl" id="fEmergName" name="emgName" type="text" placeholder="紧急联系人">
+            </div>
+            <div class="field">
+              <label class="field-label" for="fRel">关系</label>
+              <select class="f-ctrl" id="fRel" name="relation">
+                <option value="" disabled selected>选择关系</option>
+                <option>配偶</option>
+                <option>父母</option>
+                <option>子女</option>
+                <option>兄弟姐妹</option>
+                <option>朋友</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fEmergPhone">紧急联系电话</label>
+              <input class="f-ctrl" id="fEmergPhone" name="emgPhone" type="tel" placeholder="如 0412 000 000">
+            </div>
+            <div class="field">
+              <label class="field-label" for="fEmail">邮箱</label>
+              <input class="f-ctrl" id="fEmail" name="email" type="email" placeholder="name@example.com" inputmode="email">
+              <span class="f-msg" id="errEmail"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fSocial">微信号 / 社交账号</label>
+              <input class="f-ctrl" id="fSocial" name="social" type="text" placeholder="微信号 / WhatsApp">
+            </div>
+          </div>
+        </div>
+
+        <!-- 步骤 3 · 工作信息 -->
+        <div class="panel" data-step="2">
+          <h2 class="panel-title">工作信息</h2>
+          <p class="panel-desc">岗位与可用性的基本设定。</p>
+          <p class="req-hint"><span class="ast">*</span> 为必填项</p>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="fRole">职位类型 <span class="ast">*</span></label>
+              <select class="f-ctrl" id="fRole" name="role" required>
+                <option value="" disabled selected>选择职位类型</option>
+                <option>全职</option>
+                <option>兼职</option>
+                <option>临时</option>
+              </select>
+              <span class="f-msg" id="errRole"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fDept">部门</label>
+              <select class="f-ctrl" id="fDept" name="dept">
+                <option value="" disabled selected>选择部门</option>
+                <option>后厨</option>
+                <option>前台</option>
+                <option>服务</option>
+                <option>仓储</option>
+                <option>管理</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fGrade">职级</label>
+              <select class="f-ctrl" id="fGrade" name="grade">
+                <option value="" disabled selected>选择职级</option>
+                <option>前台</option>
+                <option>后厨</option>
+                <option>值班经理</option>
+                <option>店长</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fMaxHr">每周最大可用时长（小时）</label>
+              <input class="f-ctrl" id="fMaxHr" name="maxHours" type="number" min="1" max="168" placeholder="如 40">
+              <span class="f-msg" id="errMaxHr"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fLoc">工作地点 <span class="ast">*</span></label>
+              <select class="f-ctrl" id="fLoc" name="location" required>
+                <option value="" disabled selected>选择地点</option>
+                <option>市中心店</option>
+                <option>西区店</option>
+                <option>机场店</option>
+              </select>
+              <span class="f-msg" id="errLoc"></span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="fStart">入职日期 <span class="ast">*</span></label>
+              <input class="f-ctrl" id="fStart" name="startDate" type="date" required>
+              <span class="f-msg" id="errStart"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 步骤 4 · 确认 -->
+        <div class="panel" data-step="3">
+          <h2 class="panel-title">确认信息</h2>
+          <p class="panel-desc">请核对以下信息，确认后创建员工档案。</p>
+
+          <div class="grid-1">
+            <section class="ro-sec">
+              <h3 class="ro-sec-h">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M4 17 20 6"/></svg>
+                基本信息
+              </h3>
+              <dl class="ro-grid">
+                <div class="ro-item"><dt>姓名</dt><dd id="cName">—</dd></div>
+                <div class="ro-item"><dt>性别</dt><dd id="cGender">—</dd></div>
+                <div class="ro-item"><dt>出生日期</dt><dd id="cBirth">—</dd></div>
+                <div class="ro-item"><dt>国籍</dt><dd id="cNation">—</dd></div>
+                <div class="ro-item"><dt>证件号</dt><dd id="cId">—</dd></div>
+                <div class="ro-item"><dt>现住址</dt><dd id="cAddr">—</dd></div>
+              </dl>
+            </section>
+            <section class="ro-sec">
+              <h3 class="ro-sec-h">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 L12 20 L20 4"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></svg>
+                联系方式
+              </h3>
+              <dl class="ro-grid">
+                <div class="ro-item"><dt>手机号</dt><dd id="cPhone">—</dd></div>
+                <div class="ro-item"><dt>邮箱</dt><dd id="cEmail">—</dd></div>
+                <div class="ro-item"><dt>紧急联系人</dt><dd id="cEcName">—</dd></div>
+                <div class="ro-item"><dt>关系</dt><dd id="cEcRel">—</dd></div>
+                <div class="ro-item"><dt>紧急电话</dt><dd id="cEcPhone">—</dd></div>
+                <div class="ro-item"><dt>微信号</dt><dd id="cSocial">—</dd></div>
+              </dl>
+            </section>
+            <section class="ro-sec">
+              <h3 class="ro-sec-h">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17 L13 3 L20 12"/><circle cx="13" cy="16" r="2"/></svg>
+                工作信息
+              </h3>
+              <dl class="ro-grid">
+                <div class="ro-item"><dt>职位类型</dt><dd id="cRole">—</dd></div>
+                <div class="ro-item"><dt>部门</dt><dd id="cDept">—</dd></div>
+                <div class="ro-item"><dt>职级</dt><dd id="cGrade">—</dd></div>
+                <div class="ro-item"><dt>工作地点</dt><dd id="cLoc">—</dd></div>
+                <div class="ro-item"><dt>每周可用时长</dt><dd id="cMaxHr">—</dd></div>
+                <div class="ro-item"><dt>入职日期</dt><dd id="cStart">—</dd></div>
+              </dl>
+            </section>
+          </div>
+        </div>
+
+        <!-- ============================ 底部操作 ============================ -->
+        <footer class="w-nav">
+          <button type="button" class="btn btn-secondary" id="btnPrev" style="visibility:hidden">
+            <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 9 12 15 19"/></svg>
+            上一步
+          </button>
+          <button type="button" class="btn btn-primary" id="btnNext" aria-label="下一步">
+            下一步
+            <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 15 12 9 19"/></svg>
+          </button>
+        </footer>
+
+      </form>
+    </section>
+  </main>
+
+  <!-- ============================ 成功弹层 ============================ -->
+  <div class="modal-mask" id="successMask" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="modal-card" id="successCard">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 9 16 18 7"/></svg>
+      </div>
+      <h3 class="modal-title" id="successTitle">员工创建成功！</h3>
+      <p class="modal-sub" id="successMsg">员工档案已添加，可继续进行排班分配。</p>
+      <button type="button" class="btn btn-primary" id="modalClose">完成</button>
+    </div>
+  </div>
+
+  <script>
+    /* ==================== Roster Creator · 员工创建 Wizard ==================== */
+    const panels  = Array.from(document.querySelectorAll('#wizard .panel')),
+          steps   = Array.from(document.querySelectorAll('.stepper .step')),
+          bridges = Array.from(document.querySelectorAll('.stepper .step-bridge')),
+          form    = document.getElementById('staffForm'),
+          btnPrev = document.getElementById('btnPrev'),
+          btnNext = document.getElementById('btnNext'),
+          wizard  = document.getElementById('wizard');
+    let current = 1;   // 当前步骤 1..4
+
+    /* ---------- 步骤条渲染 ---------- */
+    function renderStepper(){
+      steps.forEach((s,i)=>{
+        s.classList.remove('pending','done','now');
+        if(i < current-1) s.classList.add('done');
+        else if(i === current-1) s.classList.add('now');
+        else s.classList.add('pending');
+        const dot = s.querySelector('.step-dot');
+        if(i < current-1){
+          dot.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 18 9"/></svg>';
+        } else {
+          dot.textContent = String(i+1);
+        }
+      });
+      bridges.forEach((b,i)=> b.classList.toggle('on', i+1 < current));
+    }
+
+    /* ---------- 字段错误 / 校验态 ---------- */
+    function setErr(id, msg){
+      const el = document.getElementById(id);
+      if(el) el.textContent = msg || '';
+    }
+    function mark(ctrl, ok){
+      ctrl.classList.remove('f-valid','f-invalid');
+      ctrl.classList.add(ok ? 'f-valid' : 'f-invalid');
+    }
+    function checkFlag(cid, ok){
+      const c = document.querySelector('.field #'+cid+' .check-flag');
+      if(c) c.style.display = ok ? 'flex' : 'none';
+    }
+
+    /* ---------- 校验规则 ---------- */
+    const AU_PHONE = /^(?:\+?61|0)4\d{8}$/;
+    function validateStep(n){            // n = 0,1,2
+      let ok = true;
+      if(n===0){
+        const name=form.querySelector('#fName'), birth=form.querySelector('#fBirth'), nation=form.querySelector('#fNation');
+        const nameOk   = name.value.trim().length >= 2;
+        const genderOk = !!form.querySelector('input[name="gender"]:checked');
+        const birthOk  = !!birth.value;
+        const nationOk = !!nation.value;
+        setErr('errName',   nameOk   ? '' : '姓名至少 2 个字符');
+        setErr('errGender', genderOk ? '' : '请选择性别');
+        setErr('errBirth',  birthOk  ? '' : '请选择出生日期');
+        setErr('errNation', nationOk ? '' : '请选择国籍');
+        mark(name,   nameOk);   checkFlag('fName', nameOk);
+        mark(birth,  birthOk);
+        mark(nation, nationOk);
+        if(!nameOk || !genderOk || !birthOk || !nationOk) ok = false;
+      }
+      if(n===1){
+        const phone=form.querySelector('#fPhone'), email=form.querySelector('#fEmail');
+        const phoneOk = AU_PHONE.test(phone.value.trim().replace(/[\s-]/g,''));
+        const emailOk = !email.value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+        setErr('errPhone', phoneOk ? '' : '手机号格式不正确');
+        setErr('errEmail', emailOk ? '' : '邮箱格式不正确');
+        mark(phone, phoneOk); checkFlag('fPhone', phoneOk);
+        if(email.value) mark(email, emailOk);
+        if(!phoneOk || !emailOk) ok = false;
+      }
+      if(n===2){
+        const role=form.querySelector('#fRole'), loc=form.querySelector('#fLoc'),
+              start=form.querySelector('#fStart'), maxHr=form.querySelector('#fMaxHr');
+        const roleOk  = !!role.value;
+        const locOk   = !!loc.value;
+        const startOk = !!start.value;
+        const maxOk   = !maxHr.value || (+maxHr.value >= 1 && +maxHr.value <= 168);
+        setErr('errRole',  roleOk  ? '' : '请选择职位类型');
+        setErr('errLoc',   locOk   ? '' : '请选择工作地点');
+        setErr('errStart', startOk ? '' : '请选择入职日期');
+        setErr('errMaxHr', maxOk   ? '' : '每周可用时长应为 1-168 小时');
+        mark(role, roleOk);
+        mark(loc,  locOk);
+        mark(start,startOk);
+        if(maxHr.value) mark(maxHr, maxOk);
+        if(!roleOk || !locOk || !startOk || !maxOk) ok = false;
+      }
+      return ok;
+    }
+
+    /* ---------- 填充确认摘要 ---------- */
+    function gname(name){
+      const el = form.querySelector('[name="'+name+'"]');
+      return el ? el.value : '';
+    }
+    function fillSummary(){
+      const set = (id,v)=> document.getElementById(id).textContent = (v || '').trim() || '—';
+      set('cName',  gname('name'));
+      set('cGender',(form.querySelector('input[name="gender"]:checked')||{}).value);
+      set('cBirth', gname('birth'));
+      set('cNation',gname('nation'));
+      set('cId',   gname('idnum'));
+      set('cAddr', gname('address'));
+      set('cPhone',gname('phone'));
+      set('cEmail',gname('email'));
+      set('cEcName',gname('emgName'));
+      set('cEcRel', gname('relation'));
+      set('cEcPhone',gname('emgPhone'));
+      set('cSocial',gname('social'));
+      set('cRole', gname('role'));
+      set('cDept', gname('dept'));
+      set('cGrade',gname('grade'));
+      set('cLoc',  gname('location'));
+      set('cMaxHr',gname('maxHours') ? gname('maxHours')+' 小时' : '');
+      set('cStart',gname('startDate'));
+    }
+
+    /* ---------- 步骤切换 ---------- */
+    function goTo(target){            // target 1..4
+      if(target === current) return;
+      if(target > current && !validateStep(current-1)) return;   // 前进需校验当前步
+      const prev = current;
+      current = target;
+      const from = Array.from(panels).find(p=>+p.dataset.step === prev-1);
+      const to   = Array.from(panels).find(p=>+p.dataset.step === current-1);
+      from.classList.remove('show');
+      setTimeout(()=>{
+        from.classList.remove('active');
+        to.classList.add('active','show');
+      }, 190);
+      renderStep();
+      btnPrev.style.visibility = current > 1 ? 'visible' : 'hidden';
+      if(current === 4){
+        btnNext.textContent = '确认创建';
+        fillSummary();
+      } else {
+        btnNext.textContent = '下一步';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('class','arr');
+        svg.setAttribute('fill','none'); svg.setAttribute('stroke','currentColor'); svg.setAttribute('stroke-width','2.4');
+        const pl = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+        pl.setAttribute('points','9 5 15 12 9 19'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        svg.appendChild(pl);
+        btnNext.insertAdjacentElement('beforeend', svg);
+      }
+    }
+
+    /* ---------- 事件 ---------- */
+    btnNext.addEventListener('click', ()=>{
+      if(current === 4){
+        // 模拟创建 loading
+        btnNext.disabled = true;
+        btnNext.innerHTML = '<span class="spinner"></span>创建中...';
+        setTimeout(()=>{
+          document.getElementById('successMask').classList.add('show');
+          setTimeout(()=> document.getElementById('successCard').classList.add('in'), 60);
+          btnNext.disabled = false;
+          btnNext.innerHTML = '确认';
+        }, 1500);
+        return;
+      }
+      goTo(current + 1);
+    });
+    btnPrev.addEventListener('click', ()=> goTo(current - 1));
+    steps.forEach(s=>{
+      s.querySelector('.step-dot').addEventListener('click', ()=>{
+        const t = +s.dataset.i + 1;
+        if(t < current) goTo(t);     // 仅可回退到已完成步骤
+      });
+    });
+    document.getElementById('modalClose').addEventListener('click', ()=>{
+      document.getElementById('successCard').classList.remove('in');
+      setTimeout(()=> document.getElementById('successMask').classList.remove('show'), 220);
+    });
+
+    /* ---------- 初始化 ---------- */
+    renderStepper();
+    setTimeout(()=> wizard.classList.add('ready'), 120);   // 卡片淡入上浮
+  </script>
+
+    <style>
+      /* =============================== 基础 =============================== */
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: var(--rc-font-sans);
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--rc-foreground);
+        background: var(--rc-background);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      :focus-visible {
+        outline: 2px solid var(--rc-primary);
+        outline-offset: 2px;
+      }
+      ::selection { background: var(--rc-primary-100); }
+
+      /* =============================== 页面加载动画 =============================== */
+      @keyframes rise-in {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .wc-head { animation: rise-in .5s ease both; }
+
+      /* =============================== 布局容器 =============================== */
+      .wc-shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px 72px;
+      }
+      .wc-header {
+        width: 100%;
+        max-width: 640px;
+        text-align: center;
+        margin-bottom: 8px;
+      }
+      .wc-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        letter-spacing: .02em;
+        color: var(--rc-muted-foreground);
+        background: var(--rc-primary-50);
+        border: 1px solid var(--rc-primary-200);
+        border-radius: var(--rc-radius-full);
+        padding: 5px 12px;
+        margin-bottom: 18px;
+      }
+      .wc-brand svg { width: 13px; height: 13px; }
+      .wc-title {
+        font-family: var(--rc-font-display);
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -.01em;
+        color: var(--rc-foreground);
+        margin: 0 0 6px;
+      }
+      .wc-sub {
+        font-size: 13.5px;
+        color: var(--rc-muted-foreground);
+        margin: 4px 0 0;
+      }
+
+      /* =============================== 步骤条 =============================== */
+      .stepper {
+        width: 100%;
+        max-width: 640px;
+        display: flex;
+        align-items: flex-start;
+        margin: 26px auto 0;
+        animation: rise-in .55s ease .06s both;
+      }
+      .step {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+      .step-bridge {
+        flex: 1;
+        position: relative;
+        height: 40px;
+        margin: 0;
+        pointer-events: none;
+      }
+      .step-bridge::before {
+        content: "";
+        position: absolute;
+        top: 19px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 3px;
+        background: var(--rc-border);
+        transition: background-color .3s ease;
+      }
+      .step-bridge.on::before { background: var(--rc-primary); }
+
+      .step-dot {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        font-weight: 700;
+        transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease, border-color .18s ease;
+      }
+      .step-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--rc-muted-foreground);
+        margin-top: 8px;
+        white-space: nowrap;
+        letter-spacing: .01em;
+      }
+      /* 状态 */
+      .step.pending .step-dot {
+        background: var(--rc-card);
+        color: var(--rc-muted-foreground);
+        border: 2px solid var(--rc-border);
+      }
+      .step.done .step-dot {
+        background: var(--rc-primary);
+        color: #fff;
+        border: 0;
+        box-shadow: 0 4px 14px -4px rgba(74,56,194,.35);
+      }
+      .step.done .step-dot svg { width: 18px; height: 18px; }
+      .step.pending .step-label,
+      .step.done .step-label { color: var(--rc-muted-foreground); }
+      .step.now .step-dot {
+        background: var(--rc-card);
+        color: var(--rc-primary-600);
+        border: 2.5px solid var(--rc-primary-600);
+        box-shadow: 0 0 0 4px var(--rc-primary-100);
+        transform: scale(1.12);
+      }
+      .step.now .step-label { color: var(--rc-primary-600); font-weight: 700; }
+      .step.now .step-dot:hover { transform: scale(1.18); }
+      .step.done .step-dot:hover { transform: scale(1.12); }
+
+      /* =============================== 向导卡片 =============================== */
+      .w-card {
+        width: 100%;
+        max-width: 640px;
+        background: var(--rc-card);
+        border: 1px solid var(--rc-border);
+        border-radius: var(--rc-radius-lg);
+        box-shadow: var(--rc-shadow-md);
+        padding: 30px 32px;
+        margin-top: 26px;
+        opacity: 0;
+        transform: translateY(14px);
+        transition: opacity .5s ease, transform .5s ease;
+      }
+      .w-card.ready { opacity: 1; transform: translateY(0); }
+      .panel-title {
+        font-family: var(--rc-font-display);
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 4px;
+        color: var(--rc-foreground);
+      }
+      .panel-desc {
+        font-size: 13px;
+        color: var(--rc-muted-foreground);
+        margin: 0;
+      }
+      .req-hint {
+        font-size: 12px;
+        color: var(--rc-muted-foreground);
+        margin: 14px 0 18px;
+      }
+      .req-hint .ast { color: var(--rc-danger); font-weight: 700; }
+
+      /* =============================== 步骤面板 =============================== */
+      .panel {
+        display: none;
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      .panel.show {
+        display: block;
+        animation: panel-in .32s ease both;
+      }
+      @keyframes panel-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      /* =============================== 栅格 =============================== */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 16px;
+        row-gap: 14px;
+      }
+      .grid-1 {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 14px;
+      }
+
+      /* =============================== 表单项 =============================== */
+      .field { position: relative; }
+      .field-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--rc-muted-foreground);
+        margin-bottom: 6px;
+      }
+      .field-label .ast { color: var(--rc-danger); font-weight: 700; }
+      .f-ctrl {
+        width: 100%;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--rc-foreground);
+        background: var(--rc-card);
+        border: 1.5px solid var(--rc-border);
+        border-radius: var(--rc-radius-sm);
+        padding: 10px 13px;
+        transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+        -webkit-appearance: none;
+      }
+      .f-ctrl::placeholder { color: var(--rc-muted-foreground); opacity: .72; }
+      .f-ctrl:hover { border-color: var(--rc-primary-300); }
+      .f-ctrl:focus {
+        outline: none;
+        border-color: var(--rc-primary-600);
+        box-shadow: 0 0 0 4px var(--rc-primary-100), 0 6px 20px -10px rgba(109,99,240,.32);
+      }
+      select.f-ctrl {
+        appearance: none;
+        padding-right: 34px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236a7089' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 8 18 8 10 15 18 15'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 14px;
+      }
+      input[type="date"].f-ctrl { color-scheme: light; }
+
+      /* 校验态 */
+      .f-ctrl.f-invalid {
+        border-color: var(--rc-danger);
+        box-shadow: 0 0 0 3px var(--rc-danger-soft);
+      }
+      .f-ctrl.f-valid { border-color: var(--rc-success); }
+      .f-msg {
+        display: block;
+        font-size: 12px;
+        color: var(--rc-danger);
+        margin-top: 5px;
+        line-height: 1.35;
+      }
+      .check-flag {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none;
+        color: var(--rc-success);
+        pointer-events: none;
+      }
+      .check-flag svg { width: 17px; height: 17px; }
+
+      /* =============================== 单选 chips（性别） =============================== */
+      .choice-row { display: flex; gap: 10px; }
+      .choice { position: relative; flex: 1 1 0; }
+      .choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+      .choice label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+        padding: 9px;
+        border: 1.5px solid var(--rc-border);
+        border-radius: var(--rc-radius-sm);
+        background: var(--rc-card);
+        color: var(--rc-muted-foreground);
+        font-size: 13.5px;
+        font-weight: 600;
+        transition: all .18s ease;
+      }
+      .choice label:hover { border-color: var(--rc-primary-300); color: var(--rc-primary-600); }
+      .choice input:checked + label {
+        border-color: var(--rc-primary-600);
+        background: var(--rc-primary-50);
+        color: var(--rc-primary-600);
+        box-shadow: 0 0 0 3px var(--rc-primary-100);
+      }
+      .choice input:focus-visible + label { outline: 2px solid var(--rc-primary); outline-offset: 2px; }
+      .choice .radio-dot {
+        width: 14px; height: 14px;
+        border: 2px solid var(--rc-border);
+        border-radius: 50%;
+        flex: 0 0 auto;
+        background: var(--rc-card);
+        transition: all .18s ease;
+      }
+      .choice input:checked + label .radio-dot {
+        border-color: var(--rc-primary-600);
+        background: var(--rc-primary-600);
+        box-shadow: inset 0 0 0 2px var(--rc-card);
+      }
+      .choice label:hover .radio-dot { border-color: var(--rc-primary-400); }
+
+      /* =============================== 确认只读区块 =============================== */
+      .ro-sec {
+        border: 1px solid var(--rc-border);
+        border-radius: var(--rc-radius-md);
+        background: var(--rc-primary-50);
+        padding: 16px 18px;
+      }
+      .ro-sec + .ro-sec { margin-top: 14px; }
+      .ro-sec-h {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--rc-primary-700);
+      }
+      .ro-sec-h svg { width: 16px; height: 16px; }
+      .ro-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 14px;
+        margin-top: 10px;
+      }
+      .ro-item dt { font-size: 12px; color: var(--rc-muted-foreground); margin-bottom: 3px; }
+      .ro-item dd { font-size: 13.5px; font-weight: 600; color: var(--rc-foreground); margin: 0; }
+
+      /* =============================== 底部按钮 =============================== */
+      .w-nav {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 26px;
+      }
+      .btn {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14.5px;
+        font-weight: 600;
+        padding: 11px 24px;
+        border-radius: var(--rc-radius-sm);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all .18s ease;
+        outline: none;
+      }
+      .btn:focus-visible { outline: 2px solid var(--rc-primary); outline-offset: 2px; }
+      .btn-secondary {
+        background: var(--rc-card);
+        color: var(--rc-foreground);
+        border: 1.5px solid var(--rc-border);
+      }
+      .btn-secondary:hover {
+        background: var(--rc-muted);
+        border-color: var(--rc-primary-200);
+        transform: translateY(-1px);
+      }
+      .btn-primary {
+        background: var(--rc-primary);
+        color: var(--rc-primary-foreground);
+        box-shadow: 0 6px 18px -6px rgba(74,56,194,.45);
+      }
+      .btn-primary:hover {
+        background: var(--rc-primary-600);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px -6px rgba(74,56,194,.5);
+      }
+      .btn-primary:active { transform: translateY(0) scale(.98); }
+      .btn-primary:disabled { cursor: not-allowed; opacity: .72; }
+      .btn svg.arr { width: 15px; height: 15px; }
+
+      /* 加载旋转 */
+      .spinner {
+        width: 16px; height: 16px;
+        border: 2.5px solid rgba(255,255,255,.35);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin .7s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* =============================== 成功弹层 =============================== */
+      .modal-mask {
+        position: fixed;
+        inset: 0;
+        background: rgba(25,28,46,.38);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        transition: opacity .25s ease;
+      }
+      .modal-mask.show { display: flex; opacity: 1; }
+      .modal-card {
+        width: 360px;
+        background: var(--rc-card);
+        border: 1px solid var(--rc-border);
+        border-radius: var(--rc-radius-lg);
+        box-shadow: var(--rc-shadow-lg);
+        padding: 26px 28px;
+        text-align: center;
+        transform: scale(.9);
+        opacity: 0;
+        transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .28s ease;
+      }
+      .modal-card.in { transform: scale(1); opacity: 1; }
+      .modal-icon {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        background: var(--rc-success-soft);
+        color: var(--rc-success);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 18px;
+      }
+      .modal-icon svg { width: 34px; height: 34px; }
+      .modal-title {
+        font-family: var(--rc-font-display);
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0 0 6px;
+      }
+      .modal-sub { font-size: 13.5px; color: var(--rc-muted-foreground); margin: 0 0 18px; }
+
+      /* =============================== 响应式 =============================== */
+      @media (max-width: 560px) {
+        .grid-2,
+        .ro-grid { grid-template-columns: minmax(0, 1fr); }
+        .w-card { padding: 24px 20px; }
+      }
+    </style>
+</body>
+</html>
