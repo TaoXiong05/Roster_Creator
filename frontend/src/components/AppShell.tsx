@@ -118,14 +118,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <KangarooMascot variant="badge" animated={false} className="h-9 w-9" />
         <span className="font-display text-base font-semibold text-ink">Roster Creator</span>
       </Link>
-      <nav className="mt-8 space-y-1">
+      <nav className="mt-8 space-y-1.5">
         {NAV_ITEMS.map((item) => (
           <div key={item.to} className={item.separatorBefore ? 'mt-4 border-t border-tan/15 pt-4' : undefined}>
             <NavLink to={item.to} end={item.end} onClick={onNavigate} className={navLinkClass}>
               {({ isActive }) => (
                 <>
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-coral-deep" />
+                    <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-coral-deep" />
                   )}
                   <span className="shrink-0 opacity-80">{item.icon}</span>
                   {t(item.labelKey)}
@@ -170,12 +170,12 @@ export function AppShell({
       <AmbientBackground subtle />
 
       {/* desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-tan/15 bg-sand/60 px-4 py-6 md:block">
+      <aside className="hidden w-64 shrink-0 border-r border-tan/15 bg-sand/60 px-5 py-7 md:block">
         <SidebarContent />
       </aside>
 
       {/* mobile top bar */}
-      <div className="flex items-center justify-between border-b border-tan/15 bg-sand/90 px-4 py-3 backdrop-blur md:hidden">
+      <div className="flex items-center justify-between border-b border-tan/15 bg-sand/90 px-5 py-3.5 backdrop-blur md:hidden">
         <Link to="/dashboard" className="flex items-center gap-2">
           <KangarooMascot variant="badge" animated={false} className="h-8 w-8" />
           <span className="font-display text-base font-semibold text-ink">Roster Creator</span>
