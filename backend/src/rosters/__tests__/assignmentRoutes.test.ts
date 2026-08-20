@@ -10,10 +10,13 @@ vi.mock('../../db', () => ({
     $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   },
 }));
-vi.mock('../../ai/provider', () => ({ aiProvider: { assignShifts: vi.fn() } }));
+vi.mock('../../scheduling/localScheduler', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../scheduling/localScheduler')>();
+  return { ...actual, localScheduler: { assignShifts: vi.fn() } };
+});
 
 import { prisma } from '../../db';
-import { aiProvider } from '../../ai/provider';
+import { localScheduler } from '../../scheduling/localScheduler';
 import { createApp } from '../../app';
 import { signToken } from '../../auth/jwt';
 
@@ -74,13 +77,13 @@ describe('POST /rosters/:id/generate-assignments', () => {
 
     expect(res.status).toBe(409);
     expect(res.body).toEqual({ error: 'Already generating assignments for this roster' });
-    expect(aiProvider.assignShifts).not.toHaveBeenCalled();
+    expect(localScheduler.assignShifts).not.toHaveBeenCalled();
     expect(prisma.roster.update).not.toHaveBeenCalled();
   });
 
   it('returns 502, reverts the status, and makes no db changes when the ai provider fails', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockRejectedValue(new Error('AI provider is not configured'));
+    (localScheduler.assignShifts as any).mockRejectedValue(new Error('AI provider is not configured'));
 
     const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
@@ -93,44 +96,44 @@ describe('POST /rosters/:id/generate-assignments', () => {
 
   it("passes the roster's hoursPerShift through to the AI context", async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
+    (localScheduler.assignShifts as any).mockResolvedValue({ assignments: [] });
     (prisma.assignment.findMany as any).mockResolvedValue([]);
     (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
-    const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
+    const contextArg = (localScheduler.assignShifts as any).mock.calls[0][0];
     expect(contextArg.hoursPerShift).toBe(6);
   });
 
   it("passes each shift's responsibilityId and each staff member's responsibilityIds through to the AI context", async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
+    (localScheduler.assignShifts as any).mockResolvedValue({ assignments: [] });
     (prisma.assignment.findMany as any).mockResolvedValue([]);
     (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
-    const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
+    const contextArg = (localScheduler.assignShifts as any).mock.calls[0][0];
     expect(contextArg.shifts[0].responsibilityId).toBe('resp-1');
     expect(contextArg.staff[0].responsibilityIds).toEqual(['resp-1']);
   });
 
   it("passes each staff member's unavailableShifts through to the AI context", async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
+    (localScheduler.assignShifts as any).mockResolvedValue({ assignments: [] });
     (prisma.assignment.findMany as any).mockResolvedValue([]);
     (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
-    const contextArg = (aiProvider.assignShifts as any).mock.calls[0][0];
+    const contextArg = (localScheduler.assignShifts as any).mock.calls[0][0];
     expect(contextArg.staff[0].unavailableShifts).toEqual([{ weekday: 3, shiftTemplateId: 'template-1' }]);
   });
 
   it('replaces assignments and fills unfilled slots when ai returns fewer staff than headcount', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({
+    (localScheduler.assignShifts as any).mockResolvedValue({
       assignments: [{ rosterShiftId: 'rs-1', staffIds: ['staff-1'] }],
     });
     (prisma.assignment.findMany as any).mockResolvedValue([
@@ -153,7 +156,7 @@ describe('POST /rosters/:id/generate-assignments', () => {
 
   it('ignores a hallucinated staff id but keeps the valid one and fills the rest as unfilled', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({
+    (localScheduler.assignShifts as any).mockResolvedValue({
       assignments: [{ rosterShiftId: 'rs-1', staffIds: ['staff-1', 'staff-does-not-exist'] }],
     });
     (prisma.assignment.findMany as any).mockResolvedValue([
@@ -174,7 +177,7 @@ describe('POST /rosters/:id/generate-assignments', () => {
 
   it('ignores assignments for an unknown roster shift and leaves real shifts unfilled', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({
+    (localScheduler.assignShifts as any).mockResolvedValue({
       assignments: [{ rosterShiftId: 'rs-does-not-exist', staffIds: ['staff-1'] }],
     });
     (prisma.assignment.findMany as any).mockResolvedValue([

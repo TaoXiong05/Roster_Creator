@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { requireAuth, AuthedRequest } from '../auth/middleware';
-import { aiProvider, AssignmentContext } from '../ai/provider';
+import { localScheduler, AssignmentContext } from '../scheduling/localScheduler';
 
 export const assignmentRouter = Router();
 assignmentRouter.use(requireAuth);
@@ -33,6 +33,7 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
       endTime: rs.shiftTemplate.endTime,
       headcount: rs.headcount,
       responsibilityId: rs.responsibilityId,
+      shiftTemplateId: rs.shiftTemplate.id,
     })),
     staff: roster.group.members.map((m) => ({
       staffId: m.staff.id,
@@ -52,20 +53,19 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
 
   let result;
   try {
-    result = await aiProvider.assignShifts(context);
+    result = await localScheduler.assignShifts(context);
   } catch (err) {
     await prisma.roster.update({ where: { id: roster.id }, data: { status: previousStatus } });
-    return res.status(502).json({ error: err instanceof Error ? err.message : 'AI provider failed' });
+    return res.status(502).json({ error: err instanceof Error ? err.message : 'Scheduling failed' });
   }
 
   const shiftIds = roster.rosterShifts.map((rs) => rs.id);
   const shiftIdSet = new Set(shiftIds);
   const knownStaffIds = new Set(roster.group.members.map((m) => m.staff.id));
 
-  // Tolerate imperfect model output: keep only roster shifts and group members
-  // the AI actually referenced. Unknown ids (hallucinated/mangled UUIDs) are
-  // dropped so a single bad entry does not fail the whole generation; those
-  // slots simply remain unfilled below.
+  // Defensive filtering: keep only roster shifts and group members the
+  // scheduler actually referenced, in case ids ever go stale between the
+  // context build and this point.
   const cleaned = result.assignments
     .filter((a) => shiftIdSet.has(a.rosterShiftId))
     .map((a) => ({
