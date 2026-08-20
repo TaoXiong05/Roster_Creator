@@ -92,10 +92,22 @@ export function DashboardPage() {
   });
 
   useEffect(() => {
-    api.staff.list().then((list) => setCounts((prev) => ({ ...prev, staff: list.length })));
-    api.groups.list().then((list) => setCounts((prev) => ({ ...prev, groups: list.length })));
-    api.shiftTemplates.list().then((list) => setCounts((prev) => ({ ...prev, shiftTemplates: list.length })));
-    api.rosters.list().then((list) => setCounts((prev) => ({ ...prev, rosters: list.length })));
+    api.staff
+      .list()
+      .then((list) => setCounts((prev) => ({ ...prev, staff: list.length })))
+      .catch(() => {});
+    api.groups
+      .list()
+      .then((list) => setCounts((prev) => ({ ...prev, groups: list.length })))
+      .catch(() => {});
+    api.shiftTemplates
+      .list()
+      .then((list) => setCounts((prev) => ({ ...prev, shiftTemplates: list.length })))
+      .catch(() => {});
+    api.rosters
+      .list()
+      .then((list) => setCounts((prev) => ({ ...prev, rosters: list.length })))
+      .catch(() => {});
   }, []);
 
   return (

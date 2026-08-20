@@ -112,7 +112,13 @@ export function StaffCreatePage() {
         )}
 
         {step === 1 ? (
-          <div className={`${cardBase} space-y-4`}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleNext();
+            }}
+            className={`${cardBase} space-y-4`}
+          >
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="sm:flex-1">
                 <label htmlFor="staff-name" className={labelBase}>
@@ -166,10 +172,10 @@ export function StaffCreatePage() {
                 </div>
               )}
             </div>
-            <button type="button" onClick={handleNext} className={`w-full gap-2 ${btnPrimary}`}>
+            <button type="submit" className={`w-full gap-2 ${btnPrimary}`}>
               {t('common.next')}
             </button>
-          </div>
+          </form>
         ) : (
           <form onSubmit={handleCreate} className={`${cardBase} space-y-4`}>
             <p className="font-display text-sm font-semibold text-ink">{t('staff.preferencesHeading')}</p>
