@@ -39,7 +39,7 @@ export function LoginPage() {
       formEyebrow={t('auth.login.formEyebrow')}
       formTitle={t('auth.login.formTitle')}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <p role="alert" className={errorText}>
             {error}

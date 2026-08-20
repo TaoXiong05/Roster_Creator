@@ -37,16 +37,16 @@ export function AuthLayout({ headline, tagline, formEyebrow, formTitle, children
           </div>
         </div>
 
-        <h2 className="relative mt-6 max-w-sm text-2xl font-bold leading-snug text-white md:text-3xl">{headline}</h2>
+        <h2 className="relative mt-7 max-w-sm text-2xl font-bold leading-snug tracking-tight text-white md:text-3xl">{headline}</h2>
         <p className="relative mt-3 max-w-xs text-sm text-sand/75 md:text-base">{tagline}</p>
       </div>
 
       {/* form panel */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm motion-safe:animate-rise-in" style={{ animationDelay: '150ms' }}>
-          <p className="text-sm font-medium text-ink-soft">{formEyebrow}</p>
-          <h1 className="mt-1 font-display text-3xl font-semibold text-ink">{formTitle}</h1>
-          <div className="mt-8">{children}</div>
+          <p className="text-sm font-medium uppercase tracking-wide text-ink-soft">{formEyebrow}</p>
+          <h1 className="mt-1.5 font-display text-3xl font-semibold tracking-tight text-ink">{formTitle}</h1>
+          <div className="mt-9">{children}</div>
         </div>
       </div>
     </div>

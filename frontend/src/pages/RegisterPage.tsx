@@ -40,7 +40,7 @@ export function RegisterPage() {
       formEyebrow={t('auth.register.formEyebrow')}
       formTitle={t('auth.register.formTitle')}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {bannerError && (
           <p role="alert" className={errorText}>
             {bannerError}
