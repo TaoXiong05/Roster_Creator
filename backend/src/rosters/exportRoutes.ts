@@ -44,6 +44,9 @@ exportRouter.get('/:id/export/ics', async (req: AuthedRequest, res) => {
   const staffId = typeof req.query.staffId === 'string' ? req.query.staffId : undefined;
   const data = await loadExportableRoster(req.params.id, req.userId!, staffId);
   if (!data) return res.status(404).json({ error: 'Roster not found' });
+  if (data.roster.status !== 'published') {
+    return res.status(409).json({ error: 'Publish this roster before exporting it' });
+  }
 
   const ics = buildIcs(
     data.rows.map((row, index) => ({
@@ -64,6 +67,9 @@ exportRouter.get('/:id/export/csv', async (req: AuthedRequest, res) => {
   const staffId = typeof req.query.staffId === 'string' ? req.query.staffId : undefined;
   const data = await loadExportableRoster(req.params.id, req.userId!, staffId);
   if (!data) return res.status(404).json({ error: 'Roster not found' });
+  if (data.roster.status !== 'published') {
+    return res.status(409).json({ error: 'Publish this roster before exporting it' });
+  }
 
   const csv = buildCsv(data.rows.map((row) => ({ ...row, date: toDisplayDate(row.date) })));
 
@@ -76,6 +82,9 @@ exportRouter.get('/:id/export/pdf', async (req: AuthedRequest, res) => {
   const staffId = typeof req.query.staffId === 'string' ? req.query.staffId : undefined;
   const data = await loadExportableRoster(req.params.id, req.userId!, staffId);
   if (!data) return res.status(404).json({ error: 'Roster not found' });
+  if (data.roster.status !== 'published') {
+    return res.status(409).json({ error: 'Publish this roster before exporting it' });
+  }
 
   const pdf = await buildPdf(data.roster.name, data.rows.map((row) => ({ ...row, date: toDisplayDate(row.date) })));
 

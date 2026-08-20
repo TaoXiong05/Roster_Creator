@@ -66,4 +66,41 @@ describe('OpenAICompatibleProvider', () => {
     const provider = new OpenAICompatibleProvider();
     await expect(provider.assignShifts(context)).rejects.toThrow('not configured');
   });
+
+  it('retries once and succeeds if the first attempt returns an invalid shape', async () => {
+    (fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify({ foo: 'bar' }) } }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [
+            { message: { content: JSON.stringify({ assignments: [{ rosterShiftId: 'rs-1', staffIds: ['staff-1'] }] }) } },
+          ],
+        }),
+      });
+
+    const provider = new OpenAICompatibleProvider();
+    const result = await provider.assignShifts(context);
+
+    expect(result.assignments).toEqual([{ rosterShiftId: 'rs-1', staffIds: ['staff-1'] }]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after exhausting retries and surfaces the last failure', async () => {
+    (fetch as any).mockResolvedValue({ ok: false, status: 503 });
+
+    const provider = new OpenAICompatibleProvider();
+    await expect(provider.assignShifts(context)).rejects.toThrow('status 503');
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps an aborted request to a clear timeout error', async () => {
+    (fetch as any).mockRejectedValue(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' }));
+
+    const provider = new OpenAICompatibleProvider();
+    await expect(provider.assignShifts(context)).rejects.toThrow('timed out after 90s');
+  });
 });

@@ -26,6 +26,9 @@ emailRouter.post('/:id/send-emails', async (req: AuthedRequest, res) => {
   if (!roster || roster.userId !== req.userId) {
     return res.status(404).json({ error: 'Roster not found' });
   }
+  if (roster.status !== 'published') {
+    return res.status(409).json({ error: 'Publish this roster before sending emails' });
+  }
 
   const { staffIds } = req.body as { staffIds?: string[] };
 

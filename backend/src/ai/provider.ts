@@ -48,7 +48,8 @@ function buildPrompt(context: AssignmentContext): string {
     '',
     '【一定要遵守（硬性约束，只有在人手/班次确实不够时才允许妥协）】',
     '1. 必须让每位员工达到其 minHours 的最低工时/班次量。minHours/maxHours 按 hoursPeriod 周期计算（weekly=每周、fortnightly=每两周、monthly=每月），本次排班表这段日期只占该周期的一部分，据此按比例衡量是否达标；hoursUnit 决定单位——shifts 表示按分配到的班次次数计算（每次分配算 1 次），hours 表示按工时小时数计算，此时不要用 startTime/endTime 去算时长，统一按 hoursPerShift（每个班次等于多少小时，本次排班表设定的值）× 分配到的班次数来估算工时。',
-    `2. 绝对不能把员工分配到落在其 unavailableDateRanges 任意一段日期范围内的班次（例如病假、年假等请假日期）。`,
+    '2. 输出里的每个 rosterShiftId、staffId 都必须原样照抄自下方班次列表和员工列表，一个字符都不能改，绝不能创造、改写或编造不存在的 id。',
+    '3. 绝对不能把员工分配到落在其 unavailableDateRanges 任意一段日期范围内的班次（例如病假、年假等请假日期）。',
     '',
     '【尽量满足（不是硬性要求，但要尽力，优先级低于上面的硬性约束）】',
     '1. 尽量满足员工的工作倾向：优先分配到其 preferredShifts 命中的班次（每一项是 {weekday, shiftTemplateId}，表示该员工在这一周几想上这一个班次；weekday 0=周日...6=周六）；同时尽量避免分配到其 unavailableShifts 命中的班次（格式同 preferredShifts，表示员工不希望上这个班次，但不是绝对禁止，人手紧张时可以分配）。',
@@ -80,6 +81,9 @@ function isValidResult(value: unknown): value is AssignmentResult {
   );
 }
 
+const REQUEST_TIMEOUT_MS = 90_000;
+const MAX_ATTEMPTS = 2;
+
 export class OpenAICompatibleProvider implements AIProvider {
   async assignShifts(context: AssignmentContext): Promise<AssignmentResult> {
     const baseUrl = process.env.AI_BASE_URL;
@@ -89,18 +93,51 @@ export class OpenAICompatibleProvider implements AIProvider {
       throw new Error('AI provider is not configured (AI_BASE_URL/AI_API_KEY/AI_MODEL)');
     }
 
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: buildPrompt(context) }],
-        response_format: { type: 'json_object' },
-      }),
-    });
+    let lastError: Error = new Error('AI provider failed');
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        return await this.requestOnce(baseUrl, apiKey, model, context);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error('AI provider failed');
+        console.error(`[AI provider] attempt ${attempt}/${MAX_ATTEMPTS} failed: ${lastError.message}`);
+      }
+    }
+    throw lastError;
+  }
+
+  private async requestOnce(
+    baseUrl: string,
+    apiKey: string,
+    model: string,
+    context: AssignmentContext
+  ): Promise<AssignmentResult> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: buildPrompt(context) }],
+          response_format: { type: 'json_object' },
+          temperature: 0,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new Error(`AI provider request timed out after ${REQUEST_TIMEOUT_MS / 1000}s`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       throw new Error(`AI provider request failed with status ${response.status}`);
@@ -116,10 +153,12 @@ export class OpenAICompatibleProvider implements AIProvider {
     try {
       parsed = JSON.parse(content);
     } catch {
+      console.error(`[AI provider] response content was not valid JSON. Raw content:\n${content.slice(0, 2000)}`);
       throw new Error('AI provider returned invalid JSON');
     }
 
     if (!isValidResult(parsed)) {
+      console.error(`[AI provider] response had an unexpected shape. Raw content:\n${content.slice(0, 2000)}`);
       throw new Error('AI provider returned an unexpected response shape');
     }
 

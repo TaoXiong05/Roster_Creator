@@ -17,6 +17,7 @@ interface DayAssignmentDialogProps {
   members: Staff[];
   responsibilities: Responsibility[];
   sendingStaffId: string | null;
+  canSend: boolean;
   onAssignmentChange: (assignmentId: string, patch: Partial<AssignmentEntry>) => void;
   onSendOne: (staffId: string) => void;
   onClose: () => void;
@@ -31,6 +32,7 @@ export function DayAssignmentDialog({
   members,
   responsibilities,
   sendingStaffId,
+  canSend,
   onAssignmentChange,
   onSendOne,
   onClose,
@@ -130,18 +132,28 @@ export function DayAssignmentDialog({
                                 <button
                                   type="button"
                                   onClick={() => onSendOne(row.staffId!)}
-                                  disabled={sendingStaffId === row.staffId}
-                                  className="inline-flex items-center gap-1.5 font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline disabled:no-underline disabled:opacity-60"
+                                  disabled={!canSend || sendingStaffId === row.staffId}
+                                  title={canSend ? undefined : t('rosters.sendExportRequiresPublishHint')}
+                                  className="inline-flex items-center gap-1.5 font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
                                 >
                                   {sendingStaffId === row.staffId && <Spinner className="h-3.5 w-3.5" />}
                                   {t('rosters.sendToThem')}
                                 </button>
-                                <a
-                                  href={api.rosters.exportUrl(rosterId, 'ics', row.staffId)}
-                                  className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
-                                >
-                                  {t('rosters.personalIcs')}
-                                </a>
+                                {canSend ? (
+                                  <a
+                                    href={api.rosters.exportUrl(rosterId, 'ics', row.staffId)}
+                                    className="font-medium text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
+                                  >
+                                    {t('rosters.personalIcs')}
+                                  </a>
+                                ) : (
+                                  <span
+                                    title={t('rosters.sendExportRequiresPublishHint')}
+                                    className="cursor-not-allowed font-medium text-ink-soft/50"
+                                  >
+                                    {t('rosters.personalIcs')}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>

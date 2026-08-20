@@ -156,6 +156,9 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
   if (!existing || existing.userId !== req.userId) {
     return res.status(404).json({ error: 'Roster not found' });
   }
+  if (existing.status === 'generating') {
+    return res.status(409).json({ error: 'Cannot edit a roster while it is generating' });
+  }
 
   const { name, dateRangeStart, dateRangeEnd, groupId, shifts, hoursPerShift } = req.body as {
     name?: string;
@@ -224,6 +227,7 @@ rosterRouter.put('/:id', async (req: AuthedRequest, res) => {
         dateRangeEnd: new Date(dateRangeEnd),
         groupId,
         hoursPerShift: hoursPerShift ?? existing.hoursPerShift,
+        status: 'draft',
       },
     });
     await tx.rosterShift.deleteMany({ where: { rosterId: existing.id } });
@@ -258,6 +262,9 @@ rosterRouter.put('/:id/publish', async (req: AuthedRequest, res) => {
   const existing = await prisma.roster.findUnique({ where: { id: req.params.id } });
   if (!existing || existing.userId !== req.userId) {
     return res.status(404).json({ error: 'Roster not found' });
+  }
+  if (existing.status !== 'preview' && existing.status !== 'published') {
+    return res.status(409).json({ error: 'Generate assignments before publishing this roster' });
   }
   const roster = await prisma.roster.update({ where: { id: req.params.id }, data: { status: 'published' } });
   res.json(roster);

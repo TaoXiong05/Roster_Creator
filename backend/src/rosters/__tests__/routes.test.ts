@@ -393,6 +393,22 @@ describe("PUT /rosters/:id", () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
+  it('rejects editing a roster while it is generating', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', status: 'generating' });
+
+    const res = await request(app).put('/rosters/roster-1').set('Cookie', authCookie).send({
+      name: 'Week 35',
+      dateRangeStart: '2026-08-24',
+      dateRangeEnd: '2026-08-30',
+      groupId: 'group-1',
+      shifts: [{ shiftTemplateId: 'template-1', dates: ['2026-08-24'], requirements: [{ responsibilityId: 'resp-1', headcount: 2 }] }],
+    });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Cannot edit a roster while it is generating' });
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
   it("updates roster fields and rebuilds its shifts", async () => {
     (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', hoursPerShift: 8 });
     (prisma.staffGroup.findUnique as any).mockResolvedValue({ id: 'group-1', userId: 'user-1' });
@@ -421,6 +437,7 @@ describe("PUT /rosters/:id", () => {
         name: 'Week 35',
         groupId: 'group-1',
         hoursPerShift: 6,
+        status: 'draft',
       }),
     });
     expect(prisma.rosterShift.deleteMany).toHaveBeenCalledWith({ where: { rosterId: 'roster-1' } });
@@ -455,7 +472,7 @@ describe("PUT /rosters/:id/publish", () => {
   });
 
   it('marks the roster as published', async () => {
-    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1' });
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', status: 'preview' });
     (prisma.roster.update as any).mockResolvedValue({ id: 'roster-1', status: 'published' });
 
     const res = await request(app).put('/rosters/roster-1/publish').set('Cookie', authCookie);
@@ -463,6 +480,36 @@ describe("PUT /rosters/:id/publish", () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('published');
     expect(prisma.roster.update).toHaveBeenCalledWith({ where: { id: 'roster-1' }, data: { status: 'published' } });
+  });
+
+  it('allows idempotent republishing when already published', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', status: 'published' });
+    (prisma.roster.update as any).mockResolvedValue({ id: 'roster-1', status: 'published' });
+
+    const res = await request(app).put('/rosters/roster-1/publish').set('Cookie', authCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('published');
+  });
+
+  it('rejects publishing a draft roster', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', status: 'draft' });
+
+    const res = await request(app).put('/rosters/roster-1/publish').set('Cookie', authCookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Generate assignments before publishing this roster' });
+    expect(prisma.roster.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects publishing a roster that is still generating', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ id: 'roster-1', userId: 'user-1', status: 'generating' });
+
+    const res = await request(app).put('/rosters/roster-1/publish').set('Cookie', authCookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Generate assignments before publishing this roster' });
+    expect(prisma.roster.update).not.toHaveBeenCalled();
   });
 });
 

@@ -202,7 +202,9 @@ export const api = {
       shifts: RosterShiftInput[];
     }) => apiRequest<RosterDetail>(`/rosters/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     generateAssignments: (id: string) =>
-      apiRequest<{ assignments: AssignmentEntry[] }>(`/rosters/${id}/generate-assignments`, { method: 'POST' }),
+      apiRequest<{ assignments: AssignmentEntry[]; status: string }>(`/rosters/${id}/generate-assignments`, {
+        method: 'POST',
+      }),
     saveAssignments: (id: string, assignments: { id: string; staffId: string | null; unfilledTag: string | null }[]) =>
       apiRequest<{ assignments: AssignmentEntry[] }>(`/rosters/${id}/assignments`, {
         method: 'PUT',

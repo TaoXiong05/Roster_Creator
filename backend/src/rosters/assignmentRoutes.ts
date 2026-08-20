@@ -17,6 +17,12 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
   if (!roster || roster.userId !== req.userId) {
     return res.status(404).json({ error: 'Roster not found' });
   }
+  if (roster.status === 'generating') {
+    return res.status(409).json({ error: 'Already generating assignments for this roster' });
+  }
+
+  const previousStatus = roster.status;
+  await prisma.roster.update({ where: { id: roster.id }, data: { status: 'generating' } });
 
   const context: AssignmentContext = {
     hoursPerShift: roster.hoursPerShift ?? 8,
@@ -48,6 +54,7 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
   try {
     result = await aiProvider.assignShifts(context);
   } catch (err) {
+    await prisma.roster.update({ where: { id: roster.id }, data: { status: previousStatus } });
     return res.status(502).json({ error: err instanceof Error ? err.message : 'AI provider failed' });
   }
 
@@ -55,18 +62,18 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
   const shiftIdSet = new Set(shiftIds);
   const knownStaffIds = new Set(roster.group.members.map((m) => m.staff.id));
 
-  for (const a of result.assignments) {
-    if (!shiftIdSet.has(a.rosterShiftId)) {
-      return res.status(502).json({ error: 'AI provider referenced a roster shift that does not exist' });
-    }
-    for (const staffId of a.staffIds) {
-      if (!knownStaffIds.has(staffId)) {
-        return res.status(502).json({ error: 'AI provider referenced a staff member that does not exist' });
-      }
-    }
-  }
+  // Tolerate imperfect model output: keep only roster shifts and group members
+  // the AI actually referenced. Unknown ids (hallucinated/mangled UUIDs) are
+  // dropped so a single bad entry does not fail the whole generation; those
+  // slots simply remain unfilled below.
+  const cleaned = result.assignments
+    .filter((a) => shiftIdSet.has(a.rosterShiftId))
+    .map((a) => ({
+      rosterShiftId: a.rosterShiftId,
+      staffIds: a.staffIds.filter((id) => knownStaffIds.has(id)),
+    }));
 
-  const resultByShift = new Map(result.assignments.map((a) => [a.rosterShiftId, a.staffIds]));
+  const resultByShift = new Map(cleaned.map((a) => [a.rosterShiftId, a.staffIds]));
 
   const rows = roster.rosterShifts.flatMap((rs) => {
     const staffIds = resultByShift.get(rs.id) ?? [];
@@ -82,9 +89,10 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
     return [...filled, ...unfilled];
   });
 
-  await prisma.$transaction([
+  const [, , updatedRoster] = await prisma.$transaction([
     prisma.assignment.deleteMany({ where: { rosterShiftId: { in: shiftIds } } }),
     prisma.assignment.createMany({ data: rows }),
+    prisma.roster.update({ where: { id: roster.id }, data: { status: 'preview' } }),
   ]);
 
   const assignments = await prisma.assignment.findMany({
@@ -92,7 +100,7 @@ assignmentRouter.post('/:id/generate-assignments', async (req: AuthedRequest, re
     include: { staff: true },
   });
 
-  res.json({ assignments });
+  res.json({ assignments, status: updatedRoster.status });
 });
 
 assignmentRouter.put('/:id/assignments', async (req: AuthedRequest, res) => {

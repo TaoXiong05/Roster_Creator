@@ -61,6 +61,7 @@ describe('RosterDetailPage', () => {
     (api.groups.listMembers as any).mockResolvedValue([{ id: 'staff-1', name: 'Alice', email: 'a@b.com', preference: null }]);
     (api.rosters.generateAssignments as any).mockResolvedValue({
       assignments: [{ id: 'a-1', rosterShiftId: 'rs-1', staffId: 'staff-1', unfilledTag: null, staff: { id: 'staff-1', name: 'Alice', email: 'a@b.com' } }],
+      status: 'preview',
     });
 
     renderPage();
@@ -217,7 +218,7 @@ describe('RosterDetailPage publish and email actions', () => {
     );
 
   it('publishes the roster', async () => {
-    (api.rosters.get as any).mockResolvedValue(baseRoster);
+    (api.rosters.get as any).mockResolvedValue({ ...baseRoster, status: 'preview' });
     (api.groups.listMembers as any).mockResolvedValue([]);
     (api.rosters.publish as any).mockResolvedValue({ id: 'roster-1', status: 'published' });
 
@@ -231,7 +232,7 @@ describe('RosterDetailPage publish and email actions', () => {
   });
 
   it('sends emails to everyone assigned', async () => {
-    (api.rosters.get as any).mockResolvedValue(baseRoster);
+    (api.rosters.get as any).mockResolvedValue({ ...baseRoster, status: 'published' });
     (api.groups.listMembers as any).mockResolvedValue([]);
     (api.rosters.sendEmails as any).mockResolvedValue({ sentTo: ['a@b.com'] });
 

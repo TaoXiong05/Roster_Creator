@@ -3,7 +3,7 @@ import request from 'supertest';
 
 vi.mock('../../db', () => ({
   prisma: {
-    roster: { findUnique: vi.fn() },
+    roster: { findUnique: vi.fn(), update: vi.fn() },
     rosterShift: { findMany: vi.fn() },
     assignment: { deleteMany: vi.fn(), createMany: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     staff: { findMany: vi.fn() },
@@ -23,6 +23,7 @@ const authCookie = `token=${signToken({ userId: 'user-1' })}`;
 const rosterFixture = {
   id: 'roster-1',
   userId: 'user-1',
+  status: 'draft',
   hoursPerShift: 6,
   rosterShifts: [
     {
@@ -66,7 +67,18 @@ describe('POST /rosters/:id/generate-assignments', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns 502 and makes no db changes when the ai provider fails', async () => {
+  it('returns 409 without calling the ai provider when already generating', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ ...rosterFixture, status: 'generating' });
+
+    const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Already generating assignments for this roster' });
+    expect(aiProvider.assignShifts).not.toHaveBeenCalled();
+    expect(prisma.roster.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 502, reverts the status, and makes no db changes when the ai provider fails', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
     (aiProvider.assignShifts as any).mockRejectedValue(new Error('AI provider is not configured'));
 
@@ -75,12 +87,15 @@ describe('POST /rosters/:id/generate-assignments', () => {
     expect(res.status).toBe(502);
     expect(prisma.assignment.deleteMany).not.toHaveBeenCalled();
     expect(prisma.assignment.createMany).not.toHaveBeenCalled();
+    expect(prisma.roster.update).toHaveBeenCalledWith({ where: { id: 'roster-1' }, data: { status: 'generating' } });
+    expect(prisma.roster.update).toHaveBeenCalledWith({ where: { id: 'roster-1' }, data: { status: 'draft' } });
   });
 
   it("passes the roster's hoursPerShift through to the AI context", async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
     (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
     (prisma.assignment.findMany as any).mockResolvedValue([]);
+    (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
@@ -92,6 +107,7 @@ describe('POST /rosters/:id/generate-assignments', () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
     (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
     (prisma.assignment.findMany as any).mockResolvedValue([]);
+    (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
@@ -104,6 +120,7 @@ describe('POST /rosters/:id/generate-assignments', () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
     (aiProvider.assignShifts as any).mockResolvedValue({ assignments: [] });
     (prisma.assignment.findMany as any).mockResolvedValue([]);
+    (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
@@ -120,6 +137,30 @@ describe('POST /rosters/:id/generate-assignments', () => {
       { id: 'a-1', rosterShiftId: 'rs-1', staffId: 'staff-1', unfilledTag: null, staff: { id: 'staff-1', name: 'Alice' } },
       { id: 'a-2', rosterShiftId: 'rs-1', staffId: null, unfilledTag: null, staff: null },
     ]);
+    (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
+
+    const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('preview');
+    expect(prisma.assignment.deleteMany).toHaveBeenCalledWith({ where: { rosterShiftId: { in: ['rs-1'] } } });
+    const createArg = (prisma.assignment.createMany as any).mock.calls[0][0];
+    expect(createArg.data).toHaveLength(2);
+    expect(createArg.data.filter((r: any) => r.staffId === 'staff-1')).toHaveLength(1);
+    expect(createArg.data.filter((r: any) => r.staffId === null)).toHaveLength(1);
+    expect(res.body.assignments).toHaveLength(2);
+  });
+
+  it('ignores a hallucinated staff id but keeps the valid one and fills the rest as unfilled', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+    (aiProvider.assignShifts as any).mockResolvedValue({
+      assignments: [{ rosterShiftId: 'rs-1', staffIds: ['staff-1', 'staff-does-not-exist'] }],
+    });
+    (prisma.assignment.findMany as any).mockResolvedValue([
+      { id: 'a-1', rosterShiftId: 'rs-1', staffId: 'staff-1', unfilledTag: null, staff: { id: 'staff-1', name: 'Alice' } },
+      { id: 'a-2', rosterShiftId: 'rs-1', staffId: null, unfilledTag: null, staff: null },
+    ]);
+    (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
@@ -129,33 +170,26 @@ describe('POST /rosters/:id/generate-assignments', () => {
     expect(createArg.data).toHaveLength(2);
     expect(createArg.data.filter((r: any) => r.staffId === 'staff-1')).toHaveLength(1);
     expect(createArg.data.filter((r: any) => r.staffId === null)).toHaveLength(1);
-    expect(res.body.assignments).toHaveLength(2);
   });
 
-  it('returns 502 and makes no db changes when the ai hallucinates a staff id', async () => {
+  it('ignores assignments for an unknown roster shift and leaves real shifts unfilled', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
     (aiProvider.assignShifts as any).mockResolvedValue({
-      assignments: [{ rosterShiftId: 'rs-1', staffIds: ['staff-does-not-exist'] }],
+      assignments: [{ rosterShiftId: 'rs-does-not-exist', staffIds: ['staff-1'] }],
     });
+    (prisma.assignment.findMany as any).mockResolvedValue([
+      { id: 'a-1', rosterShiftId: 'rs-1', staffId: null, unfilledTag: null, staff: null },
+      { id: 'a-2', rosterShiftId: 'rs-1', staffId: null, unfilledTag: null, staff: null },
+    ]);
+    (prisma.roster.update as any).mockResolvedValue({ status: 'preview' });
 
     const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
 
-    expect(res.status).toBe(502);
-    expect(prisma.assignment.deleteMany).not.toHaveBeenCalled();
-    expect(prisma.assignment.createMany).not.toHaveBeenCalled();
-  });
-
-  it('returns 502 and makes no db changes when the ai references an unknown roster shift', async () => {
-    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
-    (aiProvider.assignShifts as any).mockResolvedValue({
-      assignments: [{ rosterShiftId: 'rs-does-not-exist', staffIds: [] }],
-    });
-
-    const res = await request(app).post('/rosters/roster-1/generate-assignments').set('Cookie', authCookie);
-
-    expect(res.status).toBe(502);
-    expect(prisma.assignment.deleteMany).not.toHaveBeenCalled();
-    expect(prisma.assignment.createMany).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(prisma.assignment.deleteMany).toHaveBeenCalledWith({ where: { rosterShiftId: { in: ['rs-1'] } } });
+    const createArg = (prisma.assignment.createMany as any).mock.calls[0][0];
+    expect(createArg.data).toHaveLength(2);
+    expect(createArg.data.filter((r: any) => r.staffId === null)).toHaveLength(2);
   });
 });
 

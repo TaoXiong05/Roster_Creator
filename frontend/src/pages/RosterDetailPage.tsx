@@ -37,6 +37,7 @@ export function RosterDetailPage() {
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [generatingSeconds, setGeneratingSeconds] = useState(0);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [sendingAll, setSendingAll] = useState(false);
@@ -78,6 +79,13 @@ export function RosterDetailPage() {
     setPageIndex(0);
   }, [viewLength, roster?.id]);
 
+  useEffect(() => {
+    if (!generating) return;
+    setGeneratingSeconds(0);
+    const interval = setInterval(() => setGeneratingSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [generating]);
+
   const handleGenerate = async () => {
     if (!id) return;
     setError(null);
@@ -85,6 +93,7 @@ export function RosterDetailPage() {
     try {
       const result = await api.rosters.generateAssignments(id);
       setAssignments(result.assignments);
+      setRoster((prev) => (prev ? { ...prev, status: result.status } : prev));
       setDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('rosters.aiFailedError'));
@@ -224,7 +233,7 @@ export function RosterDetailPage() {
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={handleGenerate} disabled={generating} className={`gap-2 ${btnSecondary}`}>
               {generating && <Spinner className="h-4 w-4" />}
-              {generating ? t('rosters.generating') : t('rosters.generateButton')}
+              {generating ? t('rosters.generating', { seconds: generatingSeconds }) : t('rosters.generateButton')}
             </button>
             <button type="button" onClick={handleSave} disabled={!dirty || saving} className={`gap-2 ${btnPrimary}`}>
               {saving && <Spinner className="h-4 w-4" />}
@@ -233,18 +242,27 @@ export function RosterDetailPage() {
             <button
               type="button"
               onClick={handlePublish}
-              disabled={roster.status === 'published' || publishing}
+              disabled={roster.status !== 'preview' || publishing}
+              title={roster.status === 'draft' || roster.status === 'generating' ? t('rosters.publishRequiresPreviewHint') : undefined}
               className={`gap-2 ${btnSecondary}`}
             >
               {publishing && <Spinner className="h-4 w-4" />}
               {t('rosters.publishButton')}
             </button>
-            <button type="button" onClick={handleSendAll} disabled={sendingAll} className={`gap-2 ${btnSecondary}`}>
+            <button
+              type="button"
+              onClick={handleSendAll}
+              disabled={sendingAll || roster.status !== 'published'}
+              title={roster.status !== 'published' ? t('rosters.sendExportRequiresPublishHint') : undefined}
+              className={`gap-2 ${btnSecondary}`}
+            >
               {sendingAll && <Spinner className="h-4 w-4" />}
               {t('rosters.sendAllButton')}
             </button>
           </div>
         </div>
+
+        {generating && <p className="text-sm text-ink-soft">{t('rosters.generateHint')}</p>}
 
         {error && (
           <p role="alert" className={errorText}>
@@ -253,16 +271,24 @@ export function RosterDetailPage() {
         )}
         {emailStatus && <p className={successText}>{emailStatus}</p>}
 
+        {roster.status !== 'published' && <p className="text-sm text-ink-soft">{t('rosters.sendExportRequiresPublishHint')}</p>}
+
         <div className="flex flex-wrap gap-4 text-sm">
-          <a href={api.rosters.exportUrl(roster.id, 'ics')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            {t('rosters.exportIcs')}
-          </a>
-          <a href={api.rosters.exportUrl(roster.id, 'csv')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            {t('rosters.exportCsv')}
-          </a>
-          <a href={api.rosters.exportUrl(roster.id, 'pdf')} className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
-            {t('rosters.exportPdf')}
-          </a>
+          {(['ics', 'csv', 'pdf'] as const).map((format) =>
+            roster.status === 'published' ? (
+              <a
+                key={format}
+                href={api.rosters.exportUrl(roster.id, format)}
+                className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
+              >
+                {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
+              </a>
+            ) : (
+              <span key={format} className="cursor-not-allowed text-ink-soft/50">
+                {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
+              </span>
+            )
+          )}
         </div>
 
         <div className={`${cardBase} space-y-3`}>
@@ -419,6 +445,7 @@ export function RosterDetailPage() {
         members={members}
         responsibilities={responsibilities}
         sendingStaffId={sendingStaffId}
+        canSend={roster.status === 'published'}
         onAssignmentChange={updateAssignment}
         onSendOne={handleSendOne}
         onClose={() => setEditingDate(null)}

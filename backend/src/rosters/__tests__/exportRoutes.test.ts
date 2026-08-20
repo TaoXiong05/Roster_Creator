@@ -16,6 +16,7 @@ const rosterFixture = {
   id: 'roster-1',
   userId: 'user-1',
   name: 'Week 34',
+  status: 'published',
   rosterShifts: [
     {
       date: new Date('2026-08-17'),
@@ -37,6 +38,15 @@ describe('GET /rosters/:id/export/ics', () => {
     const res = await request(app).get('/rosters/roster-1/export/ics').set('Cookie', authCookie);
 
     expect(res.status).toBe(404);
+  });
+
+  it('rejects exporting when the roster is not published', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ ...rosterFixture, status: 'preview' });
+
+    const res = await request(app).get('/rosters/roster-1/export/ics').set('Cookie', authCookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Publish this roster before exporting it' });
   });
 
   it('returns an ics calendar with only assigned staff', async () => {
@@ -75,6 +85,15 @@ describe('GET /rosters/:id/export/ics', () => {
 describe('GET /rosters/:id/export/csv', () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it('rejects exporting when the roster is not published', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ ...rosterFixture, status: 'draft' });
+
+    const res = await request(app).get('/rosters/roster-1/export/csv').set('Cookie', authCookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Publish this roster before exporting it' });
+  });
+
   it('returns a csv table', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
 
@@ -89,6 +108,15 @@ describe('GET /rosters/:id/export/csv', () => {
 
 describe('GET /rosters/:id/export/pdf', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('rejects exporting when the roster is not published', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ ...rosterFixture, status: 'generating' });
+
+    const res = await request(app).get('/rosters/roster-1/export/pdf').set('Cookie', authCookie);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Publish this roster before exporting it' });
+  });
 
   it('returns a pdf document', async () => {
     (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);

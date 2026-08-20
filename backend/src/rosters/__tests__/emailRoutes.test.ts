@@ -18,6 +18,7 @@ const rosterFixture = {
   id: 'roster-1',
   userId: 'user-1',
   name: 'Week 34',
+  status: 'published',
   rosterShifts: [
     {
       date: new Date('2026-08-17'),
@@ -40,6 +41,16 @@ describe('POST /rosters/:id/send-emails', () => {
     const res = await request(app).post('/rosters/roster-1/send-emails').set('Cookie', authCookie).send({});
 
     expect(res.status).toBe(404);
+  });
+
+  it('rejects sending emails when the roster is not published', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue({ ...rosterFixture, status: 'preview' });
+
+    const res = await request(app).post('/rosters/roster-1/send-emails').set('Cookie', authCookie).send({});
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Publish this roster before sending emails' });
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 
   it('sends to every assigned staff member when staffIds is omitted', async () => {
