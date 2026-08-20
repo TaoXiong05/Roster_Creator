@@ -124,20 +124,22 @@ export function StaffEditPage() {
               {error}
             </p>
           )}
-          <div>
-            <label className={labelBase}>{t('staff.nameLabel')}</label>
-            <input placeholder={t('staff.namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} className={inputBase} required />
-          </div>
-          <div>
-            <label className={labelBase}>{t('staff.emailLabel')}</label>
-            <input
-              type="email"
-              placeholder={t('staff.emailLabel')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputBase}
-              required
-            />
+          <div className="space-y-4">
+            <div>
+              <label className={labelBase}>{t('staff.nameLabel')}</label>
+              <input placeholder={t('staff.namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} className={inputBase} required />
+            </div>
+            <div>
+              <label className={labelBase}>{t('staff.emailLabel')}</label>
+              <input
+                type="email"
+                placeholder={t('staff.emailLabel')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputBase}
+                required
+              />
+            </div>
           </div>
           <div>
             <label className={labelBase}>{t('staff.responsibilityLabel')}</label>
