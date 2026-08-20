@@ -67,7 +67,7 @@ export function DayShiftDialog({
         aria-modal="true"
         aria-labelledby="day-shift-dialog-title"
         onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-md rounded-[24px] border border-tan/15 bg-white p-6 shadow-warm transition-all duration-300 ease-in-out ${
+        className={`max-h-[85vh] w-full max-w-md overflow-y-auto rounded-[24px] border border-tan/15 bg-white p-6 shadow-warm transition-all duration-300 ease-in-out ${
           visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'
         }`}
       >
@@ -122,6 +122,15 @@ export function DayShiftDialog({
                           const respName =
                             responsibilities.find((r) => r.id === req.responsibilityId)?.name ??
                             t('dayShiftDialog.defaultResponsibilityLabel');
+                          const usedIds = new Set(
+                            row.requirements
+                              .filter((_, i) => i !== reqIndex)
+                              .map((r) => r.responsibilityId)
+                              .filter(Boolean)
+                          );
+                          const availableResponsibilities = responsibilities.filter(
+                            (r) => r.id === req.responsibilityId || !usedIds.has(r.id)
+                          );
                           return (
                             <div key={reqIndex} className="flex items-center gap-2">
                               <select
@@ -131,7 +140,7 @@ export function DayShiftDialog({
                                 className="flex-1 rounded-lg border border-tan/30 bg-white/70 px-2 py-1 text-sm text-ink outline-none transition focus:border-coral focus:ring-1 focus:ring-coral/30"
                               >
                                 <option value="">{t('dayShiftDialog.selectResponsibility')}</option>
-                                {responsibilities.map((r) => (
+                                {availableResponsibilities.map((r) => (
                                   <option key={r.id} value={r.id}>
                                     {r.name}
                                   </option>

@@ -6,11 +6,87 @@ import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { DayShiftDialog, DayShiftRow } from '../components/DayShiftDialog';
 import { PageHeader } from '../components/PageHeader';
+import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
 import { getDictionary, useLanguage } from '../i18n/LanguageContext';
-import { btnPrimary, btnSecondary, cardBase, errorText, fieldErrorText, inputBase, inputError, labelBase } from '../styles/ui';
+import {
+  btnPillActive,
+  btnPillInactive,
+  btnPrimary,
+  btnSecondary,
+  bulkActionBar,
+  cardBase,
+  checkboxBase,
+  errorText,
+  fieldErrorText,
+  inputBase,
+  inputError,
+  labelBase,
+} from '../styles/ui';
 
-const DAYS_PER_PAGE = 7;
+type ViewLength = 'weekly' | 'fortnightly' | 'monthly';
+
+const DAYS_PER_PAGE: Partial<Record<ViewLength, number>> = { weekly: 7, fortnightly: 14 };
+
+// 'YYYY-MM' key for the calendar month a date falls in.
+function monthKeyOf(date: string): string {
+  return date.slice(0, 7);
+}
+
+// Every calendar month touched by the date range, in order, as 'YYYY-MM' keys.
+function monthsInRange(start: string, end: string): string[] {
+  if (!start || !end) return [];
+  const months: string[] = [];
+  const cursor = new Date(`${start}T00:00:00Z`);
+  cursor.setUTCDate(1);
+  const last = new Date(`${end}T00:00:00Z`);
+  last.setUTCDate(1);
+  while (cursor <= last) {
+    months.push(monthKeyOf(cursor.toISOString()));
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return months;
+}
+
+// A full Sun–Sat aligned grid (complete weeks, so 5 or 6 rows) covering the given month,
+// including the leading/trailing days from adjacent months needed to fill each week.
+function monthGridDates(monthKey: string): string[] {
+  const [year, month] = monthKey.split('-').map(Number);
+  const firstOfMonth = new Date(Date.UTC(year, month - 1, 1));
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setUTCDate(gridStart.getUTCDate() - firstOfMonth.getUTCDay());
+  const lastOfMonth = new Date(Date.UTC(year, month, 0));
+  const gridEnd = new Date(lastOfMonth);
+  gridEnd.setUTCDate(gridEnd.getUTCDate() + (6 - lastOfMonth.getUTCDay()));
+
+  const dates: string[] = [];
+  const cursor = new Date(gridStart);
+  while (cursor <= gridEnd) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+function formatMonthLabel(monthKey: string, language: string): string {
+  const [year, month] = monthKey.split('-').map(Number);
+  const formatter = new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+  });
+  return formatter.format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+function todayISODate(): string {
+  // Use local calendar date components, not toISOString() (which is UTC) — the roster's
+  // day cells are plain calendar dates (from <input type="date">), so "today" needs to match
+  // the user's local day rather than shifting a day off near midnight in non-UTC timezones.
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function datesBetween(start: string, end: string): string[] {
   if (!start || !end) return [];
@@ -43,10 +119,14 @@ export function RosterCreatePage() {
   const [groupId, setGroupId] = useState('');
   const [hoursPerShift, setHoursPerShift] = useState(8);
   const [dayShifts, setDayShifts] = useState<Record<string, DayShiftRow[]>>({});
+  const [viewLength, setViewLength] = useState<ViewLength>('weekly');
   const [pageIndex, setPageIndex] = useState(0);
   const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [clipboardDate, setClipboardDate] = useState<string | null>(null);
+  const [pasteTargets, setPasteTargets] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [loadingRoster, setLoadingRoster] = useState(isEdit);
 
   const dateFieldError = error && /date/i.test(error) ? error : null;
   const groupFieldError = error && /group/i.test(error) ? error : null;
@@ -83,7 +163,10 @@ export function RosterCreatePage() {
         }
         setDayShifts(byDate);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : t('rosters.loadFailedError')));
+      .catch((err) => setError(err instanceof Error ? err.message : t('rosters.loadFailedError')))
+      .finally(() => {
+        if (!cancelled) setLoadingRoster(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -91,15 +174,19 @@ export function RosterCreatePage() {
 
   useEffect(() => {
     setPageIndex(0);
-  }, [dateRangeStart, dateRangeEnd]);
+  }, [dateRangeStart, dateRangeEnd, viewLength]);
 
   const availableDates = datesBetween(dateRangeStart, dateRangeEnd);
-  const totalPages = Math.max(1, Math.ceil(availableDates.length / DAYS_PER_PAGE));
+  const availableDatesSet = new Set(availableDates);
+  const months = monthsInRange(dateRangeStart, dateRangeEnd);
+  const isMonthly = viewLength === 'monthly';
+  const daysPerPage = DAYS_PER_PAGE[viewLength];
+  const totalPages = isMonthly ? Math.max(1, months.length) : Math.max(1, Math.ceil(availableDates.length / daysPerPage!));
   const clampedPageIndex = Math.min(pageIndex, totalPages - 1);
-  const pageDates = availableDates.slice(
-    clampedPageIndex * DAYS_PER_PAGE,
-    clampedPageIndex * DAYS_PER_PAGE + DAYS_PER_PAGE
-  );
+  const pageDates = isMonthly
+    ? monthGridDates(months[clampedPageIndex] ?? monthKeyOf(dateRangeStart))
+    : availableDates.slice(clampedPageIndex * daysPerPage!, clampedPageIndex * daysPerPage! + daysPerPage!);
+  const today = todayISODate();
 
   const addDayShift = (date: string, shiftTemplateId: string) => {
     setDayShifts((prev) => ({
@@ -153,6 +240,55 @@ export function RosterCreatePage() {
     }));
   };
 
+  const pasteMode = clipboardDate !== null;
+
+  const startCopy = (date: string) => {
+    setClipboardDate(date);
+    setPasteTargets(new Set());
+  };
+
+  const cancelPaste = () => {
+    setClipboardDate(null);
+    setPasteTargets(new Set());
+  };
+
+  const togglePasteTarget = (date: string) => {
+    setPasteTargets((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  };
+
+  const confirmPaste = () => {
+    if (!clipboardDate) return;
+    const sourceRows = dayShifts[clipboardDate] || [];
+    setDayShifts((prev) => {
+      const next = { ...prev };
+      for (const date of pasteTargets) {
+        next[date] = sourceRows.map((row) => ({
+          shiftTemplateId: row.shiftTemplateId,
+          requirements: row.requirements.map((req) => ({ ...req })),
+        }));
+      }
+      return next;
+    });
+    cancelPaste();
+  };
+
+  const handleDayClick = (date: string) => {
+    if (pasteMode) {
+      if (date === clipboardDate) return;
+      togglePasteTarget(date);
+    } else {
+      setEditingDate(date);
+    }
+  };
+
   const buildShifts = (): RosterShiftInput[] => {
     const shifts: RosterShiftInput[] = [];
     for (const date of availableDates) {
@@ -185,16 +321,23 @@ export function RosterCreatePage() {
       const payload = { name, dateRangeStart, dateRangeEnd, groupId, hoursPerShift, shifts };
       if (isEdit) {
         await api.rosters.update(id!, payload);
-        navigate(`/rosters/${id}`);
       } else {
-        const roster = await api.rosters.create(payload);
-        navigate(`/rosters/${roster.id}`);
+        await api.rosters.create(payload);
       }
+      navigate('/rosters');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('rosters.createFailedError'));
       setCreating(false);
     }
   };
+
+  if (loadingRoster) {
+    return (
+      <AppShell>
+        <PageSkeleton rows={5} />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -311,67 +454,183 @@ export function RosterCreatePage() {
               <p className={`${cardBase} text-sm text-ink-soft`}>{t('rosters.selectDatesMessage')}</p>
             ) : (
               <div className={`${cardBase} space-y-3`}>
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
-                    disabled={clampedPageIndex === 0}
-                    className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
-                  >
-                    {t('rosters.prevWeek')}
-                  </button>
-                  <span className="text-sm text-ink-soft">
-                    {t('rosters.pageIndicator', { current: clampedPageIndex + 1, total: totalPages })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
-                    disabled={clampedPageIndex >= totalPages - 1}
-                    className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
-                  >
-                    {t('rosters.nextWeek')}
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setViewLength('weekly')}
+                      className={viewLength === 'weekly' ? btnPillActive : btnPillInactive}
+                    >
+                      {t('rosters.viewWeekly')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewLength('fortnightly')}
+                      className={viewLength === 'fortnightly' ? btnPillActive : btnPillInactive}
+                    >
+                      {t('rosters.viewFortnightly')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewLength('monthly')}
+                      className={viewLength === 'monthly' ? btnPillActive : btnPillInactive}
+                    >
+                      {t('rosters.viewMonthly')}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                      disabled={clampedPageIndex === 0}
+                      className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+                    >
+                      {t('rosters.prevPage')}
+                    </button>
+                    <span className="text-sm text-ink-soft">
+                      {isMonthly ? formatMonthLabel(months[clampedPageIndex] ?? '', language) : t('rosters.pageIndicator', { current: clampedPageIndex + 1, total: totalPages })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={clampedPageIndex >= totalPages - 1}
+                      className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+                    >
+                      {t('rosters.nextPage')}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <div className="grid grid-cols-7 gap-2" style={{ minWidth: '56rem' }}>
-                    {pageDates.map((date) => {
+                {pasteMode && (
+                  <div className={bulkActionBar}>
+                    <span>{t('rosters.pasteBannerText', { date: `${formatDate(clipboardDate!)} ${weekdayLabel(clipboardDate!, weekdays)}` })}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-ink-soft">{t('common.selectedCount', { count: pasteTargets.size })}</span>
+                      <button type="button" onClick={cancelPaste} className={btnSecondary}>
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={confirmPaste}
+                        disabled={pasteTargets.size === 0}
+                        className={`${btnPrimary} disabled:cursor-not-allowed disabled:opacity-40`}
+                      >
+                        {t('rosters.pasteButton')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isMonthly && (
+                  <div className="grid grid-cols-7 gap-2 px-1 text-center text-[11px] font-semibold text-ink-soft">
+                    {weekdays.map((w) => (
+                      <span key={w}>{w}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-7 gap-2">
+                  {pageDates.map((date) => {
+                      if (!availableDatesSet.has(date)) {
+                        return (
+                          <div
+                            key={date}
+                            aria-hidden="true"
+                            className="min-h-[6.5rem] rounded-2xl border border-dashed border-tan/10 p-3 opacity-40"
+                          >
+                            <span className="text-xs text-ink-soft">{date.slice(8, 10)}</span>
+                          </div>
+                        );
+                      }
                       const rows = dayShifts[date] || [];
+                      const isToday = date === today;
+                      const isSource = date === clipboardDate;
+                      const isSelectedTarget = pasteTargets.has(date);
                       return (
-                        <button
-                          type="button"
-                          key={date}
-                          onClick={() => setEditingDate(date)}
-                          className="min-h-[6.5rem] rounded-2xl border border-tan/15 bg-white/60 p-3 text-left transition hover:border-coral/40 hover:bg-white"
-                        >
-                          <p className="text-xs font-medium text-ink-soft">
-                            {formatDate(date)} {weekdayLabel(date, weekdays)}
-                          </p>
-                          {rows.length === 0 ? (
-                            <p className="mt-2 text-xs text-ink-soft/60">{t('rosters.clickToSet')}</p>
-                          ) : (
-                            <ul className="mt-2 space-y-1">
-                              {rows.map((row) => {
-                                const tpl = templates.find((t) => t.id === row.shiftTemplateId);
-                                const summary = row.requirements
-                                  .filter((req) => req.headcount > 0)
-                                  .map((req) => {
-                                    const r = responsibilities.find((resp) => resp.id === req.responsibilityId);
-                                    return `${r?.name ?? t('rosters.unselectedResponsibility')} × ${req.headcount}`;
-                                  })
-                                  .join(t('common.listSeparator'));
-                                return (
-                                  <li key={row.shiftTemplateId} className="text-xs text-ink">
-                                    {tpl?.name ?? '?'}{t('common.colon')}{summary || t('rosters.notSetHeadcount')}
-                                  </li>
-                                );
-                              })}
-                            </ul>
+                        <div className="relative" key={date}>
+                          <button
+                            type="button"
+                            onClick={() => handleDayClick(date)}
+                            disabled={isSource}
+                            className={`min-h-[6.5rem] w-full rounded-2xl border p-3 text-left transition hover:border-coral/40 hover:bg-white disabled:cursor-not-allowed disabled:hover:border-tan/15 ${
+                              isSelectedTarget
+                                ? 'border-coral-deep bg-coral-deep/10 ring-2 ring-coral-deep/40'
+                                : isSource
+                                ? 'border-tan/30 bg-sand/40'
+                                : isToday
+                                ? 'border-coral-deep/50 bg-coral-deep/5 ring-1 ring-coral-deep/20'
+                                : 'border-tan/15 bg-white/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                  isToday ? 'bg-coral-deep text-white' : 'bg-sand/70 text-ink'
+                                }`}
+                              >
+                                {date.slice(8, 10)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-ink">{weekdayLabel(date, weekdays)}</p>
+                                <p className="text-[11px] text-ink-soft/70">{formatDate(date)}</p>
+                              </div>
+                            </div>
+                            {rows.length === 0 ? (
+                              <p className="mt-2 text-xs text-ink-soft/60">{t('rosters.clickToSet')}</p>
+                            ) : (
+                              <ul className="mt-2 space-y-1">
+                                {rows.map((row) => {
+                                  const tpl = templates.find((t) => t.id === row.shiftTemplateId);
+                                  const summary = row.requirements
+                                    .filter((req) => req.headcount > 0)
+                                    .map((req) => {
+                                      const r = responsibilities.find((resp) => resp.id === req.responsibilityId);
+                                      return `${r?.name ?? t('rosters.unselectedResponsibility')} × ${req.headcount}`;
+                                    })
+                                    .join(t('common.listSeparator'));
+                                  return (
+                                    <li key={row.shiftTemplateId} className="text-xs text-ink">
+                                      {tpl?.name ?? '?'}{t('common.colon')}{summary || t('rosters.notSetHeadcount')}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </button>
+
+                          {!pasteMode && rows.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => startCopy(date)}
+                              aria-label={t('rosters.copyDayAria', { date: formatDate(date) })}
+                              title={t('rosters.copyDayAria', { date: formatDate(date) })}
+                              className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-ink-soft shadow-sm transition hover:bg-white hover:text-coral-deep"
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="12" height="12" rx="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                            </button>
                           )}
-                        </button>
+
+                          {isSource && (
+                            <span className="absolute right-2 top-2 z-10 rounded-full bg-coral-deep px-2 py-0.5 text-[10px] font-semibold text-white">
+                              {t('rosters.copiedBadge')}
+                            </span>
+                          )}
+
+                          {pasteMode && !isSource && (
+                            <input
+                              type="checkbox"
+                              checked={isSelectedTarget}
+                              onChange={() => togglePasteTarget(date)}
+                              aria-label={t('rosters.selectPasteDateAria', { date: formatDate(date) })}
+                              className={`absolute right-2 top-2 z-10 ${checkboxBase}`}
+                            />
+                          )}
+                        </div>
                       );
                     })}
-                  </div>
                 </div>
               </div>
             )}
