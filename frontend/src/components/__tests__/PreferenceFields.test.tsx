@@ -150,7 +150,7 @@ describe('PreferenceFields', () => {
       </MemoryRouter>
     );
 
-    const select = screen.getByLabelText('Hours Period') as HTMLSelectElement;
+    const select = screen.getByLabelText('Work Period') as HTMLSelectElement;
     expect(select.value).toBe('weekly');
 
     await userEvent.selectOptions(select, 'fortnightly');
