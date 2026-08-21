@@ -8,6 +8,8 @@ export interface PdfRow {
   startTime: string;
   endTime: string;
   staffName: string;
+  // True when the slot has no staff assigned (an unfilled gap in the roster).
+  unfilled?: boolean;
 }
 
 export interface WeekGroup<T> {
@@ -94,8 +96,12 @@ export function buildPdf(title: string, dateRangeStart: string, rows: PdfRow[]):
         doc.fontSize(12).text(`${toDisplayDate(day.date)} (${weekdayOf(day.date)})`, { underline: true });
         doc.fontSize(10);
         for (const row of day.rows) {
+          // Unfilled slots are printed in red so an open gap jumps out when the page is reviewed
+          // or handed off; every other line stays black.
+          if (row.unfilled) doc.fillColor('#cc0000');
           // Extra spacing after each line leaves room for the printed page to be marked up by hand.
           doc.text(`   ${row.shiftName} · ${row.responsibilityName} (${row.startTime}-${row.endTime})  —  ${row.staffName}`);
+          if (row.unfilled) doc.fillColor('#000000');
           doc.moveDown(0.5);
         }
         doc.moveDown(0.5);
