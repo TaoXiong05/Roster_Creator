@@ -49,6 +49,13 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
         linkLabel: 'Go to Responsibility Templates',
       },
       {
+        title: 'Set up shift templates',
+        description:
+          'Define shifts like "Morning 09:00-17:00" or "Night 22:00-06:00" once, then reuse them when creating rosters or setting staff preferences.',
+        to: '/shift-templates',
+        linkLabel: 'Go to Shift Templates',
+      },
+      {
         title: 'Build a group',
         description: 'Put staff who’ll be rostered together into the same group — you’ll pick a group when creating a roster.',
         to: '/groups',
@@ -60,13 +67,6 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
           'Record name, email, and at least one responsibility. Hour limits and preferred shifts can be filled in later.',
         to: '/staff',
         linkLabel: 'Go to Staff',
-      },
-      {
-        title: 'Set up shift templates',
-        description:
-          'Define shifts like "Morning 09:00-17:00" or "Night 22:00-06:00" once, then reuse them when creating rosters or setting staff preferences.',
-        to: '/shift-templates',
-        linkLabel: 'Go to Shift Templates',
       },
       {
         title: 'Create a roster',
@@ -159,6 +159,12 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
         linkLabel: '去职责模板',
       },
       {
+        title: '设置班次模板',
+        description: '定义好"早班 09:00-17:00""夜班 22:00-06:00"这类班次，之后创建排班和员工填偏好时都直接选用。',
+        to: '/shift-templates',
+        linkLabel: '去班次模板',
+      },
+      {
         title: '建立小组',
         description: '把要一起排班的员工分到同一个小组，创建排班表时按组选人。',
         to: '/groups',
@@ -169,12 +175,6 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
         description: '记录姓名、邮箱，并至少勾选一个职责；工时上下限、偏好班次都可以之后再补。',
         to: '/staff',
         linkLabel: '去员工管理',
-      },
-      {
-        title: '设置班次模板',
-        description: '定义好"早班 09:00-17:00""夜班 22:00-06:00"这类班次，之后创建排班和员工填偏好时都直接选用。',
-        to: '/shift-templates',
-        linkLabel: '去班次模板',
       },
       {
         title: '创建排班表',

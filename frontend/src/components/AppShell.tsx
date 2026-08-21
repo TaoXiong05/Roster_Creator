@@ -147,6 +147,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="mt-6">
         <LanguageToggle />
       </div>
+      <div className="mt-6 space-y-0.5 border-t border-tan/15 pt-4 text-xs text-ink-soft/70">
+        <p>{t('nav.copyright', { year: new Date().getFullYear() })}</p>
+        <p>
+          {t('nav.contact')}{' '}
+          <a href="mailto:taoxiong05@gmail.com" className="text-coral-deep hover:underline">
+            taoxiong05@gmail.com
+          </a>
+        </p>
+      </div>
     </>
   );
 }

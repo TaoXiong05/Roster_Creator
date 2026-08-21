@@ -35,6 +35,8 @@ export const en = {
     help: 'Help',
     openMenu: 'Open navigation menu',
     closeMenu: 'Close navigation menu',
+    copyright: '© {{year}} Roster Creator',
+    contact: 'Contact:',
   },
   auth: {
     login: {

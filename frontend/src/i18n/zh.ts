@@ -35,6 +35,8 @@ export const zh = {
     help: '帮助',
     openMenu: '打开导航菜单',
     closeMenu: '关闭导航菜单',
+    copyright: '© {{year}} Roster Creator',
+    contact: '联系邮箱：',
   },
   auth: {
     login: {

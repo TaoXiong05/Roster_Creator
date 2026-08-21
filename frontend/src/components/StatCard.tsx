@@ -16,7 +16,7 @@ export function StatCard({ to, icon, label, value, accentBg, accentText, accentL
   return (
     <Link
       to={to}
-      className={`group relative flex items-center gap-4 rounded-[24px] border ${border} bg-white/85 p-6 shadow-warm-sm transition-all hover:-translate-y-1 hover:shadow-warm`}
+      className={`group relative flex h-full items-center gap-4 rounded-[24px] border ${border} bg-white/85 p-6 shadow-warm-sm transition-all hover:-translate-y-1 hover:shadow-warm`}
     >
       <span className={`pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent ${accentLine} to-transparent`} />
       <span
