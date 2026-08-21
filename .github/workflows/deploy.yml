@@ -71,6 +71,8 @@ jobs:
           tags: |
             ghcr.io/taoxiong05/roster_creator-backend:latest
             ghcr.io/taoxiong05/roster_creator-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push proxy image
         uses: docker/build-push-action@v6
@@ -84,6 +86,8 @@ jobs:
           tags: |
             ghcr.io/taoxiong05/roster_creator-proxy:latest
             ghcr.io/taoxiong05/roster_creator-proxy:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: build-and-push
@@ -100,6 +104,12 @@ jobs:
           source: "docker-compose.yml,proxy/Caddyfile"
           target: "/opt/roster-creator"
 
+      - name: URL-encode database password
+        id: urlencode
+        run: |
+          ENCODED=$(printf '%s' "${{ secrets.POSTGRES_PASSWORD }}" | jq -sRr @uri)
+          echo "encoded_password=$ENCODED" >> "$GITHUB_OUTPUT"
+
       - name: Write .env and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -107,11 +117,13 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cat > /opt/roster-creator/.env <<EOF
+            set -euo pipefail
+            umask 077
+            cat > /opt/roster-creator/.env <<'EOF'
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}
+            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ steps.urlencode.outputs.encoded_password }}@db:5432/${{ secrets.POSTGRES_DB }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             PORT=4000
             FRONTEND_URL=https://roster.taoxiong.site
