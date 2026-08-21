@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 
 vi.mock('../../db', () => ({
@@ -72,6 +72,48 @@ describe('POST /auth/login', () => {
     const res = await request(app).post('/auth/login').send({ email: 'nope@b.com', password: 'password123' });
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe('POST /auth/demo', () => {
+  const originalDemoEmail = process.env.DEMO_USER_EMAIL;
+
+  beforeEach(() => vi.clearAllMocks());
+
+  afterEach(() => {
+    if (originalDemoEmail === undefined) {
+      delete process.env.DEMO_USER_EMAIL;
+    } else {
+      process.env.DEMO_USER_EMAIL = originalDemoEmail;
+    }
+  });
+
+  it('returns 404 when DEMO_USER_EMAIL is not configured', async () => {
+    delete process.env.DEMO_USER_EMAIL;
+
+    const res = await request(app).post('/auth/demo');
+
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when the configured demo account does not exist', async () => {
+    process.env.DEMO_USER_EMAIL = 'demo@example.com';
+    (prisma.user.findUnique as any).mockResolvedValue(null);
+
+    const res = await request(app).post('/auth/demo');
+
+    expect(res.status).toBe(404);
+  });
+
+  it('logs in as the demo account and sets a cookie', async () => {
+    process.env.DEMO_USER_EMAIL = 'demo@example.com';
+    (prisma.user.findUnique as any).mockResolvedValue({ id: 'demo-user', email: 'demo@example.com' });
+
+    const res = await request(app).post('/auth/demo');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ id: 'demo-user', email: 'demo@example.com' });
+    expect(res.headers['set-cookie'][0]).toMatch(/token=/);
   });
 });
 

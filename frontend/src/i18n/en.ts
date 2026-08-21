@@ -49,6 +49,7 @@ export const en = {
       forgotPassword: 'Forgot password?',
       or: 'or',
       googleSubmit: 'Continue with Google',
+      demoSubmit: 'Try the demo',
     },
     register: {
       headline: 'Let me help you get the whole team sorted',

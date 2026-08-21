@@ -49,6 +49,7 @@ export const zh = {
       forgotPassword: '忘记密码？',
       or: '或者',
       googleSubmit: '使用 Google 登录',
+      demoSubmit: '体验 Demo',
     },
     register: {
       headline: '让我陪你把整个团队安排好',

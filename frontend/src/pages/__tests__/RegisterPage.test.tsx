@@ -14,6 +14,7 @@ describe('RegisterPage', () => {
       loading: false,
       login: vi.fn(),
       register,
+      demoLogin: vi.fn(),
       logout: vi.fn(),
     });
 

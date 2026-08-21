@@ -132,6 +132,7 @@ jobs:
             GOOGLE_CALLBACK_URL=https://roster-api.taoxiong.site/auth/google/callback
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
             RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+            DEMO_USER_EMAIL=demo@taoxiong.site
             EOF
             cd /opt/roster-creator
             docker compose pull

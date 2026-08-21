@@ -12,6 +12,7 @@ describe('App routing', () => {
       loading: false,
       login: vi.fn(),
       register: vi.fn(),
+      demoLogin: vi.fn(),
       logout: vi.fn(),
     });
 
@@ -30,6 +31,7 @@ describe('App routing', () => {
       loading: false,
       login: vi.fn(),
       register: vi.fn(),
+      demoLogin: vi.fn(),
       logout: vi.fn(),
     });
 
@@ -48,6 +50,7 @@ describe('App routing', () => {
       loading: false,
       login: vi.fn(),
       register: vi.fn(),
+      demoLogin: vi.fn(),
       logout: vi.fn(),
     });
 
@@ -66,6 +69,7 @@ describe('App routing', () => {
       loading: false,
       login: vi.fn(),
       register: vi.fn(),
+      demoLogin: vi.fn(),
       logout: vi.fn(),
     });
 

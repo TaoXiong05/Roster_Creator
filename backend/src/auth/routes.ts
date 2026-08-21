@@ -40,6 +40,20 @@ authRouter.post('/login', async (req, res) => {
   res.json({ id: user.id, email: user.email });
 });
 
+authRouter.post('/demo', async (_req, res) => {
+  const demoEmail = process.env.DEMO_USER_EMAIL;
+  if (!demoEmail) {
+    return res.status(404).json({ error: 'Demo login is not enabled' });
+  }
+  const user = await prisma.user.findUnique({ where: { email: demoEmail } });
+  if (!user) {
+    return res.status(404).json({ error: 'Demo account not found' });
+  }
+  const token = signToken({ userId: user.id });
+  res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+  res.json({ id: user.id, email: user.email });
+});
+
 authRouter.post('/logout', (_req, res) => {
   res.clearCookie('token');
   res.status(204).send();

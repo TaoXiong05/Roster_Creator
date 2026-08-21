@@ -11,7 +11,7 @@ import { btnPrimary, btnSecondary, errorText, inputBase, labelBase } from '../st
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [email, setEmail] = useState('');
@@ -28,6 +28,18 @@ export function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await demoLogin();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo login failed');
       setLoading(false);
     }
   };
@@ -85,6 +97,11 @@ export function LoginPage() {
             />
           </div>
         </div>
+
+        <button type="button" onClick={handleDemoLogin} disabled={loading} className={`w-full gap-2 ${btnSecondary}`}>
+          {loading && <Spinner className="h-4 w-4" />}
+          {t('auth.login.demoSubmit')}
+        </button>
 
         <button type="submit" disabled={loading} className={`w-full gap-2 ${btnPrimary}`}>
           {loading && <Spinner className="h-4 w-4" />}

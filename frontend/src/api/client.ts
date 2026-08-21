@@ -138,6 +138,7 @@ export const api = {
     apiRequest<User>('/auth/register', { method: 'POST', body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>
     apiRequest<User>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  demoLogin: () => apiRequest<User>('/auth/demo', { method: 'POST' }),
   logout: () => apiRequest<void>('/auth/logout', { method: 'POST' }),
   me: () => apiRequest<User>('/auth/me'),
   requestPasswordReset: (email: string) =>

@@ -14,6 +14,7 @@ describe('LoginPage', () => {
       loading: false,
       login,
       register: vi.fn(),
+      demoLogin: vi.fn(),
       logout: vi.fn(),
     });
 
@@ -29,5 +30,27 @@ describe('LoginPage', () => {
 
     expect(login).toHaveBeenCalledWith('a@b.com', 'wrongpass');
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Invalid credentials'));
+  });
+
+  it('calls demoLogin when the demo button is clicked', async () => {
+    const demoLogin = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: null,
+      loading: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      demoLogin,
+      logout: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try the demo' }));
+
+    await waitFor(() => expect(demoLogin).toHaveBeenCalled());
   });
 });
