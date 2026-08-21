@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, RosterListItem } from '../api/client';
 import { formatDate } from '../utils/date';
 import { AppShell } from '../components/AppShell';
@@ -14,20 +15,13 @@ import { btnDanger, btnPrimary, btnSecondary, tableShell, tableHeaderRow, tableH
 
 export function RosterListPage() {
   const { t } = useLanguage();
-  const [rosters, setRosters] = useState<RosterListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: rosters = [], isLoading } = useQuery({
+    queryKey: ['rosters'],
+    queryFn: () => api.rosters.list(),
+  });
   const [confirmTarget, setConfirmTarget] = useState<RosterListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const load = async () => setRosters(await api.rosters.list());
-
-  useEffect(() => {
-    let active = true;
-    load().finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const handleConfirmDelete = async () => {
     if (!confirmTarget) return;
@@ -35,7 +29,7 @@ export function RosterListPage() {
     try {
       await api.rosters.remove(confirmTarget.id);
       setConfirmTarget(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['rosters'] });
     } finally {
       setDeleting(false);
     }
@@ -54,7 +48,7 @@ export function RosterListPage() {
           }
         />
 
-        {loading ? (
+        {isLoading ? (
           <PageSkeleton />
         ) : rosters.length === 0 ? (
           <EmptyState

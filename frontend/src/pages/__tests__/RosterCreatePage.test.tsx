@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { RosterCreatePage } from '../RosterCreatePage';
 import { api } from '../../api/client';
+import { QueryProvider } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -28,9 +29,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     // The create form (no `id` param, so isEdit is false) renders immediately — no fetch is
@@ -52,9 +55,11 @@ describe('RosterCreatePage', () => {
     (api.rosters.create as any).mockResolvedValue({ id: 'roster-1' });
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -121,9 +126,11 @@ describe('RosterCreatePage', () => {
     (api.rosters.create as any).mockResolvedValue({ id: 'roster-1' });
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -173,9 +180,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -201,9 +210,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -226,9 +237,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -251,9 +264,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -278,9 +293,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -323,9 +340,11 @@ describe('RosterCreatePage', () => {
     (api.groups.list as any).mockResolvedValue([{ id: 'group-1', name: 'Kitchen', memberCount: 2 }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -365,9 +384,11 @@ describe('RosterCreatePage copy/paste day shifts', () => {
 
   async function setUpBasicForm(start: string, end: string) {
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
     await userEvent.type(screen.getByPlaceholderText('Roster name'), 'Week 34');
@@ -599,9 +620,11 @@ describe('RosterCreatePage monthly view', () => {
 
   it('renders a full Sun-Sat calendar-month grid with a weekday header, dimming adjacent-month padding days as non-interactive placeholders', async () => {
     const { container } = render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -641,9 +664,11 @@ describe('RosterCreatePage monthly view', () => {
 
   it('excludes in-month days outside the selected range (e.g. before a start date not on the 1st) the same way as adjacent-month padding', async () => {
     const { container } = render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -669,9 +694,11 @@ describe('RosterCreatePage monthly view', () => {
 
   it('shows the month name as the page indicator and steps Prev/Next by calendar month', async () => {
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
@@ -702,9 +729,11 @@ describe('RosterCreatePage monthly view', () => {
 
   it('resets pagination to page 1 when switching into or out of monthly view', async () => {
     render(
+      <QueryProvider>
       <MemoryRouter>
         <RosterCreatePage />
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());

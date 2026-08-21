@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { GroupDetailPage } from '../GroupDetailPage';
 import { api } from '../../api/client';
+import { QueryProvider } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -27,11 +28,13 @@ describe('GroupDetailPage', () => {
     (api.groups.addMember as any).mockResolvedValue(undefined);
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/groups/group-1']}>
         <Routes>
           <Route path="/groups/:id" element={<GroupDetailPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByText('Group Night Shift')).toBeInTheDocument());
@@ -69,11 +72,13 @@ describe('GroupDetailPage', () => {
     ]);
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/groups/group-1']}>
         <Routes>
           <Route path="/groups/:id" element={<GroupDetailPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
@@ -114,11 +119,13 @@ describe('GroupDetailPage', () => {
     });
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/groups/group-1']}>
         <Routes>
           <Route path="/groups/:id" element={<GroupDetailPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());

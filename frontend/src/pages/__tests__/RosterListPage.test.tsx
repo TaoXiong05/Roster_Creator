@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { RosterListPage } from '../RosterListPage';
 import { api } from '../../api/client';
+import { renderWithProviders } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: { rosters: { list: vi.fn(), remove: vi.fn() } },
@@ -26,11 +26,7 @@ describe('RosterListPage', () => {
   it('lists existing rosters', async () => {
     (api.rosters.list as any).mockResolvedValue([rosterFixture]);
 
-    render(
-      <MemoryRouter>
-        <RosterListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<RosterListPage />);
 
     await waitFor(() => expect(screen.getByText('Week 34')).toBeInTheDocument());
     expect(screen.getByText(/Kitchen/)).toBeInTheDocument();
@@ -40,11 +36,7 @@ describe('RosterListPage', () => {
   it('renders edit and prepare-for-publish buttons routing to their pages', async () => {
     (api.rosters.list as any).mockResolvedValue([rosterFixture]);
 
-    render(
-      <MemoryRouter>
-        <RosterListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<RosterListPage />);
 
     const editLink = await screen.findByRole('link', { name: 'Edit Dates & Group' });
     expect(editLink).toHaveAttribute('href', '/rosters/roster-1/edit');
@@ -57,11 +49,7 @@ describe('RosterListPage', () => {
     (api.rosters.list as any).mockResolvedValue([rosterFixture]);
     (api.rosters.remove as any).mockResolvedValue(undefined);
 
-    render(
-      <MemoryRouter>
-        <RosterListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<RosterListPage />);
 
     await waitFor(() => expect(screen.getByText('Week 34')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }));

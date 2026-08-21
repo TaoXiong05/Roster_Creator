@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, RosterDetail, AssignmentEntry, Responsibility, RosterShift, Staff } from '../api/client';
 import { formatDate } from '../utils/date';
 import {
@@ -28,6 +29,7 @@ interface ShiftGroupSummary {
 
 export function RosterDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const { t, language } = useLanguage();
   const weekdays = getDictionary(language).weekdaysShort;
   const [roster, setRoster] = useState<RosterDetail | null>(null);
@@ -132,6 +134,7 @@ export function RosterDetailPage() {
     try {
       const updated = await api.rosters.publish(id);
       setRoster((prev) => (prev ? { ...prev, status: updated.status } : prev));
+      await queryClient.invalidateQueries({ queryKey: ['rosters'] });
     } finally {
       setPublishing(false);
     }

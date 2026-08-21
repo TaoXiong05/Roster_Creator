@@ -1,5 +1,6 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, StaffGroup } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -13,22 +14,15 @@ import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, ta
 
 export function GroupListPage() {
   const { t } = useLanguage();
-  const [groups, setGroups] = useState<StaffGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: groups = [], isLoading } = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => api.groups.list(),
+  });
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<StaffGroup | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const load = async () => setGroups(await api.groups.list());
-
-  useEffect(() => {
-    let active = true;
-    load().finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -36,7 +30,7 @@ export function GroupListPage() {
     try {
       await api.groups.create(name);
       setName('');
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     } finally {
       setCreating(false);
     }
@@ -46,7 +40,7 @@ export function GroupListPage() {
     const next = window.prompt(t('groups.renamePrompt'), currentName);
     if (!next) return;
     await api.groups.rename(id, next);
-    await load();
+    await queryClient.invalidateQueries({ queryKey: ['groups'] });
   };
 
   const handleConfirmDelete = async () => {
@@ -55,7 +49,7 @@ export function GroupListPage() {
     try {
       await api.groups.remove(confirmTarget.id);
       setConfirmTarget(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     } finally {
       setDeleting(false);
     }
@@ -86,7 +80,7 @@ export function GroupListPage() {
           </button>
         </form>
 
-        {loading ? (
+        {isLoading ? (
           <PageSkeleton rows={3} />
         ) : groups.length === 0 ? (
           <EmptyState

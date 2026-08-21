@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -26,8 +27,11 @@ import {
 
 export function StaffListPage() {
   const { t } = useLanguage();
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: staff = [], isLoading } = useQuery({
+    queryKey: ['staff'],
+    queryFn: () => api.staff.list(),
+  });
   const [confirmTarget, setConfirmTarget] = useState<Staff | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [unavailabilityTarget, setUnavailabilityTarget] = useState<Staff | null>(null);
@@ -36,19 +40,6 @@ export function StaffListPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [bulkTargetCount, setBulkTargetCount] = useState(0);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      setStaff(await api.staff.list());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const handleConfirmDelete = async () => {
     if (!confirmTarget) return;
@@ -61,7 +52,7 @@ export function StaffListPage() {
         return next;
       });
       setConfirmTarget(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['staff'] });
     } finally {
       setDeleting(false);
     }
@@ -93,7 +84,7 @@ export function StaffListPage() {
       await Promise.all([...selectedIds].map((id) => api.staff.remove(id)));
       setSelectedIds(new Set());
       setBulkConfirmOpen(false);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['staff'] });
     } catch (err) {
       setBulkError(err instanceof Error ? err.message : t('staff.bulkDeleteError'));
     } finally {
@@ -116,7 +107,7 @@ export function StaffListPage() {
           }
         />
 
-        {loading ? (
+        {isLoading ? (
           <PageSkeleton />
         ) : staff.length === 0 ? (
           <EmptyState
@@ -238,7 +229,7 @@ export function StaffListPage() {
         open={!!unavailabilityTarget}
         staff={unavailabilityTarget}
         onClose={() => setUnavailabilityTarget(null)}
-        onSaved={(updated) => setStaff((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ['staff'] })}
       />
     </AppShell>
   );

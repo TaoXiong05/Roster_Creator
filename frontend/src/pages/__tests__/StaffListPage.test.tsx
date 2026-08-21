@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen, waitFor } from '@testing-library/react';
 import { StaffListPage } from '../StaffListPage';
 import { api } from '../../api/client';
+import { renderWithProviders } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -20,11 +20,7 @@ describe('StaffListPage', () => {
       { id: 'staff-1', name: 'Alice', email: 'alice@b.com', responsibilityIds: ['resp-1'], preference: null },
     ]);
 
-    render(
-      <MemoryRouter>
-        <StaffListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<StaffListPage />);
 
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
   });
@@ -32,11 +28,7 @@ describe('StaffListPage', () => {
   it('renders create employee links routing to the create page', async () => {
     (api.staff.list as any).mockResolvedValue([]);
 
-    render(
-      <MemoryRouter>
-        <StaffListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<StaffListPage />);
 
     const links = await screen.findAllByRole('link', { name: /Add Staff/ });
     expect(links.length).toBeGreaterThan(0);

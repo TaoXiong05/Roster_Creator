@@ -1,4 +1,5 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ShiftTemplate } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -13,8 +14,11 @@ import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, ta
 
 export function ShiftTemplateListPage() {
   const { t } = useLanguage();
-  const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ['shift-templates'],
+    queryFn: () => api.shiftTemplates.list(),
+  });
   const [name, setName] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
@@ -27,23 +31,13 @@ export function ShiftTemplateListPage() {
   const [editEnd, setEditEnd] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
-  const load = async () => setTemplates(await api.shiftTemplates.list());
-
-  useEffect(() => {
-    let active = true;
-    load().finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     setCreating(true);
     try {
       await api.shiftTemplates.create({ name, startTime, endTime });
       setName('');
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['shift-templates'] });
     } finally {
       setCreating(false);
     }
@@ -55,7 +49,7 @@ export function ShiftTemplateListPage() {
     try {
       await api.shiftTemplates.remove(confirmTarget.id);
       setConfirmTarget(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['shift-templates'] });
     } finally {
       setDeleting(false);
     }
@@ -75,7 +69,7 @@ export function ShiftTemplateListPage() {
     try {
       await api.shiftTemplates.update(editingId, { name: editName, startTime: editStart, endTime: editEnd });
       setEditingId(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['shift-templates'] });
     } finally {
       setSavingEdit(false);
     }
@@ -121,7 +115,7 @@ export function ShiftTemplateListPage() {
           <p className="text-xs text-ink-soft">{t('shiftTemplates.hint')}</p>
         </form>
 
-        {loading ? (
+        {isLoading ? (
           <PageSkeleton rows={3} />
         ) : templates.length === 0 ? (
           <EmptyState

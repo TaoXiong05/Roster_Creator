@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { RosterDetailPage } from '../RosterDetailPage';
 import { api } from '../../api/client';
+import { QueryProvider } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -53,11 +54,13 @@ describe('RosterDetailPage', () => {
 
   const renderPage = () =>
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/rosters/roster-1']}>
         <Routes>
           <Route path="/rosters/:id" element={<RosterDetailPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
   it('generates assignments via the AI and shows the result', async () => {
@@ -365,11 +368,13 @@ describe('RosterDetailPage publish and email actions', () => {
 
   const renderPage = () =>
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/rosters/roster-1']}>
         <Routes>
           <Route path="/rosters/:id" element={<RosterDetailPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
   it('publishes the roster', async () => {

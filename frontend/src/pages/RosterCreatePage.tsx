@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, Responsibility, RosterShiftInput, ShiftTemplate, StaffGroup } from '../api/client';
 import { formatDate } from '../utils/date';
 import { AppShell } from '../components/AppShell';
@@ -37,6 +38,7 @@ import {
 
 export function RosterCreatePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t, language } = useLanguage();
   const weekdays = getDictionary(language).weekdaysShort;
   const { id } = useParams<{ id: string }>();
@@ -255,6 +257,7 @@ export function RosterCreatePage() {
       } else {
         await api.rosters.create(payload);
       }
+      await queryClient.invalidateQueries({ queryKey: ['rosters'] });
       navigate('/rosters');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('rosters.createFailedError'));

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { ResponsibilityListPage } from '../ResponsibilityListPage';
 import { api } from '../../api/client';
+import { renderWithProviders } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: { responsibilities: { list: vi.fn(), create: vi.fn(), remove: vi.fn(), update: vi.fn() } },
@@ -15,11 +15,7 @@ describe('ResponsibilityListPage', () => {
   it('lists existing responsibilities', async () => {
     (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
 
-    render(
-      <MemoryRouter>
-        <ResponsibilityListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ResponsibilityListPage />);
 
     await waitFor(() => expect(screen.getByText('Cashier')).toBeInTheDocument());
   });
@@ -28,11 +24,7 @@ describe('ResponsibilityListPage', () => {
     (api.responsibilities.list as any).mockResolvedValue([]);
     (api.responsibilities.create as any).mockResolvedValue({ id: 'resp-1', name: 'Cashier' });
 
-    render(
-      <MemoryRouter>
-        <ResponsibilityListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ResponsibilityListPage />);
 
     await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
     await userEvent.type(screen.getByPlaceholderText('Name (e.g. Cashier)'), 'Cashier');
@@ -45,11 +37,7 @@ describe('ResponsibilityListPage', () => {
     (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
     (api.responsibilities.update as any).mockResolvedValue({ id: 'resp-1', name: 'Head Cashier' });
 
-    render(
-      <MemoryRouter>
-        <ResponsibilityListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ResponsibilityListPage />);
 
     await waitFor(() => expect(screen.getByText('Cashier')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
@@ -66,11 +54,7 @@ describe('ResponsibilityListPage', () => {
     (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
     (api.responsibilities.remove as any).mockResolvedValue(undefined);
 
-    render(
-      <MemoryRouter>
-        <ResponsibilityListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ResponsibilityListPage />);
 
     await waitFor(() => expect(screen.getByText('Cashier')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }));

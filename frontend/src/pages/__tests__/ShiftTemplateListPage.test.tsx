@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { ShiftTemplateListPage } from '../ShiftTemplateListPage';
 import { api } from '../../api/client';
+import { renderWithProviders } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: { shiftTemplates: { list: vi.fn(), create: vi.fn(), remove: vi.fn(), update: vi.fn() } },
@@ -17,11 +17,7 @@ describe('ShiftTemplateListPage', () => {
       { id: 'template-1', name: 'Morning', startTime: '06:00', endTime: '14:00' },
     ]);
 
-    render(
-      <MemoryRouter>
-        <ShiftTemplateListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ShiftTemplateListPage />);
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
   });
@@ -35,11 +31,7 @@ describe('ShiftTemplateListPage', () => {
       endTime: '22:00',
     });
 
-    render(
-      <MemoryRouter>
-        <ShiftTemplateListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ShiftTemplateListPage />);
 
     await waitFor(() => expect(api.shiftTemplates.list).toHaveBeenCalled());
     await userEvent.type(screen.getByPlaceholderText('Name (e.g. Morning Shift)'), 'Evening');
@@ -63,11 +55,7 @@ describe('ShiftTemplateListPage', () => {
       endTime: '13:00',
     });
 
-    render(
-      <MemoryRouter>
-        <ShiftTemplateListPage />
-      </MemoryRouter>
-    );
+    renderWithProviders(<ShiftTemplateListPage />);
 
     await waitFor(() => expect(screen.getByText(/Morning/)).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));

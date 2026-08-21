@@ -1,4 +1,5 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Responsibility } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -12,8 +13,11 @@ import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, ta
 
 export function ResponsibilityListPage() {
   const { t } = useLanguage();
-  const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: responsibilities = [], isLoading } = useQuery({
+    queryKey: ['responsibilities'],
+    queryFn: () => api.responsibilities.list(),
+  });
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<Responsibility | null>(null);
@@ -22,23 +26,13 @@ export function ResponsibilityListPage() {
   const [editName, setEditName] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
-  const load = async () => setResponsibilities(await api.responsibilities.list());
-
-  useEffect(() => {
-    let active = true;
-    load().finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     setCreating(true);
     try {
       await api.responsibilities.create(name);
       setName('');
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['responsibilities'] });
     } finally {
       setCreating(false);
     }
@@ -50,7 +44,7 @@ export function ResponsibilityListPage() {
     try {
       await api.responsibilities.remove(confirmTarget.id);
       setConfirmTarget(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['responsibilities'] });
     } finally {
       setDeleting(false);
     }
@@ -68,7 +62,7 @@ export function ResponsibilityListPage() {
     try {
       await api.responsibilities.update(editingId, editName);
       setEditingId(null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ['responsibilities'] });
     } finally {
       setSavingEdit(false);
     }
@@ -99,7 +93,7 @@ export function ResponsibilityListPage() {
           </button>
         </form>
 
-        {loading ? (
+        {isLoading ? (
           <PageSkeleton rows={3} />
         ) : responsibilities.length === 0 ? (
           <EmptyState

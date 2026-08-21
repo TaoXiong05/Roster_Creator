@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { RosterCreatePage } from '../RosterCreatePage';
 import { api } from '../../api/client';
+import { QueryProvider } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -36,6 +37,7 @@ const existingRoster = {
 
 function renderEdit() {
   return render(
+    <QueryProvider>
     <MemoryRouter initialEntries={['/rosters/roster-1/edit']}>
       <Routes>
         <Route path="/rosters/new" element={<RosterCreatePage />} />
@@ -43,6 +45,7 @@ function renderEdit() {
         <Route path="/rosters/:id" element={<div>roster detail</div>} />
       </Routes>
     </MemoryRouter>
+    </QueryProvider>
   );
 }
 

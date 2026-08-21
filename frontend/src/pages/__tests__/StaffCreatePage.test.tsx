@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { StaffCreatePage } from '../StaffCreatePage';
 import { api } from '../../api/client';
+import { QueryProvider } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -15,12 +16,14 @@ vi.mock('../../api/client', () => ({
 
 function renderPage() {
   return render(
+    <QueryProvider>
     <MemoryRouter initialEntries={['/staff/new']}>
       <Routes>
         <Route path="/staff/new" element={<StaffCreatePage />} />
         <Route path="/staff" element={<div>staff list</div>} />
       </Routes>
     </MemoryRouter>
+    </QueryProvider>
   );
 }
 

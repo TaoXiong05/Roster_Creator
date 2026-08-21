@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
@@ -26,6 +27,7 @@ import {
 
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const { t } = useLanguage();
   const [members, setMembers] = useState<Staff[]>([]);
   const [allStaff, setAllStaff] = useState<Staff[]>([]);
@@ -69,6 +71,7 @@ export function GroupDetailPage() {
         return next;
       });
       await load();
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     } finally {
       setPendingId(null);
     }
@@ -95,6 +98,7 @@ export function GroupDetailPage() {
       await Promise.all([...selectedIds].map((staffId) => api.groups.addMember(id, staffId)));
       setSelectedIds(new Set());
       await load();
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     } catch (err) {
       setBulkError(err instanceof Error ? err.message : t('groups.bulkAddError'));
     } finally {
@@ -109,6 +113,7 @@ export function GroupDetailPage() {
       await api.groups.removeMember(id, confirmTarget.id);
       setConfirmTarget(null);
       await load();
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     } finally {
       setRemoving(false);
     }

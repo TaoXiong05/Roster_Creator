@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTemplate, Staff } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
@@ -22,6 +23,7 @@ import {
 export function StaffEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t } = useLanguage();
   const [staff, setStaff] = useState<Staff | null>(null);
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
@@ -130,6 +132,7 @@ useEffect(() => {
         hoursPeriod,
         hoursUnit,
       });
+      await queryClient.invalidateQueries({ queryKey: ['staff'] });
       navigate('/staff');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save staff');

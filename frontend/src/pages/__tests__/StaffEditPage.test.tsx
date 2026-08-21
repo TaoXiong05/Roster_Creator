@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { StaffEditPage } from '../StaffEditPage';
 import { api } from '../../api/client';
+import { QueryProvider } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -24,11 +25,13 @@ const staffWith = (overrides: Record<string, unknown> = {}) => ({
 
 const renderEditPage = () =>
   render(
+    <QueryProvider>
     <MemoryRouter initialEntries={['/staff/staff-1']}>
       <Routes>
         <Route path="/staff/:id" element={<StaffEditPage />} />
       </Routes>
     </MemoryRouter>
+    </QueryProvider>
   );
 
 describe('StaffEditPage', () => {
@@ -60,11 +63,13 @@ describe('StaffEditPage', () => {
     (api.staff.updatePreference as any).mockResolvedValue({});
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/staff/staff-1']}>
         <Routes>
           <Route path="/staff/:id" element={<StaffEditPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
@@ -114,11 +119,13 @@ describe('StaffEditPage', () => {
     (api.staff.updatePreference as any).mockResolvedValue({});
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/staff/staff-1']}>
         <Routes>
           <Route path="/staff/:id" element={<StaffEditPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
@@ -166,11 +173,13 @@ describe('StaffEditPage', () => {
     (api.staff.updatePreference as any).mockResolvedValue({});
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/staff/staff-1']}>
         <Routes>
           <Route path="/staff/:id" element={<StaffEditPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
@@ -205,11 +214,13 @@ describe('StaffEditPage', () => {
     (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/staff/staff-1']}>
         <Routes>
           <Route path="/staff/:id" element={<StaffEditPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
@@ -235,11 +246,13 @@ describe('StaffEditPage', () => {
     (api.staff.updatePreference as any).mockResolvedValue({});
 
     render(
+      <QueryProvider>
       <MemoryRouter initialEntries={['/staff/staff-1']}>
         <Routes>
           <Route path="/staff/:id" element={<StaffEditPage />} />
         </Routes>
       </MemoryRouter>
+      </QueryProvider>
     );
 
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());

@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTemplate } from '../api/client';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
@@ -21,6 +22,7 @@ import {
 
 export function StaffCreatePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t } = useLanguage();
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
   const [responsibilities, setResponsibilities] = useState<Responsibility[]>([]);
@@ -93,6 +95,7 @@ export function StaffCreatePage() {
         hoursPeriod,
         hoursUnit,
       });
+      await queryClient.invalidateQueries({ queryKey: ['staff'] });
       navigate('/staff');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create staff');
