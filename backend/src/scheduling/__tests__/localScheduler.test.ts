@@ -266,19 +266,94 @@ describe('localScheduler', () => {
     expect(countFor('staff-b')).toBeGreaterThanOrEqual(3);
   });
 
-  it('keeps responsibility match as a higher priority than minHours shortfall', async () => {
+  it('prioritizes reaching minHours over responsibility match when someone is far below target', async () => {
+    // staff-needs-hours is far below their proportional minHours for this single-shift roster, so
+    // they must be fed a shift first even though the responsibility match belongs to staff-qualified.
     const context: AssignmentContext = {
       hoursPerShift: 8,
       shifts: [makeShift({ headcount: 1, responsibilityId: 'resp-1' })],
       staff: [
         makeStaff({ staffId: 'staff-qualified', responsibilityIds: ['resp-1'], minHours: 0 }),
-        makeStaff({ staffId: 'staff-needs-hours', responsibilityIds: ['resp-2'], minHours: 40, hoursUnit: 'shifts' }),
+        makeStaff({
+          staffId: 'staff-needs-hours',
+          responsibilityIds: ['resp-2'],
+          minHours: 40,
+          hoursUnit: 'shifts',
+        }),
       ],
     };
 
     const result = await localScheduler.assignShifts(context);
 
-    expect(findShift(result.assignments, 'rs-1').staffIds).toEqual(['staff-qualified']);
+    expect(findShift(result.assignments, 'rs-1').staffIds).toEqual(['staff-needs-hours']);
+  });
+
+  it('never assigns the same staff member more shifts than their maxHours allows', async () => {
+    const context: AssignmentContext = {
+      hoursPerShift: 8,
+      shifts: [
+        makeShift({ rosterShiftId: 'rs-a', date: '2026-08-24' }),
+        makeShift({ rosterShiftId: 'rs-b', date: '2026-08-25' }),
+      ],
+      staff: [
+        makeStaff({ staffId: 'staff-only', maxHours: 1, hoursUnit: 'shifts' }),
+      ],
+    };
+
+    const result = await localScheduler.assignShifts(context);
+
+    // staff-only can take exactly one shift; the second is left unfilled rather than violating maxHours.
+    expect(findShift(result.assignments, 'rs-b').staffIds).toEqual([]);
+  });
+
+  it('scales maxHours up to match minHours when the roster spans more than one hoursPeriod', async () => {
+    // fortnightly minHours=6/maxHours=8 (shifts) on a 30-day roster: the proportional minHours
+    // target for the whole roster is ~12.86 shifts, so maxHours must scale by the same ratio
+    // (~2.14x -> ~17.1) or the raw cap of 8 makes that target impossible to reach.
+    const start = new Date('2026-08-01T00:00:00Z');
+    const shifts = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(start);
+      d.setUTCDate(start.getUTCDate() + i);
+      return makeShift({ rosterShiftId: `rs-${i}`, date: d.toISOString().slice(0, 10) });
+    });
+    const context: AssignmentContext = {
+      hoursPerShift: 8,
+      shifts,
+      staff: [
+        makeStaff({
+          staffId: 'staff-fortnight',
+          minHours: 6,
+          maxHours: 8,
+          hoursPeriod: 'fortnightly',
+          hoursUnit: 'shifts',
+        }),
+        makeStaff({ staffId: 'staff-filler' }),
+      ],
+    };
+
+    const result = await localScheduler.assignShifts(context);
+
+    const fortnightCount = result.assignments.filter((a) => a.staffIds.includes('staff-fortnight')).length;
+    expect(fortnightCount).toBeGreaterThan(8);
+  });
+
+  it('leaves a shift unfilled when its only candidates have that shift marked unavailable', async () => {
+    const shift = makeShift({ date: '2026-08-24' });
+    const weekday = new Date('2026-08-24T00:00:00Z').getUTCDay();
+    const context: AssignmentContext = {
+      hoursPerShift: 8,
+      shifts: [shift],
+      staff: [
+        makeStaff({
+          staffId: 'staff-avoids',
+          unavailableShifts: [{ weekday, shiftTemplateId: shift.shiftTemplateId }],
+        }),
+      ],
+    };
+
+    const result = await localScheduler.assignShifts(context);
+
+    expect(findShift(result.assignments, 'rs-1').staffIds).toEqual([]);
   });
 
   it('caps the number of staff assigned to a shift at its headcount', async () => {

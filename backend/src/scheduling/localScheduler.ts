@@ -40,14 +40,22 @@ export interface SchedulingEngine {
   assignShifts(context: AssignmentContext): Promise<AssignmentResult>;
 }
 
-// Priority order (highest to lowest), mirroring the previous AI prompt's tiers:
-// 1. responsibility match (basic rule: prefer a qualified staff member, fall back rather than leave a shift empty)
-// 2. minHours target (hard tier: satisfy each staff member's minimum hours/shifts for this period)
-// 3. shift preference (nice-to-have: honor preferredShifts / avoid unavailableShifts, respect maxHours)
-// 4. 11-hour rest gap between consecutive-day shifts (nice-to-have, lower priority than preference)
-// A staff member is never given a second shift on a day they already have one (hard rule — see
-// isHardEligible), so daily-overtime-from-stacking and double-booking can no longer occur; a shift
-// left uncovered because everyone eligible is already booked that day is the expected outcome.
+// Constraint tiers, implemented in runLocalScheduler:
+// 0. Hard eligibility (isHardEligible) — a candidate is simply off the table if they:
+//      - are on an unavailable date range, or
+//      - are assigned to a shift marked unavailable for them (weekday x shiftTemplate), or
+//      - would exceed their maxHours / max shift count by taking this shift, or
+//      - already work a shift on that same date (at most one shift per day — the single-role per
+//        shift-occurrence case is a subset of this).
+// 1. Hard minHours target: while any eligible candidate has not yet reached their proportional
+//    minimum hours/shifts for this period, the shift goes to one of them before anyone already
+//    booked — and the later local-search pass refuses to strip a shift from someone still below
+//    target. If total capacity can't satisfy everyone, the shortfall is accepted rather than
+//    violating the hard caps above.
+// 2. Scoring (soft) within the eligible pool: responsibility match > prefer shift / avoid
+//    unavailable-shift penalty > 11-hour rest gap.
+// A shift left uncovered because everyone eligible is already booked / over-hours / unavailable is
+// the expected outcome — never a hard constraint override.
 const RESP_MATCH_BONUS = 5000;
 const SHORTFALL_WEIGHT = 1000;
 const PREFERRED_BONUS = 100;
@@ -110,6 +118,15 @@ function matchesShiftRule(
   return rule.weekday === weekday && rule.shiftTemplateId === shift.shiftTemplateId;
 }
 
+// True when this exact weekday+shiftTemplate combination is marked unavailable for the staff member.
+function matchesUnavailableShifts(
+  staff: AssignmentContextStaff,
+  shift: AssignmentContextShift,
+  weekday: number
+): boolean {
+  return staff.unavailableShifts.some((rule) => matchesShiftRule(rule, shift, weekday));
+}
+
 function computeRosterDays(shifts: AssignmentContextShift[]): number {
   if (shifts.length === 0) return 0;
   const dates = shifts.map((s) => s.date).sort();
@@ -122,6 +139,17 @@ function computeTargetUnits(staff: AssignmentContextStaff, rosterDays: number): 
   if (rosterDays <= 0) return 0;
   const periodDays = PERIOD_DAYS[staff.hoursPeriod] ?? PERIOD_DAYS.weekly;
   return staff.minHours * (rosterDays / periodDays);
+}
+
+// maxHours is a per-hoursPeriod ceiling. When the roster spans more than one period (e.g. a
+// fortnightly cap on a month-long roster), it must scale up by the same ratio as the minHours
+// target above — otherwise the raw per-period cap can sit below the scaled minHours target and
+// make it mathematically impossible to reach. A roster shorter than one period does not shrink
+// the cap, since that's not the scenario this scaling exists to fix.
+function computeMaxUnits(staff: AssignmentContextStaff, rosterDays: number): number {
+  if (rosterDays <= 0) return staff.maxHours;
+  const periodDays = PERIOD_DAYS[staff.hoursPeriod] ?? PERIOD_DAYS.weekly;
+  return staff.maxHours * Math.max(1, rosterDays / periodDays);
 }
 
 interface Move {
@@ -138,6 +166,7 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
 
   const rosterDays = computeRosterDays(shifts);
   const targetByStaff = new Map(staff.map((s) => [s.staffId, computeTargetUnits(s, rosterDays)]));
+  const maxUnitsByStaff = new Map(staff.map((s) => [s.staffId, computeMaxUnits(s, rosterDays)]));
 
   const assignedByShift = new Map<string, string[]>(shifts.map((s) => [s.rosterShiftId, []]));
   const assignedByStaff = new Map<string, Set<string>>(staff.map((s) => [s.staffId, new Set<string>()]));
@@ -162,10 +191,23 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
     // that's a subset of "another shift the same date".
     const others = otherAssignedShifts(staffId, shift.rosterShiftId);
     if (others.some((o) => o.date === shift.date)) return false;
+    // Hard constraints the user opted into:
+    //  - a shift marked unavailable for this staff member (weekday x shiftTemplate) is off-limits;
+    //  - adding this shift must not push the staff member past their maxHours / max shift count.
+    const s = staffById.get(staffId)!;
+    if (matchesUnavailableShifts(s, shift, dateWeekday(shift.date))) return false;
+    const unitsAfter = others.length * unitDelta(s) + unitDelta(s);
+    if (unitsAfter > maxUnitsByStaff.get(staffId)!) return false;
     return true;
   }
 
-  // Marginal score of having `staffId` on `shift`, given their other current assignments
+  // True while the staff member's booked units for this roster are still below their proportional
+  // minHours target — used to make "reach minHours" a hard priority rather than a scoring nicety.
+  function isBelowTarget(staffId: string): boolean {
+    const s = staffById.get(staffId)!;
+    const units = otherAssignedShifts(staffId, '').reduce((sum, o) => sum + unitDelta(s), 0);
+    return units < (targetByStaff.get(staffId) ?? 0);
+  }
   // (excluding `shift` itself, so it works both for "would gain this shift" and "currently holds it").
   function marginalScore(staffId: string, shift: AssignmentContextShift): number {
     const s = staffById.get(staffId)!;
@@ -184,7 +226,7 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
     const weekday = dateWeekday(shift.date);
     if (s.preferredShifts.some((r) => matchesShiftRule(r, shift, weekday))) score += PREFERRED_BONUS;
     if (s.unavailableShifts.some((r) => matchesShiftRule(r, shift, weekday))) score -= UNAVAILABLE_SHIFT_PENALTY;
-    if (after > s.maxHours) score -= MAX_HOURS_PENALTY;
+    if (after > maxUnitsByStaff.get(staffId)!) score -= MAX_HOURS_PENALTY;
 
     for (const other of others) {
       if (hasRestGapViolation(other, shift)) score -= REST_GAP_PENALTY;
@@ -216,17 +258,35 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
   for (const shift of shiftFillOrder) {
     const slots = assignedByShift.get(shift.rosterShiftId)!;
     while (slots.length < shift.headcount) {
-      let best: string | null = null;
-      let bestScore = -Infinity;
+      // "Reach minHours" is a hard priority: as long as any eligible candidate has not yet hit
+      // their target, the shift goes to one of them before it ever goes to someone already booked.
+      let bestBelow: string | null = null;
+      let bestBelowScore = -Infinity;
+      let bestMet: string | null = null;
+      let bestMetScore = -Infinity;
       for (const s of staff) {
         if (slots.includes(s.staffId)) continue;
         if (!isHardEligible(s.staffId, shift)) continue;
         const score = marginalScore(s.staffId, shift);
-        if (best === null || score > bestScore || (score === bestScore && s.staffId < best)) {
-          bestScore = score;
-          best = s.staffId;
+        if (isBelowTarget(s.staffId)) {
+          if (
+            bestBelow === null ||
+            score > bestBelowScore ||
+            (score === bestBelowScore && s.staffId < bestBelow)
+          ) {
+            bestBelowScore = score;
+            bestBelow = s.staffId;
+          }
+        } else if (
+          bestMet === null ||
+          score > bestMetScore ||
+          (score === bestMetScore && s.staffId < bestMet)
+        ) {
+          bestMetScore = score;
+          bestMet = s.staffId;
         }
       }
+      const best = bestBelow ?? bestMet;
       if (best === null) break; // no eligible candidate left; leave this slot unfilled
       slots.push(best);
       assignedByStaff.get(best)!.add(shift.rosterShiftId);
@@ -241,6 +301,10 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
     for (const shift of shifts) {
       const slots = assignedByShift.get(shift.rosterShiftId)!;
       for (const from of slots) {
+        // Do not strip a shift from someone who has not yet reached their minHours target — that
+        // would break the hard "reach minHours" priority. (Re-assigning to someone below target is
+        // still allowed and naturally scores higher.)
+        if (isBelowTarget(from)) continue;
         const currentScore = marginalScore(from, shift);
         for (const candidate of staff) {
           if (candidate.staffId === from || slots.includes(candidate.staffId)) continue;
