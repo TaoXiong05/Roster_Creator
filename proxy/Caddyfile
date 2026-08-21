@@ -1,0 +1,9 @@
+roster.taoxiong.site {
+    root * /srv/frontend
+    file_server
+    try_files {path} /index.html
+}
+
+roster-api.taoxiong.site {
+    reverse_proxy backend:4000
+}
