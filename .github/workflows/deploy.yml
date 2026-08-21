@@ -37,3 +37,50 @@ jobs:
         run: npm run build
         env:
           VITE_API_BASE_URL: https://roster-api.taoxiong.site
+
+  build-and-push:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/taoxiong05/roster_creator-backend:latest
+            ghcr.io/taoxiong05/roster_creator-backend:${{ github.sha }}
+
+      - name: Build and push proxy image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: proxy/Dockerfile
+          platforms: linux/arm64
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=https://roster-api.taoxiong.site
+          tags: |
+            ghcr.io/taoxiong05/roster_creator-proxy:latest
+            ghcr.io/taoxiong05/roster_creator-proxy:${{ github.sha }}
