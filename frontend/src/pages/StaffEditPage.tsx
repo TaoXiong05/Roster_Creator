@@ -5,7 +5,7 @@ import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTempl
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { PageHeader } from '../components/PageHeader';
-import { HoursFields, PreferredShiftsFields, UnavailableShiftsFields } from '../components/PreferenceFields';
+import { HoursFields, PreferredShiftsFields, UnavailableShiftsFields, validateHoursRange } from '../components/PreferenceFields';
 import { Spinner } from '../components/Spinner';
 import { StepStepper } from '../components/StepStepper';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -97,7 +97,7 @@ useEffect(() => {
       if (!email.trim()) return t('staff.emailRequiredError');
       if (responsibilityIds.length === 0) return t('staff.responsibilityRequiredError');
     }
-    if (s === 1 && minHours > maxHours) return t('preferenceFields.minMaxError');
+    if (s === 1) return validateHoursRange(minHours, maxHours, t);
     return null;
   };
 

@@ -48,6 +48,55 @@ describe('StaffCreatePage', () => {
     expect(api.staff.create).not.toHaveBeenCalled();
   });
 
+  it('blocks advancing past Working Hours when minHours/maxHours are left at their 0/0 defaults', async () => {
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
+
+    renderPage();
+
+    await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
+    await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
+
+    // Step 1 → 2 (work hours)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+
+    // minHours/maxHours default to 0/0. The number inputs' HTML min={1} constraint
+    // keeps the native form submission from firing at all in this case, so the
+    // wizard simply stays put on Working Hours rather than advancing.
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(screen.getByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Preferred Working Times' })).not.toBeInTheDocument();
+    expect(api.staff.create).not.toHaveBeenCalled();
+  });
+
+  it('advances past Working Hours once valid positive min/max values are entered', async () => {
+    (api.responsibilities.list as any).mockResolvedValue([{ id: 'resp-1', name: 'Cashier' }]);
+
+    renderPage();
+
+    await waitFor(() => expect(api.responsibilities.list).toHaveBeenCalled());
+    await userEvent.type(screen.getByPlaceholderText('Name'), 'Bob');
+    await userEvent.type(screen.getByPlaceholderText('Email'), 'bob@b.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Cashier' }));
+
+    // Step 1 → 2 (work hours)
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByRole('heading', { name: 'Preferred Working Times' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('creates a staff member with selected roles', async () => {
     (api.responsibilities.list as any).mockResolvedValue([
       { id: 'resp-1', name: 'Cashier' },
@@ -65,6 +114,13 @@ describe('StaffCreatePage', () => {
 
     // Step 1 → 2 (work hours)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
     // Step 2 → 3 (preferred shifts)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     // Step 3 → 4 (unavailable shifts)
@@ -102,6 +158,13 @@ describe('StaffCreatePage', () => {
 
     // Step 1 → 2 (work hours)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
     // Step 2 → 3 (preferred shifts)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     // Step 3 → 4 (unavailable shifts)

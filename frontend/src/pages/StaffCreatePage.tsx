@@ -5,7 +5,7 @@ import { api, HoursPeriod, HoursUnit, PreferredShift, Responsibility, ShiftTempl
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
 import { PageHeader } from '../components/PageHeader';
-import { HoursFields, PreferredShiftsFields, UnavailableShiftsFields } from '../components/PreferenceFields';
+import { HoursFields, PreferredShiftsFields, UnavailableShiftsFields, validateHoursRange } from '../components/PreferenceFields';
 import { Spinner } from '../components/Spinner';
 import { StepStepper } from '../components/StepStepper';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -75,6 +75,13 @@ export function StaffCreatePage() {
     if (target > step && step === 0 && responsibilityIds.length === 0) {
       setError(t('staff.responsibilityRequiredError'));
       return;
+    }
+    if (target > step && step === 1) {
+      const hoursError = validateHoursRange(minHours, maxHours, t);
+      if (hoursError) {
+        setError(hoursError);
+        return;
+      }
     }
     setError(null);
     setStep(target);

@@ -1,7 +1,15 @@
 import { Link } from 'react-router-dom';
 import { HoursPeriod, HoursUnit, PreferredShift, ShiftTemplate } from '../api/client';
 import { getDictionary, useLanguage } from '../i18n/LanguageContext';
-import { btnPillActive, btnPillDanger, btnPillInactive, inputBase, labelBase } from '../styles/ui';
+import {
+  btnPillActive,
+  btnPillDanger,
+  btnPillInactive,
+  btnPillInactiveConfiguredDanger,
+  btnPillInactiveConfiguredSuccess,
+  inputBase,
+  labelBase,
+} from '../styles/ui';
 
 const HOURS_PERIODS: { value: HoursPeriod; labelKey: string }[] = [
   { value: 'weekly', labelKey: 'preferenceFields.periodWeekly' },
@@ -15,6 +23,7 @@ const HOURS_UNITS: { value: HoursUnit; labelKey: string }[] = [
 
 interface WeekdayShiftSectionProps {
   heading: string;
+  hint?: string;
   templates: ShiftTemplate[];
   entries: PreferredShift[];
   activeWeekday: number | null;
@@ -24,6 +33,7 @@ interface WeekdayShiftSectionProps {
   emptyHint: string;
   summaryHeading: string;
   activePillClass: string;
+  configuredPillClass: string;
   weekdays: string[];
   noTemplatesHint: string;
   goSetUp: string;
@@ -33,6 +43,7 @@ interface WeekdayShiftSectionProps {
 
 function WeekdayShiftSection({
   heading,
+  hint,
   templates,
   entries,
   activeWeekday,
@@ -42,6 +53,7 @@ function WeekdayShiftSection({
   emptyHint,
   summaryHeading,
   activePillClass,
+  configuredPillClass,
   weekdays,
   noTemplatesHint,
   goSetUp,
@@ -67,19 +79,32 @@ function WeekdayShiftSection({
     <div className="space-y-4">
       <div>
         <p className={labelBase}>{heading}</p>
+        {hint && <p className="mb-2 text-xs text-ink-soft">{hint}</p>}
         <div className="flex flex-wrap gap-2">
           {weekdays.map((label, day) => {
             const configured = entries.some((p) => p.weekday === day);
+            const dayPillClass =
+              activeWeekday === day ? activePillClass : configured ? configuredPillClass : btnPillInactive;
             return (
               <button
                 type="button"
                 key={day}
                 onClick={() => onSelectWeekday(day)}
                 aria-label={weekdayAriaLabel?.(day)}
-                className={`inline-flex items-center gap-1 ${activeWeekday === day ? activePillClass : btnPillInactive}`}
+                className={`inline-flex items-center gap-1 ${dayPillClass}`}
               >
                 {configured && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={activeWeekday === day ? undefined : 'text-eucalyptus'}
+                  >
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -90,7 +115,7 @@ function WeekdayShiftSection({
         </div>
       </div>
 
-      <div>
+      <div className="border-t border-tan/15 pt-4">
         <p className={labelBase}>{activeLabel(activeWeekday)}</p>
         {templates.length === 0 ? (
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-tan/30 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
@@ -121,7 +146,7 @@ function WeekdayShiftSection({
       </div>
 
       {summary.length > 0 && (
-        <div>
+        <div className="border-t border-tan/15 pt-4">
           <p className={labelBase}>{summaryHeading}</p>
           <ul className="space-y-1 rounded-2xl border border-tan/15 bg-white/40 px-3 py-2.5 text-sm text-ink-soft">
             {summary.map(({ day, shiftNames }) => (
@@ -200,7 +225,7 @@ export function HoursFields({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 border-t border-tan/15 pt-4">
         <div>
           <label className={labelBase}>{t('preferenceFields.minLabel', { unit: minMaxLabel })}</label>
           <input
@@ -224,6 +249,16 @@ export function HoursFields({
   );
 }
 
+export function validateHoursRange(
+  minHours: number,
+  maxHours: number,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string | null {
+  if (minHours <= 0 || maxHours <= 0) return t('preferenceFields.minPositiveError');
+  if (minHours > maxHours) return t('preferenceFields.minMaxError');
+  return null;
+}
+
 interface ShiftsSectionProps {
   templates: ShiftTemplate[];
   entries: PreferredShift[];
@@ -245,6 +280,7 @@ export function PreferredShiftsFields({
   return (
     <WeekdayShiftSection
       heading={t('preferenceFields.preferredHeading')}
+      hint={t('preferenceFields.preferredHint')}
       templates={templates}
       entries={entries}
       activeWeekday={activeWeekday}
@@ -258,6 +294,7 @@ export function PreferredShiftsFields({
       emptyHint={t('preferenceFields.selectDayFirst')}
       summaryHeading={t('preferenceFields.summaryHeading')}
       activePillClass={btnPillActive}
+      configuredPillClass={btnPillInactiveConfiguredSuccess}
       weekdays={days}
       noTemplatesHint={t('common.noShiftTemplatesHint')}
       goSetUp={t('common.goSetUp')}
@@ -278,6 +315,7 @@ export function UnavailableShiftsFields({
   return (
     <WeekdayShiftSection
       heading={t('preferenceFields.unavailableHeading')}
+      hint={t('preferenceFields.unavailableHint')}
       templates={templates}
       entries={entries}
       activeWeekday={activeWeekday}
@@ -291,6 +329,7 @@ export function UnavailableShiftsFields({
       emptyHint={t('preferenceFields.selectUnavailableDayFirst')}
       summaryHeading={t('preferenceFields.unavailableSummaryHeading')}
       activePillClass={btnPillDanger}
+      configuredPillClass={btnPillInactiveConfiguredDanger}
       weekdays={days}
       noTemplatesHint={t('common.noShiftTemplatesHint')}
       goSetUp={t('common.goSetUp')}
@@ -418,6 +457,7 @@ export function PreferenceFields({
         emptyHint={t('preferenceFields.selectDayFirst')}
         summaryHeading={t('preferenceFields.summaryHeading')}
         activePillClass={btnPillActive}
+        configuredPillClass={btnPillInactiveConfiguredSuccess}
         weekdays={days}
         noTemplatesHint={t('common.noShiftTemplatesHint')}
         goSetUp={t('common.goSetUp')}
@@ -439,6 +479,7 @@ export function PreferenceFields({
           emptyHint={t('preferenceFields.selectUnavailableDayFirst')}
           summaryHeading={t('preferenceFields.unavailableSummaryHeading')}
           activePillClass={btnPillDanger}
+          configuredPillClass={btnPillInactiveConfiguredDanger}
           weekdays={days}
           noTemplatesHint={t('common.noShiftTemplatesHint')}
           goSetUp={t('common.goSetUp')}

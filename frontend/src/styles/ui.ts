@@ -20,6 +20,10 @@ export const btnPillActive = 'rounded-full border border-coral-deep bg-coral-dee
 export const btnPillInactive =
   'rounded-full border border-tan/30 bg-white/85 px-3 py-1.5 text-sm font-medium text-ink-soft transition hover:border-coral/40 hover:text-ink';
 export const btnPillDanger = 'rounded-full border border-red-500 bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition';
+export const btnPillInactiveConfiguredSuccess =
+  'rounded-full border border-eucalyptus/40 bg-eucalyptus/15 px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors duration-500 hover:border-coral/40 hover:text-ink';
+export const btnPillInactiveConfiguredDanger =
+  'rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors duration-500 hover:border-coral/40 hover:text-ink';
 
 export const inputBase =
   'w-full rounded-2xl border border-tan/30 bg-white px-4 py-2.5 text-[15px] text-ink placeholder:text-ink-soft/45 outline-none transition focus:border-coral focus:ring-2 focus:ring-coral/30';

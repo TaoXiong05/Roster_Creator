@@ -132,6 +132,13 @@ describe('StaffEditPage', () => {
 
     // Reach Step 3 (preferred shifts)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Sun' }));
@@ -190,6 +197,13 @@ describe('StaffEditPage', () => {
 
     // Step 1 → 4
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
@@ -259,6 +273,13 @@ describe('StaffEditPage', () => {
 
     // Reach Step 3 (preferred shifts)
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Mon' }));
@@ -359,5 +380,62 @@ describe('StaffEditPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Minimum cannot exceed Maximum');
     expect(screen.getByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+  });
+
+  it('blocks jumping away from Working Hours when minHours/maxHours are non-positive', async () => {
+    (api.staff.get as any).mockResolvedValue(
+      staffWith({
+        preference: {
+          id: 'pref-1',
+          staffId: 'staff-1',
+          preferredShifts: [],
+          unavailableShifts: [],
+          unavailableDateRanges: [],
+          minHours: 0,
+          maxHours: 0,
+          hoursPeriod: 'weekly',
+          hoursUnit: 'hours',
+        },
+      })
+    );
+    (api.staff.update as any).mockResolvedValue({});
+    (api.staff.updatePreference as any).mockResolvedValue({});
+
+    renderEditPage();
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Working Hours' }));
+    expect(await screen.findByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Preferred Working Times' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Min and Max must be greater than 0');
+    expect(screen.getByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+    expect(api.staff.update).not.toHaveBeenCalled();
+  });
+
+  it('advances past Working Hours once valid positive min/max values are entered', async () => {
+    (api.staff.get as any).mockResolvedValue(staffWith({ preference: null }));
+    (api.staff.update as any).mockResolvedValue({});
+    (api.staff.updatePreference as any).mockResolvedValue({});
+
+    renderEditPage();
+
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Working Hours' }));
+    expect(await screen.findByRole('heading', { name: 'Working Hours' })).toBeInTheDocument();
+
+    const [minInput, maxInput] = screen.getAllByRole('spinbutton');
+    await userEvent.clear(minInput);
+    await userEvent.type(minInput, '10');
+    await userEvent.clear(maxInput);
+    await userEvent.type(maxInput, '40');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Preferred Working Times' }));
+
+    expect(await screen.findByRole('heading', { name: 'Preferred Working Times' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
