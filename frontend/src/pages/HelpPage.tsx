@@ -129,6 +129,13 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
           'Once published, email staff or export ICS / CSV / PDF',
         ],
       },
+      {
+        title: 'Dashboard',
+        points: [
+          'Shows shortcut cards with live counts for staff, groups, shift templates, and rosters',
+          'Click any card to jump straight into that section',
+        ],
+      },
     ],
     faqs: [
       {
@@ -142,6 +149,14 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
       {
         q: 'Can I still make changes after publishing?',
         a: 'Yes — just remember to save again, then re-send the email or re-export the file so staff see the latest version.',
+      },
+      {
+        q: 'What happens to existing rosters if I delete a staff member?',
+        a: 'The roster itself isn’t deleted, but that person is removed from every assignment — past and future — and those shifts become unfilled.',
+      },
+      {
+        q: 'Where do I switch between English and Chinese?',
+        a: 'Use the language toggle in the sidebar — it applies immediately and is remembered next time you sign in.',
       },
     ],
   },
@@ -223,6 +238,10 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
           '发布后可以发邮件通知，或导出 ICS / CSV / PDF',
         ],
       },
+      {
+        title: '仪表盘',
+        points: ['以卡片形式实时展示员工、小组、班次模板、排班表的数量', '点击任意卡片可直接跳转到对应页面'],
+      },
     ],
     faqs: [
       {
@@ -236,6 +255,14 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
       {
         q: '发布之后还能改吗？',
         a: '可以，改完记得再保存一次，之后重新发送邮件或导出文件，员工才会看到最新版本。',
+      },
+      {
+        q: '删除员工后，之前的排班表会怎样？',
+        a: '排班表本身不会被删除，但这个人会从所有排班（包括已发布的历史排班）中移除，对应的班次会变成未分配状态。',
+      },
+      {
+        q: '在哪里切换中英文？',
+        a: '在侧边栏点击语言切换按钮即可，会立即生效，下次登录也会记住你的选择。',
       },
     ],
   },
@@ -254,7 +281,19 @@ export function HelpPage() {
           action={<KangarooMascot variant="badge" animated={false} className="h-14 w-14" />}
         />
 
-        <section className="space-y-5">
+        <nav className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+          <a href="#quick-start" className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            {content.quickStartHeading}
+          </a>
+          <a href="#feature-details" className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            {content.featuresHeading}
+          </a>
+          <a href="#faq" className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline">
+            {content.faqHeading}
+          </a>
+        </nav>
+
+        <section id="quick-start" className="scroll-mt-6 space-y-5">
           <h2 className="font-display text-lg font-semibold text-ink">{content.quickStartHeading}</h2>
           <ol className="space-y-5">
             {content.steps.map((step, i) => (
@@ -281,7 +320,7 @@ export function HelpPage() {
           </ol>
         </section>
 
-        <section className="space-y-5">
+        <section id="feature-details" className="scroll-mt-6 space-y-5">
           <h2 className="font-display text-lg font-semibold text-ink">{content.featuresHeading}</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {content.features.map((f) => (
@@ -300,7 +339,7 @@ export function HelpPage() {
           </div>
         </section>
 
-        <section className="space-y-5">
+        <section id="faq" className="scroll-mt-6 space-y-5">
           <h2 className="font-display text-lg font-semibold text-ink">{content.faqHeading}</h2>
           <div className="space-y-3">
             {content.faqs.map((item) => (

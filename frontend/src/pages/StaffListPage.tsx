@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, Staff } from '../api/client';
+import { ActionsMenu } from '../components/ActionsMenu';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
@@ -27,6 +28,7 @@ import {
 
 export function StaffListPage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ['staff'],
@@ -170,6 +172,7 @@ export function StaffListPage() {
                         </td>
                         <td className={`${tableCell} font-medium text-ink`}>
                           <p>{s.name}</p>
+                          <p className="mt-0.5 break-all text-xs text-ink-soft sm:hidden">{s.email}</p>
                           {unavailableRanges.length > 0 && (
                             <p className="mt-0.5 text-xs text-ink-soft">
                               {t('staff.unavailablePrefix')}
@@ -179,7 +182,7 @@ export function StaffListPage() {
                         </td>
                         <td className={`hidden ${tableCell} text-ink-soft sm:table-cell`}>{s.email}</td>
                         <td className={tableCell}>
-                          <div className="flex justify-end gap-2">
+                          <div className="hidden justify-end gap-2 sm:flex">
                             <button onClick={() => setUnavailabilityTarget(s)} className={btnSecondary}>
                               {t('staff.setUnavailableDates')}
                             </button>
@@ -189,6 +192,17 @@ export function StaffListPage() {
                             <button onClick={() => setConfirmTarget(s)} className={btnDanger}>
                               {t('common.delete')}
                             </button>
+                          </div>
+                          <div className="flex justify-end sm:hidden">
+                            <ActionsMenu
+                              label={t('staff.actionsHeader')}
+                              ariaLabel={t('staff.actionsForAria', { name: s.name })}
+                              actions={[
+                                { label: t('staff.setUnavailableDates'), onClick: () => setUnavailabilityTarget(s) },
+                                { label: t('common.edit'), onClick: () => navigate(`/staff/${s.id}`) },
+                                { label: t('common.delete'), onClick: () => setConfirmTarget(s), danger: true },
+                              ]}
+                            />
                           </div>
                         </td>
                       </tr>

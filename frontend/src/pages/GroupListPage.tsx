@@ -1,7 +1,8 @@
 import { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, StaffGroup } from '../api/client';
+import { ActionsMenu } from '../components/ActionsMenu';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
@@ -14,6 +15,7 @@ import { btnDanger, btnPrimary, btnSecondary, cardBase, inputBase, labelBase, ta
 
 export function GroupListPage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ['groups'],
@@ -106,7 +108,7 @@ export function GroupListPage() {
                       {g.memberCount} {t('groups.memberCountSuffix')}
                     </td>
                     <td className={tableCell}>
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="hidden justify-end gap-2 sm:flex">
                         <Link to={`/groups/${g.id}`} className={btnSecondary}>
                           {t('groups.manageMembers')}
                         </Link>
@@ -116,6 +118,17 @@ export function GroupListPage() {
                         <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
                           {t('groups.delete')}
                         </button>
+                      </div>
+                      <div className="flex justify-end sm:hidden">
+                        <ActionsMenu
+                          label={t('groups.actionsHeader')}
+                          ariaLabel={t('groups.actionsForAria', { name: g.name })}
+                          actions={[
+                            { label: t('groups.manageMembers'), onClick: () => navigate(`/groups/${g.id}`) },
+                            { label: t('groups.rename'), onClick: () => handleRename(g.id, g.name) },
+                            { label: t('groups.delete'), onClick: () => setConfirmTarget(g), danger: true },
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>

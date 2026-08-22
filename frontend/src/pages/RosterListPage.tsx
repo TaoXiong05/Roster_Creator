@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, RosterListItem } from '../api/client';
 import { formatDate } from '../utils/date';
+import { ActionsMenu } from '../components/ActionsMenu';
 import { AppShell } from '../components/AppShell';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
@@ -15,6 +16,7 @@ import { btnDanger, btnPrimary, btnSecondary, tableShell, tableHeaderRow, tableH
 
 export function RosterListPage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: rosters = [], isLoading } = useQuery({
     queryKey: ['rosters'],
@@ -93,7 +95,7 @@ export function RosterListPage() {
                     </td>
                     <td className={`hidden ${tableCell} text-ink-soft lg:table-cell`}>{r.shiftCount} {t('rosters.shiftCountSuffix')}</td>
                     <td className={tableCell}>
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="hidden justify-end gap-2 sm:flex">
                         <Link to={`/rosters/${r.id}/edit`} className={btnSecondary}>
                           {t('rosters.editTimePrefs')}
                         </Link>
@@ -103,6 +105,17 @@ export function RosterListPage() {
                         <button onClick={() => setConfirmTarget(r)} className={btnDanger}>
                           {t('common.delete')}
                         </button>
+                      </div>
+                      <div className="flex justify-end sm:hidden">
+                        <ActionsMenu
+                          label={t('rosters.actionsHeader')}
+                          ariaLabel={t('rosters.actionsForAria', { name: r.name })}
+                          actions={[
+                            { label: t('rosters.editTimePrefs'), onClick: () => navigate(`/rosters/${r.id}/edit`) },
+                            { label: t('rosters.prepareToPublish'), onClick: () => navigate(`/rosters/${r.id}`) },
+                            { label: t('common.delete'), onClick: () => setConfirmTarget(r), danger: true },
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>

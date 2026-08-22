@@ -1,6 +1,6 @@
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
 import { useLanguage } from '../i18n/LanguageContext';
-import { btnDanger, btnSecondary } from '../styles/ui';
+import { btnDanger, btnPrimary, btnSecondary } from '../styles/ui';
 import { Spinner } from './Spinner';
 
 interface ConfirmDialogProps {
@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   loading?: boolean;
+  tone?: 'danger' | 'primary';
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -21,6 +22,7 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   loading = false,
+  tone = 'danger',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -48,12 +50,17 @@ export function ConfirmDialog({
         <h2 id="confirm-dialog-title" className="font-display text-lg font-semibold text-ink">
           {title}
         </h2>
-        <p className="mt-2 text-sm font-medium text-red-600">{message}</p>
+        <p className={`mt-2 text-sm ${tone === 'danger' ? 'font-medium text-red-600' : 'text-ink-soft'}`}>{message}</p>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onCancel} disabled={loading} className={btnSecondary}>
             {cancelLabel ?? t('common.cancel')}
           </button>
-          <button type="button" onClick={onConfirm} disabled={loading} className={`gap-2 ${btnDanger}`}>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className={`gap-2 ${tone === 'danger' ? btnDanger : btnPrimary}`}
+          >
             {loading && <Spinner className="h-4 w-4" />}
             {confirmLabel ?? t('common.confirmDelete')}
           </button>

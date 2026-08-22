@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react';
 import { api, AssignmentEntry, Responsibility, RosterShift, Staff } from '../api/client';
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
 import { getDictionary, useLanguage } from '../i18n/LanguageContext';
 import { weekdayLabel } from '../utils/calendarGrid';
 import { formatDate } from '../utils/date';
-import { btnSecondary, inputBase } from '../styles/ui';
+import { btnSecondary } from '../styles/ui';
 import { Spinner } from './Spinner';
 
 const TAG_OPTIONS = ['AGENT', 'PICKUP'];
@@ -40,7 +41,6 @@ export function DayAssignmentDialog({
   const { mounted, visible } = useTransitionPresence(open, 300);
   const { t, language } = useLanguage();
   const weekdays = getDictionary(language).weekdaysShort;
-  if (!mounted || !date) return null;
 
   const byTemplate = new Map<string, RosterShift[]>();
   for (const rs of dayRosterShifts) {
@@ -49,6 +49,35 @@ export function DayAssignmentDialog({
     byTemplate.set(rs.shiftTemplate.id, list);
   }
   const groups = Array.from(byTemplate.values());
+
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Re-derive the default expanded set only when a new day is opened — not on every
+  // assignment edit, otherwise a user's manual expand/collapse would keep resetting
+  // as they fill in dropdowns. Shifts with an unfilled role start open since that's
+  // usually why this dialog was opened; fully-staffed shifts start collapsed.
+  useEffect(() => {
+    if (!date) return;
+    setExpandedIds(
+      new Set(
+        groups
+          .filter((group) => group.some((rs) => assignments.some((a) => a.rosterShiftId === rs.id && !a.staffId)))
+          .map((group) => group[0].shiftTemplate.id)
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
+
+  if (!mounted || !date) return null;
+
+  const toggleShift = (templateId: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(templateId)) next.delete(templateId);
+      else next.add(templateId);
+      return next;
+    });
+  };
 
   return (
     <div
@@ -72,21 +101,52 @@ export function DayAssignmentDialog({
         </h2>
         <p className="mt-0.5 text-sm text-ink-soft">{t('dayAssignmentDialog.subtitle')}</p>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-4">
           {groups.map((group) => {
             const tpl = group[0].shiftTemplate;
+            const collapsible = groups.length > 1;
+            const isExpanded = !collapsible || expandedIds.has(tpl.id);
+            const heading = (
+              <p className="text-sm font-medium text-ink">
+                {tpl.name}（{tpl.startTime}-{tpl.endTime}）
+              </p>
+            );
             return (
-              <div key={tpl.id} className="space-y-2.5 rounded-2xl border border-tan/15 bg-white/60 p-3">
-                <p className="text-sm font-medium text-ink">
-                  {tpl.name}（{tpl.startTime}-{tpl.endTime}）
-                </p>
-                <div className="space-y-3">
+              <div key={tpl.id} className="space-y-2.5 rounded-2xl border border-tan/25 bg-white p-3.5 shadow-warm-sm">
+                {collapsible ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleShift(tpl.id)}
+                    aria-expanded={isExpanded}
+                    className="flex w-full items-center justify-between gap-2 text-left"
+                  >
+                    {heading}
+                    <svg
+                      aria-hidden="true"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`shrink-0 text-ink-soft transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                ) : (
+                  heading
+                )}
+                {isExpanded && (
+                <div className="space-y-2.5">
                   {group.map((rs) => {
                     const responsibilityName =
                       responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility');
                     const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
                     return (
-                      <div key={rs.id} className="space-y-1.5">
+                      <div key={rs.id} className="space-y-1.5 rounded-xl border border-tan/15 bg-sand/15 p-2.5">
                         <p className="text-xs font-semibold text-ink-soft">{responsibilityName}</p>
                         {rows.map((row) => (
                           <div key={row.id} className="flex flex-col gap-2 rounded-xl bg-sand/30 p-2 lg:flex-row lg:items-center">
@@ -94,7 +154,9 @@ export function DayAssignmentDialog({
                               value={row.staffId ?? ''}
                               onChange={(e) => onAssignmentChange(row.id, { staffId: e.target.value || null, unfilledTag: null })}
                               aria-label={t('rosters.assignStaffAria')}
-                              className={`${inputBase} lg:w-56 lg:shrink-0`}
+                              className={`w-full rounded-2xl border px-4 py-2.5 text-[15px] text-ink outline-none transition focus:border-coral focus:ring-2 focus:ring-coral/30 lg:w-56 lg:shrink-0 ${
+                                row.staffId ? 'border-tan/30 bg-white' : 'border-amber-400/60 bg-amber-50/60'
+                              }`}
                             >
                               <option value="">{t('rosters.unassigned')}</option>
                               {members.map((m) => (
@@ -162,6 +224,7 @@ export function DayAssignmentDialog({
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}

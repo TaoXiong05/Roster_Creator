@@ -15,6 +15,7 @@ import {
 } from '../utils/calendarGrid';
 import { AppShell } from '../components/AppShell';
 import { BackLink } from '../components/BackLink';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DayAssignmentDialog } from '../components/DayAssignmentDialog';
 import { PageSkeleton } from '../components/Skeleton';
 import { Spinner } from '../components/Spinner';
@@ -42,6 +43,7 @@ export function RosterDetailPage() {
   const [generatingSeconds, setGeneratingSeconds] = useState(0);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [sendingAll, setSendingAll] = useState(false);
   const [sendingStaffId, setSendingStaffId] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
@@ -135,6 +137,7 @@ export function RosterDetailPage() {
       const updated = await api.rosters.publish(id);
       setRoster((prev) => (prev ? { ...prev, status: updated.status } : prev));
       await queryClient.invalidateQueries({ queryKey: ['rosters'] });
+      setPublishConfirmOpen(false);
     } finally {
       setPublishing(false);
     }
@@ -236,7 +239,69 @@ export function RosterDetailPage() {
 
   const editingDayShifts = editingDate ? rosterShiftsByDate.get(editingDate) ?? [] : [];
 
+  // Shared by both the desktop grid and the mobile stacked list so the two layouts never drift —
+  // only the wrapper around this content differs (grid cell vs full-width card).
+  const buildDayCard = (date: string) => {
+    const groups = summarizeDate(date, activeTab === 'unfilled');
+    const isToday = date === today;
+    const hasUnfilled = dayHasUnfilled(date);
+    const dayHasAnyShifts = (rosterShiftsByDate.get(date) ?? []).length > 0;
+    const emptyMessage =
+      activeTab === 'unfilled' && dayHasAnyShifts ? t('rosters.dayFullyStaffed') : t('rosters.noShiftsScheduled');
+    const toneClass = hasUnfilled
+      ? 'border-amber-400/60 bg-amber-50/60'
+      : isToday
+      ? 'border-coral-deep/50 bg-coral-deep/5 ring-1 ring-coral-deep/20'
+      : 'border-tan/15 bg-white/60';
+    const content = (
+      <>
+        <div className="flex items-center gap-2">
+          <span
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+              isToday ? 'bg-coral-deep text-white' : 'bg-sand/70 text-ink'
+            }`}
+          >
+            {date.slice(8, 10)}
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-ink">{weekdayLabel(date, weekdays)}</p>
+            <p className="text-[11px] text-ink-soft/70">{formatDate(date)}</p>
+          </div>
+        </div>
+        {groups.length === 0 ? (
+          <p className="mt-2 text-xs text-ink-soft/60">{emptyMessage}</p>
+        ) : (
+          <ul className="mt-2 space-y-1.5">
+            {groups.map((g) => (
+              <li key={g.shiftTemplate.id} className="text-xs text-ink">
+                <p className="font-medium">{g.shiftTemplate.name}</p>
+                {g.roles.map((role) => (
+                  <p key={role.responsibilityId} className="text-ink-soft">
+                    {role.responsibilityName}
+                    {t('common.colon')}
+                    {role.filledNames.join(t('common.listSeparator'))}
+                    {role.unfilledCount > 0 && (
+                      <span className="ml-1 font-medium text-amber-700">{t('rosters.unfilledCountBadge', { count: role.unfilledCount })}</span>
+                    )}
+                  </p>
+                ))}
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
+    );
+    return { groups, toneClass, content };
+  };
+
   const totalUnfilledCount = assignments.filter((a) => !a.staffId).length;
+
+  const statusHelperText =
+    roster.status === 'draft' || roster.status === 'generating'
+      ? t('rosters.publishRequiresPreviewHint')
+      : roster.status === 'preview'
+      ? t('rosters.sendExportRequiresPublishHint')
+      : null;
 
   return (
     <AppShell width="wide">
@@ -254,38 +319,41 @@ export function RosterDetailPage() {
               {formatDate(roster.dateRangeStart)} ~ {formatDate(roster.dateRangeEnd)}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={handleGenerate} disabled={generating} className={`gap-2 ${btnSecondary}`}>
-              {generating && <Spinner className="h-4 w-4" />}
-              {generating ? t('rosters.generating', { seconds: generatingSeconds }) : t('rosters.generateButton')}
-            </button>
-            <button type="button" onClick={handleSave} disabled={!dirty || saving} className={`gap-2 ${btnPrimary}`}>
-              {saving && <Spinner className="h-4 w-4" />}
-              {t('rosters.saveButton')}
-            </button>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={roster.status !== 'preview' || publishing}
-              title={roster.status === 'draft' || roster.status === 'generating' ? t('rosters.publishRequiresPreviewHint') : undefined}
-              className={`gap-2 ${btnSecondary}`}
-            >
-              {publishing && <Spinner className="h-4 w-4" />}
-              {t('rosters.publishButton')}
-            </button>
-            <button
-              type="button"
-              onClick={handleSendAll}
-              disabled={sendingAll || roster.status !== 'published'}
-              title={roster.status !== 'published' ? t('rosters.sendExportRequiresPublishHint') : undefined}
-              className={`gap-2 ${btnSecondary}`}
-            >
-              {sendingAll && <Spinner className="h-4 w-4" />}
-              {t('rosters.sendAllButton')}
-            </button>
-            <button type="button" onClick={handlePrint} className={`gap-2 ${btnSecondary}`}>
-              {t('rosters.printButton')}
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={handleGenerate} disabled={generating} className={`gap-2 ${btnSecondary}`}>
+                {generating && <Spinner className="h-4 w-4" />}
+                {generating ? t('rosters.generating', { seconds: generatingSeconds }) : t('rosters.generateButton')}
+              </button>
+              <button type="button" onClick={handleSave} disabled={!dirty || saving} className={`gap-2 ${btnPrimary}`}>
+                {saving && <Spinner className="h-4 w-4" />}
+                {t('rosters.saveButton')}
+              </button>
+            </div>
+            <div className="hidden h-8 w-px shrink-0 bg-tan/20 sm:block" aria-hidden="true" />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setPublishConfirmOpen(true)}
+                disabled={roster.status !== 'preview' || publishing}
+                className={`gap-2 ${btnSecondary}`}
+              >
+                {publishing && <Spinner className="h-4 w-4" />}
+                {t('rosters.publishButton')}
+              </button>
+              <button
+                type="button"
+                onClick={handleSendAll}
+                disabled={sendingAll || roster.status !== 'published'}
+                className={`gap-2 ${btnSecondary}`}
+              >
+                {sendingAll && <Spinner className="h-4 w-4" />}
+                {t('rosters.sendAllButton')}
+              </button>
+              <button type="button" onClick={handlePrint} className={`gap-2 ${btnSecondary}`}>
+                {t('rosters.printButton')}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -298,31 +366,29 @@ export function RosterDetailPage() {
         )}
         {emailStatus && <p className={`${successText} print:hidden`}>{emailStatus}</p>}
 
-        {roster.status !== 'published' && (
-          <p className="text-sm text-ink-soft print:hidden">{t('rosters.sendExportRequiresPublishHint')}</p>
-        )}
-
-        <div className="flex flex-wrap gap-4 text-sm print:hidden">
-          {(['ics', 'csv', 'pdf'] as const).map((format) =>
-            roster.status === 'published' ? (
-              <a
-                key={format}
-                href={api.rosters.exportUrl(roster.id, format, undefined, activeTab === 'unfilled')}
-                className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
-              >
-                {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
-              </a>
-            ) : (
-              <span key={format} className="cursor-not-allowed text-ink-soft/50">
-                {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
-              </span>
-            )
+        <div className="space-y-2 print:hidden">
+          {statusHelperText && <p className="text-sm text-ink-soft">{statusHelperText}</p>}
+          <div className="flex flex-wrap gap-4 text-sm">
+            {(['ics', 'csv', 'pdf'] as const).map((format) =>
+              roster.status === 'published' ? (
+                <a
+                  key={format}
+                  href={api.rosters.exportUrl(roster.id, format, undefined, activeTab === 'unfilled')}
+                  className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
+                >
+                  {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
+                </a>
+              ) : (
+                <span key={format} className="cursor-not-allowed text-ink-soft/50">
+                  {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
+                </span>
+              )
+            )}
+          </div>
+          {activeTab === 'unfilled' && roster.status === 'published' && (
+            <p className="text-sm text-ink-soft">{t('rosters.exportUnfilledOnlyHint')}</p>
           )}
         </div>
-
-        {activeTab === 'unfilled' && roster.status === 'published' && (
-          <p className="text-sm text-ink-soft print:hidden">{t('rosters.exportUnfilledOnlyHint')}</p>
-        )}
 
         <div className="flex gap-1.5 print:hidden">
           <button
@@ -398,14 +464,14 @@ export function RosterDetailPage() {
           </div>
 
           {isMonthly && (
-            <div className="grid grid-cols-7 gap-2 px-1 text-center text-[11px] font-semibold text-ink-soft">
+            <div className="hidden grid-cols-7 gap-2 px-1 text-center text-[11px] font-semibold text-ink-soft sm:grid">
               {weekdays.map((w) => (
                 <span key={w}>{w}</span>
               ))}
             </div>
           )}
 
-          <div className="grid grid-cols-7 gap-2">
+          <div className="hidden grid-cols-7 gap-2 sm:grid">
             {pageDates.map((date) => {
               if (!availableDatesSet.has(date)) {
                 return (
@@ -418,61 +484,11 @@ export function RosterDetailPage() {
                   </div>
                 );
               }
-              const groups = summarizeDate(date, activeTab === 'unfilled');
-              const isToday = date === today;
-              const hasUnfilled = dayHasUnfilled(date);
-              const dayHasAnyShifts = (rosterShiftsByDate.get(date) ?? []).length > 0;
-              const emptyMessage =
-                activeTab === 'unfilled' && dayHasAnyShifts ? t('rosters.dayFullyStaffed') : t('rosters.noShiftsScheduled');
-              const cellContent = (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                        isToday ? 'bg-coral-deep text-white' : 'bg-sand/70 text-ink'
-                      }`}
-                    >
-                      {date.slice(8, 10)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-ink">{weekdayLabel(date, weekdays)}</p>
-                      <p className="text-[11px] text-ink-soft/70">{formatDate(date)}</p>
-                    </div>
-                  </div>
-                  {groups.length === 0 ? (
-                    <p className="mt-2 text-xs text-ink-soft/60">{emptyMessage}</p>
-                  ) : (
-                    <ul className="mt-2 space-y-1.5">
-                      {groups.map((g) => (
-                        <li key={g.shiftTemplate.id} className="text-xs text-ink">
-                          <p className="font-medium">{g.shiftTemplate.name}</p>
-                          {g.roles.map((role) => (
-                            <p key={role.responsibilityId} className="text-ink-soft">
-                              {role.responsibilityName}
-                              {t('common.colon')}
-                              {role.filledNames.join(t('common.listSeparator'))}
-                              {role.unfilledCount > 0 && (
-                                <span className="ml-1 font-medium text-amber-700">
-                                  {t('rosters.unfilledCountBadge', { count: role.unfilledCount })}
-                                </span>
-                              )}
-                            </p>
-                          ))}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              );
+              const { groups, toneClass, content } = buildDayCard(date);
               if (groups.length === 0) {
                 return (
-                  <div
-                    key={date}
-                    className={`min-h-[6.5rem] rounded-2xl border p-3 text-left ${
-                      isToday ? 'border-coral-deep/50 bg-coral-deep/5 ring-1 ring-coral-deep/20' : 'border-tan/15 bg-white/40'
-                    }`}
-                  >
-                    {cellContent}
+                  <div key={date} className="min-h-[6.5rem] rounded-2xl border border-tan/15 bg-white/40 p-3 text-left">
+                    {content}
                   </div>
                 );
               }
@@ -481,18 +497,40 @@ export function RosterDetailPage() {
                   type="button"
                   key={date}
                   onClick={() => setEditingDate(date)}
-                  className={`min-h-[6.5rem] rounded-2xl border p-3 text-left transition hover:border-coral/40 hover:bg-white ${
-                    hasUnfilled
-                      ? 'border-amber-400/60 bg-amber-50/60'
-                      : isToday
-                      ? 'border-coral-deep/50 bg-coral-deep/5 ring-1 ring-coral-deep/20'
-                      : 'border-tan/15 bg-white/60'
-                  }`}
+                  className={`min-h-[6.5rem] rounded-2xl border p-3 text-left transition hover:border-coral/40 hover:bg-white ${toneClass}`}
                 >
-                  {cellContent}
+                  {content}
                 </button>
               );
             })}
+          </div>
+
+          {/* Below sm, a 7-column grid can't fit each day's shift/role/name breakdown legibly — stack
+              full-width day cards instead. Filler dates used only for the monthly grid's alignment are
+              skipped since there's no grid to align to here. */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            {pageDates
+              .filter((date) => availableDatesSet.has(date))
+              .map((date) => {
+                const { groups, toneClass, content } = buildDayCard(date);
+                if (groups.length === 0) {
+                  return (
+                    <div key={date} className="w-full rounded-2xl border border-tan/15 bg-white/40 p-3 text-left">
+                      {content}
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    key={date}
+                    onClick={() => setEditingDate(date)}
+                    className={`w-full rounded-2xl border p-3 text-left transition hover:border-coral/40 hover:bg-white ${toneClass}`}
+                  >
+                    {content}
+                  </button>
+                );
+              })}
           </div>
         </div>
 
@@ -535,6 +573,17 @@ export function RosterDetailPage() {
           ))}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={publishConfirmOpen}
+        tone="primary"
+        title={t('rosters.publishConfirmTitle')}
+        message={t('rosters.publishConfirmMessage')}
+        confirmLabel={t('rosters.publishButton')}
+        loading={publishing}
+        onCancel={() => setPublishConfirmOpen(false)}
+        onConfirm={handlePublish}
+      />
 
       <DayAssignmentDialog
         open={editingDate !== null}

@@ -40,7 +40,7 @@ export const fieldErrorText = 'mt-1.5 text-xs font-medium text-red-600';
 
 // Shared table shell used by every list page (Staff/Groups/Shift Templates/
 // Responsibilities/Rosters) so the visual refresh only has to be defined once.
-export const tableShell = 'overflow-hidden rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm';
+export const tableShell = 'overflow-x-auto rounded-[24px] border border-tan/15 bg-white/85 shadow-warm-sm';
 export const tableHeaderRow = 'border-b border-tan/15 bg-sand/60 text-left text-[11px] font-semibold uppercase tracking-wider text-ink-soft';
 export const tableHeaderCell = 'px-5 py-3.5';
 export const tableCell = 'px-5 py-3.5';
