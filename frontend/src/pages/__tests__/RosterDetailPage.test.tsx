@@ -27,6 +27,12 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
+// The desktop calendar grid and the mobile stacked list both render the same day content at all
+// times (only CSS media queries toggle which is visible), and a print-only view duplicates it
+// again — jsdom doesn't evaluate any of that, so every query that targets day-cell content must
+// be scoped to this grid to get a single, unambiguous match.
+const grid = () => screen.getByTestId('calendar-grid');
+
 const baseRoster = {
   id: 'roster-1',
   name: 'Week 34',
@@ -73,22 +79,21 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
     // The role name and unfilled count now show directly in the day cell summary instead of
     // the old table's "Role: Cashier" header row.
-    expect(screen.getAllByText(/Cashier/)[0]).toBeInTheDocument();
-    expect(screen.getByText('⚠ 1 unfilled')).toBeInTheDocument();
+    expect(within(grid()).getByText(/Cashier/)).toBeInTheDocument();
+    expect(within(grid()).getByText('⚠ 1 unfilled')).toBeInTheDocument();
+    // getAllByText(...)[0]: the print-only view (always in the DOM, hidden only via a CSS
+    // media query jsdom doesn't evaluate) duplicates this same date range text.
     expect(screen.getAllByText('17/08/2026 ~ 23/08/2026')[0]).toBeInTheDocument();
-    expect(screen.getByText('17/08/2026')).toBeInTheDocument();
+    expect(within(grid()).getByText('17/08/2026')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Generate Roster' }));
 
     await waitFor(() => expect(api.rosters.generateAssignments).toHaveBeenCalledWith('roster-1'));
 
     // The staff select now only exists inside the day dialog, opened by clicking the day cell.
-    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
+    await userEvent.click(within(grid()).getByRole('button', { name: /17\/08\/2026/ }));
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
   });
 
@@ -101,27 +106,24 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Save Assignments' })).toBeDisabled();
 
     // Staff assignment now happens inside the day dialog, opened by clicking the day cell.
-    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
+    await userEvent.click(within(grid()).getByRole('button', { name: /17\/08\/2026/ }));
     await waitFor(() => expect(screen.getByLabelText('Assign staff')).toBeInTheDocument());
 
     await userEvent.selectOptions(screen.getByLabelText('Assign staff'), 'staff-1');
-    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save Assignments' })).toBeEnabled();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save Assignments' }));
 
     await waitFor(() =>
       expect(api.rosters.saveAssignments).toHaveBeenCalledWith('roster-1', [
         { id: 'a-1', staffId: 'staff-1', unfilledTag: null },
       ])
     );
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save Assignments' })).toBeDisabled();
   });
 
   it('lets the user tag an unfilled slot', async () => {
@@ -130,16 +132,13 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
     // Unfilled tagging now happens inside the day dialog, opened by clicking the day cell.
-    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
+    await userEvent.click(within(grid()).getByRole('button', { name: /17\/08\/2026/ }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'AGENT' })).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'AGENT' }));
 
-    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save Assignments' })).toBeEnabled();
   });
 
   it('shows an unfilled badge and amber highlight on a day cell, clearing once the slot is assigned', async () => {
@@ -148,13 +147,10 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
 
-    const dayCell = () => screen.getByRole('button', { name: /17\/08\/2026/ });
-    expect(screen.getByText('⚠ 1 unfilled')).toBeInTheDocument();
+    const dayCell = () => within(grid()).getByRole('button', { name: /17\/08\/2026/ });
+    expect(within(grid()).getByText('⚠ 1 unfilled')).toBeInTheDocument();
     expect(dayCell()).toHaveClass('border-amber-400/60');
 
     await userEvent.click(dayCell());
@@ -165,7 +161,7 @@ describe('RosterDetailPage', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     // The change made inside the dialog is reflected back in the grid cell's own summary text,
     // not just inside the (now closed) dialog.
-    expect(screen.queryByText('⚠ 1 unfilled')).not.toBeInTheDocument();
+    expect(within(grid()).queryByText('⚠ 1 unfilled')).not.toBeInTheDocument();
     expect(dayCell()).not.toHaveClass('border-amber-400/60');
     expect(within(dayCell()).getByText(/Alice/)).toBeInTheDocument();
   });
@@ -176,15 +172,12 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
 
     // baseRoster only schedules a shift on 2026-08-17; the rest of the 17-23 range (6 days) has
     // no shifts at all.
-    expect(screen.queryByRole('button', { name: /18\/08\/2026/ })).not.toBeInTheDocument();
-    const noShiftLabels = screen.getAllByText('No shifts scheduled');
+    expect(within(grid()).queryByRole('button', { name: /18\/08\/2026/ })).not.toBeInTheDocument();
+    const noShiftLabels = within(grid()).getAllByText('No shifts scheduled');
     expect(noShiftLabels.length).toBe(6);
     for (const label of noShiftLabels) {
       expect(label.closest('button')).toBeNull();
@@ -202,10 +195,7 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
 
     // 20-day range (Aug 17 - Sep 5): 3 weekly pages, 2 fortnightly pages, 2 monthly pages.
     expect(screen.getByText('Page 1 / 3')).toBeInTheDocument();
@@ -217,11 +207,11 @@ describe('RosterDetailPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Monthly' }));
     expect(screen.getByText('August 2026')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /17\/08\/2026/ })).toBeInTheDocument();
+    expect(within(grid()).getByRole('button', { name: /17\/08\/2026/ })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Next →' }));
     expect(screen.getByText('September 2026')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /17\/08\/2026/ })).not.toBeInTheDocument();
+    expect(within(grid()).queryByRole('button', { name: /17\/08\/2026/ })).not.toBeInTheDocument();
     // Only 2 months in range, so Next is now disabled.
     expect(screen.getByRole('button', { name: 'Next →' })).toBeDisabled();
   });
@@ -232,10 +222,7 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
 
     await userEvent.click(screen.getByRole('button', { name: 'Unfilled' }));
 
@@ -243,9 +230,9 @@ describe('RosterDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Weekly' })).toBeInTheDocument();
     expect(screen.getByText('Page 1 / 1')).toBeInTheDocument();
     // The day cell is still there, still shows the shift/role, still clickable.
-    expect(screen.getAllByText(/Cashier/)[0]).toBeInTheDocument();
+    expect(within(grid()).getByText(/Cashier/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /17\/08\/2026/ }));
+    await userEvent.click(within(grid()).getByRole('button', { name: /17\/08\/2026/ }));
     await waitFor(() => expect(screen.getByLabelText('Assign staff')).toBeInTheDocument());
   });
 
@@ -266,17 +253,14 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Unfilled' }));
 
     // Nothing left unfilled that day, so the cell shows the "fully staffed" placeholder instead of
     // the shift, and is no longer a clickable button (nothing to assign there).
-    expect(screen.getByText('Fully staffed')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /17\/08\/2026/ })).not.toBeInTheDocument();
-    expect(screen.queryByText(/Cashier/)).not.toBeInTheDocument();
+    expect(within(grid()).getByText('Fully staffed')).toBeInTheDocument();
+    expect(within(grid()).queryByRole('button', { name: /17\/08\/2026/ })).not.toBeInTheDocument();
+    expect(within(grid()).queryByText(/Cashier/)).not.toBeInTheDocument();
   });
 
   it('narrows a partially-staffed role down to just the missing headcount on the Unfilled tab', async () => {
@@ -298,16 +282,13 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Unfilled' }));
 
     // The role still shows (one slot is unfilled) along with who's already assigned and the gap.
-    expect(screen.getAllByText(/Cashier/)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/Alice/)[0]).toBeInTheDocument();
-    expect(screen.getByText('⚠ 1 unfilled')).toBeInTheDocument();
+    expect(within(grid()).getByText(/Cashier/)).toBeInTheDocument();
+    expect(within(grid()).getByText(/Alice/)).toBeInTheDocument();
+    expect(within(grid()).getByText('⚠ 1 unfilled')).toBeInTheDocument();
   });
 
   it('switches the export links to unfilled-only and shows a hint once the Unfilled tab is active', async () => {
@@ -316,22 +297,19 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
 
-    expect(screen.getByRole('link', { name: 'Export CSV' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Export Excel' })).toHaveAttribute(
       'href',
-      '/api/rosters/roster-1/export/csv'
+      '/api/rosters/roster-1/export/xlsx'
     );
     expect(screen.queryByText('Exporting only unfilled shifts.')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Unfilled' }));
 
-    expect(screen.getByRole('link', { name: 'Export CSV' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Export Excel' })).toHaveAttribute(
       'href',
-      '/api/rosters/roster-1/export/csv?unfilledOnly=true'
+      '/api/rosters/roster-1/export/xlsx?unfilledOnly=true'
     );
     expect(screen.getByText('Exporting only unfilled shifts.')).toBeInTheDocument();
   });
@@ -343,10 +321,7 @@ describe('RosterDetailPage', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
 
     await userEvent.click(screen.getByRole('button', { name: 'Print' }));
     expect(printSpy).toHaveBeenCalledTimes(1);
@@ -384,11 +359,12 @@ describe('RosterDetailPage publish and email actions', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+
+    // Clicking Publish opens a confirmation dialog rather than publishing immediately.
+    const confirmDialog = await screen.findByRole('alertdialog');
+    await userEvent.click(within(confirmDialog).getByRole('button', { name: 'Publish' }));
 
     await waitFor(() => expect(api.rosters.publish).toHaveBeenCalledWith('roster-1'));
     await waitFor(() => expect(screen.getByText('Published')).toBeInTheDocument());
@@ -401,13 +377,10 @@ describe('RosterDetailPage publish and email actions', () => {
 
     renderPage();
 
-    // getAllByText(...)[0]: the new print-only view (always in the DOM, hidden only via a CSS
-    // media query jsdom doesn't evaluate) duplicates this same day's shift text, so a plain
-    // getByText would ambiguously match both the on-screen calendar cell and the print block.
-    await waitFor(() => expect(screen.getAllByText(/Morning/)[0]).toBeInTheDocument());
+    await waitFor(() => expect(within(grid()).getByText(/Morning/)).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Email Everyone' }));
 
-    await waitFor(() => expect(api.rosters.sendEmails).toHaveBeenCalledWith('roster-1'));
+    await waitFor(() => expect(api.rosters.sendEmails).toHaveBeenCalledWith('roster-1', undefined, 'en'));
     await waitFor(() => expect(screen.getByText(/Sent to 1 staff/)).toBeInTheDocument());
   });
 });

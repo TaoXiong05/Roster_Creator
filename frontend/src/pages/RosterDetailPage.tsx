@@ -148,7 +148,7 @@ export function RosterDetailPage() {
     setEmailStatus(null);
     setSendingAll(true);
     try {
-      const result = await api.rosters.sendEmails(id);
+      const result = await api.rosters.sendEmails(id, undefined, language);
       setEmailStatus(t('rosters.sentToCount', { count: result.sentTo.length }));
     } finally {
       setSendingAll(false);
@@ -164,7 +164,7 @@ export function RosterDetailPage() {
     setEmailStatus(null);
     setSendingStaffId(staffId);
     try {
-      const result = await api.rosters.sendEmails(id, [staffId]);
+      const result = await api.rosters.sendEmails(id, [staffId], language);
       setEmailStatus(t('rosters.sentToCount', { count: result.sentTo.length }));
     } finally {
       setSendingStaffId(null);
@@ -373,18 +373,18 @@ export function RosterDetailPage() {
         <div className="space-y-2 print:hidden">
           {statusHelperText && <p className="text-sm text-ink-soft">{statusHelperText}</p>}
           <div className="flex flex-wrap gap-4 text-sm">
-            {(['ics', 'csv', 'pdf'] as const).map((format) =>
+            {(['ics', 'xlsx', 'pdf'] as const).map((format) =>
               roster.status === 'published' ? (
                 <a
                   key={format}
                   href={api.rosters.exportUrl(roster.id, format, undefined, activeTab === 'unfilled')}
                   className="text-ink-soft underline-offset-4 hover:text-coral-deep hover:underline"
                 >
-                  {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
+                  {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'xlsx' ? 'Xlsx' : 'Pdf'}`)}
                 </a>
               ) : (
                 <span key={format} className="cursor-not-allowed text-ink-soft/50">
-                  {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'csv' ? 'Csv' : 'Pdf'}`)}
+                  {t(`rosters.export${format === 'ics' ? 'Ics' : format === 'xlsx' ? 'Xlsx' : 'Pdf'}`)}
                 </span>
               )
             )}
@@ -475,7 +475,7 @@ export function RosterDetailPage() {
             </div>
           )}
 
-          <div className="hidden grid-cols-7 gap-2 sm:grid">
+          <div data-testid="calendar-grid" className="hidden grid-cols-7 gap-2 sm:grid">
             {pageDates.map((date) => {
               if (!availableDatesSet.has(date)) {
                 return (
@@ -512,7 +512,7 @@ export function RosterDetailPage() {
           {/* Below sm, a 7-column grid can't fit each day's shift/role/name breakdown legibly — stack
               full-width day cards instead. Filler dates used only for the monthly grid's alignment are
               skipped since there's no grid to align to here. */}
-          <div className="flex flex-col gap-2 sm:hidden">
+          <div data-testid="calendar-list" className="flex flex-col gap-2 sm:hidden">
             {pageDates
               .filter((date) => availableDatesSet.has(date))
               .map((date) => {

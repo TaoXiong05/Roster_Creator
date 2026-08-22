@@ -279,7 +279,7 @@ export const zh = {
     publishConfirmMessage: '发布前员工看不到这份排班表。发布后，可以在本页点击"发送邮件给全体"通知大家。',
     sendAllButton: '发送邮件给全体',
     exportIcs: '导出 ICS',
-    exportCsv: '导出 CSV',
+    exportXlsx: '导出 Excel',
     exportPdf: '导出 PDF',
     unassigned: '未分配',
     slotsSuffix: '个槽位',

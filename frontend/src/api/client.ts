@@ -212,12 +212,12 @@ export const api = {
         body: JSON.stringify({ assignments }),
       }),
     publish: (id: string) => apiRequest<{ id: string; status: string }>(`/rosters/${id}/publish`, { method: 'PUT' }),
-    sendEmails: (id: string, staffIds?: string[]) =>
+    sendEmails: (id: string, staffIds?: string[], language?: 'en' | 'zh') =>
       apiRequest<{ sentTo: string[]; failed: string[] }>(`/rosters/${id}/send-emails`, {
         method: 'POST',
-        body: JSON.stringify({ staffIds }),
+        body: JSON.stringify({ staffIds, language }),
       }),
-    exportUrl: (id: string, format: 'ics' | 'csv' | 'pdf', staffId?: string, unfilledOnly?: boolean): string => {
+    exportUrl: (id: string, format: 'ics' | 'xlsx' | 'pdf', staffId?: string, unfilledOnly?: boolean): string => {
       const base = `${API_BASE}/rosters/${id}/export/${format}`;
       const params = new URLSearchParams();
       if (staffId) params.set('staffId', staffId);

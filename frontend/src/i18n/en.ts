@@ -284,7 +284,7 @@ export const en = {
       'Staff can’t see it until you publish. Once it’s published, use "Email Everyone" on this page to notify them.',
     sendAllButton: 'Email Everyone',
     exportIcs: 'Export ICS',
-    exportCsv: 'Export CSV',
+    exportXlsx: 'Export Excel',
     exportPdf: 'Export PDF',
     unassigned: 'Unassigned',
     slotsSuffix: 'slots',

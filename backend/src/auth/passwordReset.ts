@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '../db';
 import { hashPassword } from './password';
 import { sendEmail } from '../email/resend';
+import { authLimiter } from '../rateLimit';
 
 export const passwordResetRouter = Router();
 
@@ -12,7 +13,7 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-passwordResetRouter.post('/password-reset/request', async (req, res) => {
+passwordResetRouter.post('/password-reset/request', authLimiter, async (req, res) => {
   const { email } = req.body as { email?: string };
   if (!email) return res.status(400).json({ error: 'Email is required' });
 
@@ -37,7 +38,7 @@ passwordResetRouter.post('/password-reset/request', async (req, res) => {
   res.status(202).json({ message: 'If that email exists, a reset link was sent' });
 });
 
-passwordResetRouter.post('/password-reset/confirm', async (req, res) => {
+passwordResetRouter.post('/password-reset/confirm', authLimiter, async (req, res) => {
   const { token, password } = req.body as { token?: string; password?: string };
   if (!token || !password || password.length < 6) {
     return res.status(400).json({ error: 'Token and password (min 6 chars) are required' });

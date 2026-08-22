@@ -2,12 +2,13 @@ import { Router } from 'express';
 import { prisma } from '../db';
 import { requireAuth, AuthedRequest } from '../auth/middleware';
 import { buildIcs } from './ics';
-import { buildCsv } from './csv';
+import { buildXlsx } from './xlsx';
 import { buildPdf } from './pdf';
-import { toDisplayDate } from './dateFormat';
+import { heavyActionLimiter } from '../rateLimit';
 
 export const exportRouter = Router();
 exportRouter.use(requireAuth);
+exportRouter.use(heavyActionLimiter);
 
 async function loadExportableRoster(rosterId: string, userId: string, staffId?: string, unfilledOnly?: boolean) {
   const roster = await prisma.roster.findUnique({
@@ -76,7 +77,7 @@ exportRouter.get('/:id/export/ics', async (req: AuthedRequest, res) => {
   res.send(ics);
 });
 
-exportRouter.get('/:id/export/csv', async (req: AuthedRequest, res) => {
+exportRouter.get('/:id/export/xlsx', async (req: AuthedRequest, res) => {
   const staffId = typeof req.query.staffId === 'string' ? req.query.staffId : undefined;
   const unfilledOnly = req.query.unfilledOnly === 'true';
   const data = await loadExportableRoster(req.params.id, req.userId!, staffId, unfilledOnly);
@@ -85,11 +86,11 @@ exportRouter.get('/:id/export/csv', async (req: AuthedRequest, res) => {
     return res.status(409).json({ error: 'Publish this roster before exporting it' });
   }
 
-  const csv = buildCsv(data.rows.map((row) => ({ ...row, date: toDisplayDate(row.date) })));
+  const xlsx = await buildXlsx(data.roster.name, data.roster.dateRangeStart.toISOString().slice(0, 10), data.rows);
 
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename="${data.roster.name}.csv"`);
-  res.send(csv);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${data.roster.name}.xlsx"`);
+  res.send(xlsx);
 });
 
 exportRouter.get('/:id/export/pdf', async (req: AuthedRequest, res) => {

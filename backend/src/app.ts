@@ -15,12 +15,17 @@ import { rosterRouter } from './rosters/routes';
 import { assignmentRouter } from './rosters/assignmentRoutes';
 import { exportRouter } from './rosters/exportRoutes';
 import { emailRouter } from './rosters/emailRoutes';
+import { apiLimiter } from './rateLimit';
 
 export function createApp() {
   const app = express();
+  // Behind the Caddy reverse proxy (see proxy/Caddyfile) — trust its X-Forwarded-For so
+  // req.ip (used for rate limiting) reflects the real client, not the proxy container.
+  app.set('trust proxy', 1);
   app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
+  app.use(apiLimiter);
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
   app.use('/auth', authRouter);

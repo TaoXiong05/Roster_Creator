@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildPdf, groupRowsByWeek } from '../pdf';
+import { buildPdf } from '../pdf';
+import { groupRowsByWeek } from '../rosterGrouping';
 
 describe('buildPdf', () => {
   it('produces a valid PDF buffer', async () => {

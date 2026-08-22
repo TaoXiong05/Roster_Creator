@@ -3,10 +3,11 @@ import { prisma } from '../db';
 import { hashPassword, verifyPassword } from './password';
 import { signToken } from './jwt';
 import { requireAuth, AuthedRequest } from './middleware';
+import { authLimiter } from '../rateLimit';
 
 export const authRouter = Router();
 
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register', authLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password || password.length < 6) {
     return res.status(400).json({ error: 'Email and password (min 6 chars) are required' });
@@ -22,7 +23,7 @@ authRouter.post('/register', async (req, res) => {
   res.status(201).json({ id: user.id, email: user.email });
 });
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', authLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -40,7 +41,7 @@ authRouter.post('/login', async (req, res) => {
   res.json({ id: user.id, email: user.email });
 });
 
-authRouter.post('/demo', async (_req, res) => {
+authRouter.post('/demo', authLimiter, async (_req, res) => {
   const demoEmail = process.env.DEMO_USER_EMAIL;
   if (!demoEmail) {
     return res.status(404).json({ error: 'Demo login is not enabled' });

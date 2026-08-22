@@ -84,7 +84,7 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
       {
         title: 'Publish and notify',
         description:
-          'Once it looks right, click "Publish", then "Email Everyone" — or "Email Them" for individual staff. You can also export ICS / CSV / PDF.',
+          'Once it looks right, click "Publish", then "Email Everyone" — or "Email Them" for individual staff. You can also export ICS / Excel / PDF.',
       },
     ],
     features: [
@@ -126,7 +126,7 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
           'When creating one, pick a date range and group, then click into each day to add the shifts and headcounts needed',
           '"Generate Roster" uses AI to auto-assign — you can also pick or reassign manually from the dropdowns',
           'Tag still-open shifts as AGENT / PICKUP or a custom label to track follow-up',
-          'Once published, email staff or export ICS / CSV / PDF',
+          'Once published, email staff or export ICS / Excel / PDF',
         ],
       },
       {
@@ -205,7 +205,7 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
       },
       {
         title: '发布并通知',
-        description: '确认无误后点"发布"，再"发送邮件给全体"，或对个别人"发送给TA"；也可以导出 ICS / CSV / PDF。',
+        description: '确认无误后点"发布"，再"发送邮件给全体"，或对个别人"发送给TA"；也可以导出 ICS / Excel / PDF。',
       },
     ],
     features: [
@@ -235,7 +235,7 @@ const CONTENT: Record<'en' | 'zh', HelpContent> = {
           '创建时选日期范围、小组，再点开每一天，添加需要的班次和人数',
           '"生成排班"用 AI 自动分配；也可以在下拉框里手动指定或改派',
           '还没定的班次可以标 AGENT / PICKUP 或自定义标签，方便后续跟进',
-          '发布后可以发邮件通知，或导出 ICS / CSV / PDF',
+          '发布后可以发邮件通知，或导出 ICS / Excel / PDF',
         ],
       },
       {

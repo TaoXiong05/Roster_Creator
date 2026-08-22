@@ -19,6 +19,8 @@ const rosterFixture = {
   userId: 'user-1',
   name: 'Week 34',
   status: 'published',
+  dateRangeStart: new Date('2026-08-17'),
+  dateRangeEnd: new Date('2026-08-23'),
   rosterShifts: [
     {
       date: new Date('2026-08-17'),
@@ -77,6 +79,38 @@ describe('POST /rosters/:id/send-emails', () => {
       expect.objectContaining({ to: 'alice@b.com', attachments: expect.any(Array) })
     );
     expect(res.body.sentTo).toEqual(['alice@b.com']);
+  });
+
+  it('defaults to English subject and greeting when no language is given', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+
+    await request(app)
+      .post('/rosters/roster-1/send-emails')
+      .set('Cookie', authCookie)
+      .send({ staffIds: ['staff-1'] });
+
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: 'Your schedule: Week 34',
+        html: expect.stringContaining('Hi Alice'),
+      })
+    );
+  });
+
+  it('sends the Chinese subject and greeting when language is zh', async () => {
+    (prisma.roster.findUnique as any).mockResolvedValue(rosterFixture);
+
+    await request(app)
+      .post('/rosters/roster-1/send-emails')
+      .set('Cookie', authCookie)
+      .send({ staffIds: ['staff-1'], language: 'zh' });
+
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: '你的排班表：Week 34',
+        html: expect.stringContaining('你好 Alice'),
+      })
+    );
   });
 
   it("isolates one recipient's failure so the rest still send and the request does not throw", async () => {

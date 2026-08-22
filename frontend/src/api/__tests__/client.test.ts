@@ -161,6 +161,15 @@ describe('api.rosters publish/export/email', () => {
     );
   });
 
+  it('includes the current UI language so the email content matches it', async () => {
+    (fetch as any).mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ sentTo: [] }) });
+    await api.rosters.sendEmails('roster-1', ['staff-1'], 'zh');
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/rosters/roster-1/send-emails'),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ staffIds: ['staff-1'], language: 'zh' }) })
+    );
+  });
+
   it('builds an export url scoped to a staff member', () => {
     const url = api.rosters.exportUrl('roster-1', 'ics', 'staff-1');
     expect(url).toContain('/rosters/roster-1/export/ics');
@@ -168,8 +177,8 @@ describe('api.rosters publish/export/email', () => {
   });
 
   it('builds a whole-roster export url without a staffId', () => {
-    const url = api.rosters.exportUrl('roster-1', 'csv');
-    expect(url).toBe(`${url.split('/rosters')[0]}/rosters/roster-1/export/csv`);
+    const url = api.rosters.exportUrl('roster-1', 'xlsx');
+    expect(url).toBe(`${url.split('/rosters')[0]}/rosters/roster-1/export/xlsx`);
   });
 
   it('deletes a roster', async () => {
