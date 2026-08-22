@@ -25,7 +25,7 @@ import { btnPillActive, btnPillInactive, btnPrimary, btnSecondary, cardBase, err
 
 interface ShiftGroupSummary {
   shiftTemplate: RosterShift['shiftTemplate'];
-  roles: { responsibilityId: string; responsibilityName: string; filledNames: string[]; unfilledCount: number }[];
+  roles: { responsibilityId: string; responsibilityName: string; filledNames: string[]; unfilledCount: number; unfilledTags: string[] }[];
 }
 
 export function RosterDetailPage() {
@@ -227,6 +227,7 @@ export function RosterDetailPage() {
               responsibilityName: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
               filledNames: rows.filter((r) => r.staffId).map((r) => members.find((m) => m.id === r.staffId)?.name ?? r.staff?.name ?? '?'),
               unfilledCount: rows.filter((r) => !r.staffId).length,
+              unfilledTags: rows.filter((r) => !r.staffId && r.unfilledTag).map((r) => r.unfilledTag!),
             };
           })
           .filter((role) => !unfilledOnly || role.unfilledCount > 0),
@@ -281,7 +282,10 @@ export function RosterDetailPage() {
                     {t('common.colon')}
                     {role.filledNames.join(t('common.listSeparator'))}
                     {role.unfilledCount > 0 && (
-                      <span className="ml-1 font-medium text-amber-700">{t('rosters.unfilledCountBadge', { count: role.unfilledCount })}</span>
+                      <span className="ml-1 font-medium text-amber-700">
+                        {t('rosters.unfilledCountBadge', { count: role.unfilledCount })}
+                        {role.unfilledTags.length > 0 && ` (${role.unfilledTags.join(t('common.listSeparator'))})`}
+                      </span>
                     )}
                   </p>
                 ))}
@@ -561,7 +565,10 @@ export function RosterDetailPage() {
                           <p key={role.responsibilityId} className="text-sm text-ink-soft">
                             {g.shiftTemplate.name} · {role.responsibilityName} ({g.shiftTemplate.startTime}-{g.shiftTemplate.endTime}) —{' '}
                             {role.filledNames.join(t('common.listSeparator')) || t('rosters.unassigned')}
-                            {role.unfilledCount > 0 && ` (${t('rosters.unfilledCountBadge', { count: role.unfilledCount })})`}
+                            {role.unfilledCount > 0 &&
+                              ` (${t('rosters.unfilledCountBadge', { count: role.unfilledCount })}${
+                                role.unfilledTags.length > 0 ? ` — ${role.unfilledTags.join(t('common.listSeparator'))}` : ''
+                              })`}
                           </p>
                         ))}
                       </div>
