@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, RosterDetail, AssignmentEntry, Responsibility, RosterShift, Staff } from '../api/client';
@@ -52,18 +52,23 @@ export function RosterDetailPage() {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'calendar' | 'unfilled'>('calendar');
 
-  const loadRoster = async () => {
-    if (!id) return;
-    const r = await api.rosters.get(id);
-    setRoster(r);
-    setAssignments(r.rosterShifts.flatMap((rs) => rs.assignments));
-    const groupMembers = await api.groups.listMembers(r.groupId);
-    setMembers(groupMembers);
-    setDirty(false);
-  };
-
   useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    const loadRoster = async () => {
+      const r = await api.rosters.get(id);
+      if (cancelled) return;
+      setRoster(r);
+      setAssignments(r.rosterShifts.flatMap((rs) => rs.assignments));
+      const groupMembers = await api.groups.listMembers(r.groupId);
+      if (cancelled) return;
+      setMembers(groupMembers);
+      setDirty(false);
+    };
     loadRoster();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -124,7 +129,7 @@ export function RosterDetailPage() {
       setAssignments(result.assignments);
       setDirty(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save assignments');
+      setError(err instanceof Error ? err.message : t('rosters.saveAssignmentsFailedError'));
     } finally {
       setSaving(false);
     }
@@ -171,6 +176,54 @@ export function RosterDetailPage() {
     }
   };
 
+  // Grouping rosterShifts by date only depends on the roster itself (not on assignments), so it
+  // doesn't need to recompute on every assignment edit — only when a fresh roster is loaded.
+  const rosterShiftsByDate = useMemo(() => {
+    const map = new Map<string, RosterShift[]>();
+    if (!roster) return map;
+    for (const rs of roster.rosterShifts) {
+      const date = rs.date.slice(0, 10);
+      const list = map.get(date) ?? [];
+      list.push(rs);
+      map.set(date, list);
+    }
+    return map;
+  }, [roster]);
+
+  // This is the O(days * shifts * assignments) computation: for every shift on every day, it scans
+  // `assignments` (and `responsibilities`/`members` for name lookups) to build the filled/unfilled
+  // breakdown. The print section walks every date in the roster (not just the visible page), and
+  // unrelated re-renders (opening a day dialog, the generating-seconds ticker, page navigation) used
+  // to force this to re-run in full. Memoizing keeps it tied only to the inputs that actually change it.
+  const dateSummaries = useMemo(() => {
+    const map = new Map<string, ShiftGroupSummary[]>();
+    for (const [date, dayShifts] of rosterShiftsByDate) {
+      const byTemplate = new Map<string, RosterShift[]>();
+      for (const rs of dayShifts) {
+        const list = byTemplate.get(rs.shiftTemplate.id) ?? [];
+        list.push(rs);
+        byTemplate.set(rs.shiftTemplate.id, list);
+      }
+      const groups = Array.from(byTemplate.values())
+        .map((group) => ({
+          shiftTemplate: group[0].shiftTemplate,
+          roles: group.map((rs) => {
+            const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
+            return {
+              responsibilityId: rs.responsibilityId,
+              responsibilityName: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
+              filledNames: rows.filter((r) => r.staffId).map((r) => members.find((m) => m.id === r.staffId)?.name ?? r.staff?.name ?? '?'),
+              unfilledCount: rows.filter((r) => !r.staffId).length,
+              unfilledTags: rows.filter((r) => !r.staffId && r.unfilledTag).map((r) => r.unfilledTag!),
+            };
+          }),
+        }))
+        .filter((group) => group.roles.length > 0);
+      map.set(date, groups);
+    }
+    return map;
+  }, [rosterShiftsByDate, assignments, responsibilities, members, t]);
+
   if (!roster)
     return (
       <AppShell width="wide">
@@ -198,45 +251,19 @@ export function RosterDetailPage() {
     : availableDates.slice(clampedPageIndex * daysPerPage!, clampedPageIndex * daysPerPage! + daysPerPage!);
   const today = todayISODate();
 
-  const rosterShiftsByDate = new Map<string, RosterShift[]>();
-  for (const rs of roster.rosterShifts) {
-    const date = rs.date.slice(0, 10);
-    const list = rosterShiftsByDate.get(date) ?? [];
-    list.push(rs);
-    rosterShiftsByDate.set(date, list);
-  }
-
   // unfilledOnly narrows each day's roles down to the ones still missing staff — used to drive the
-  // Unfilled tab, which reuses this exact same grid/pagination rather than a separate layout.
+  // Unfilled tab, which reuses this exact same grid/pagination rather than a separate layout. The
+  // expensive per-shift breakdown itself lives in the memoized `dateSummaries`; this just filters it.
   const summarizeDate = (date: string, unfilledOnly = false): ShiftGroupSummary[] => {
-    const dayShifts = rosterShiftsByDate.get(date) ?? [];
-    const byTemplate = new Map<string, RosterShift[]>();
-    for (const rs of dayShifts) {
-      const list = byTemplate.get(rs.shiftTemplate.id) ?? [];
-      list.push(rs);
-      byTemplate.set(rs.shiftTemplate.id, list);
-    }
-    return Array.from(byTemplate.values())
-      .map((group) => ({
-        shiftTemplate: group[0].shiftTemplate,
-        roles: group
-          .map((rs) => {
-            const rows = assignments.filter((a) => a.rosterShiftId === rs.id);
-            return {
-              responsibilityId: rs.responsibilityId,
-              responsibilityName: responsibilities.find((r) => r.id === rs.responsibilityId)?.name ?? t('rosters.unknownResponsibility'),
-              filledNames: rows.filter((r) => r.staffId).map((r) => members.find((m) => m.id === r.staffId)?.name ?? r.staff?.name ?? '?'),
-              unfilledCount: rows.filter((r) => !r.staffId).length,
-              unfilledTags: rows.filter((r) => !r.staffId && r.unfilledTag).map((r) => r.unfilledTag!),
-            };
-          })
-          .filter((role) => !unfilledOnly || role.unfilledCount > 0),
-      }))
+    const groups = dateSummaries.get(date) ?? [];
+    if (!unfilledOnly) return groups;
+    return groups
+      .map((group) => ({ ...group, roles: group.roles.filter((role) => role.unfilledCount > 0) }))
       .filter((group) => group.roles.length > 0);
   };
 
   const dayHasUnfilled = (date: string): boolean =>
-    (rosterShiftsByDate.get(date) ?? []).some((rs) => assignments.some((a) => a.rosterShiftId === rs.id && !a.staffId));
+    (dateSummaries.get(date) ?? []).some((group) => group.roles.some((role) => role.unfilledCount > 0));
 
   const editingDayShifts = editingDate ? rosterShiftsByDate.get(editingDate) ?? [] : [];
 

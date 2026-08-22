@@ -52,6 +52,8 @@ export const en = {
       or: 'or',
       googleSubmit: 'Continue with Google',
       demoSubmit: 'Try the demo',
+      loginFailedError: 'Login failed',
+      demoLoginFailedError: 'Demo login failed',
     },
     register: {
       headline: 'Let me help you get the whole team sorted',
@@ -64,6 +66,7 @@ export const en = {
       passwordPlaceholder: 'Password (at least 6 characters)',
       submit: 'Sign up',
       haveAccount: 'Already have an account? Log in',
+      registrationFailedError: 'Registration failed',
     },
     forgotPassword: {
       headline: 'Lost your key? I’ll help you find it',
@@ -75,6 +78,7 @@ export const en = {
       emailLabel: 'Email',
       emailPlaceholder: 'Email',
       submit: 'Send reset link',
+      sendFailedError: 'Failed to send reset link',
     },
     resetPassword: {
       headline: 'A brand new key, coming right up',
@@ -86,6 +90,7 @@ export const en = {
       newPasswordLabel: 'New password',
       newPasswordPlaceholder: 'New password (at least 6 characters)',
       submit: 'Reset password',
+      resetFailedError: 'Reset failed',
     },
   },
   dashboard: {
@@ -129,6 +134,8 @@ export const en = {
     responsibilityRequiredError: 'Please select at least one role',
     nameRequiredError: 'Please enter a name',
     emailRequiredError: 'Please enter an email',
+    createFailedError: 'Failed to create staff',
+    saveFailedError: 'Failed to save staff',
     step1Title: 'Basic Info',
     step2Title: 'Working Hours',
     step3Title: 'Preferred Working Times',
@@ -268,6 +275,9 @@ export const en = {
     saveSubmit: 'Save Changes',
     missingResponsibilityError: 'Please choose a role for every headcount requirement',
     noShiftsError: 'You need to set at least one shift’s headcount on at least one day',
+    nameRequiredError: 'Please enter a roster name',
+    dateRangeRequiredError: 'Please select a start and end date',
+    groupRequiredError: 'Please select a staff group',
 
     generateButton: 'Generate Roster',
     generating: 'Generating... ({{seconds}}s)',
@@ -298,6 +308,7 @@ export const en = {
     assignStaffAria: 'Assign staff',
     loadFailedError: 'Failed to load roster',
     createFailedError: 'Failed to create roster',
+    saveAssignmentsFailedError: 'Failed to save assignments',
     noShiftsScheduled: 'No shifts scheduled',
     unfilledCountBadge: '⚠ {{count}} unfilled',
     tabCalendar: 'Calendar',
@@ -373,6 +384,136 @@ export const en = {
   mascot: {
     badgeAria: 'Roo the kangaroo',
     heroAria: 'Roo the kangaroo, carrying a roster in her pouch',
+  },
+  stepStepper: {
+    doneSuffix: ' · Done',
+    currentSuffix: ' · Current step',
+  },
+  help: {
+    pageTitle: 'Help Guide',
+    pageDescription: 'From adding staff to publishing a roster — follow the steps below to get up to speed',
+    quickStartHeading: 'Quick Start',
+    featuresHeading: 'Feature Details',
+    faqHeading: 'FAQ',
+    steps: [
+      {
+        title: 'Set up responsibility templates',
+        description:
+          'Define the responsibilities staff might take on, like "Cashier" or "Cleaning" — every staff member needs at least one when they’re added.',
+        to: '/responsibilities',
+        linkLabel: 'Go to Responsibility Templates',
+      },
+      {
+        title: 'Set up shift templates',
+        description:
+          'Define shifts like "Morning 09:00-17:00" or "Night 22:00-06:00" once, then reuse them when creating rosters or setting staff preferences.',
+        to: '/shift-templates',
+        linkLabel: 'Go to Shift Templates',
+      },
+      {
+        title: 'Build a group',
+        description: 'Put staff who’ll be rostered together into the same group — you’ll pick a group when creating a roster.',
+        to: '/groups',
+        linkLabel: 'Go to Groups',
+      },
+      {
+        title: 'Add staff',
+        description:
+          'Record name, email, and at least one responsibility. Hour limits and preferred shifts can be filled in later.',
+        to: '/staff',
+        linkLabel: 'Go to Staff',
+      },
+      {
+        title: 'Create a roster',
+        description: 'Pick a date range and group, then click into each day to set which shifts are needed and how many people for each.',
+        to: '/rosters/new',
+        linkLabel: 'Create Roster',
+      },
+      {
+        title: 'Auto-assign with AI, then fine-tune',
+        description:
+          'Open the roster detail page and click "Generate Roster" — AI assigns staff based on their hours and preferences. Not happy with the result? Change it directly in the dropdowns.',
+        to: '/rosters',
+        linkLabel: 'View Rosters',
+      },
+      {
+        title: 'Publish and notify',
+        description:
+          'Once it looks right, click "Publish", then "Email Everyone" — or "Email Them" for individual staff. You can also export ICS / Excel / PDF.',
+      },
+    ],
+    features: [
+      {
+        title: 'Responsibility Templates',
+        points: [
+          'Define the responsibilities staff might take on, like "Cashier" or "Cleaning"',
+          'Selected from here when adding staff — at least one is required',
+          'Edit the name or delete it anytime',
+        ],
+      },
+      {
+        title: 'Staff',
+        points: [
+          'Name and email are required; at least one responsibility is required (set these up under Responsibility Templates first)',
+          'Scheduling preferences are optional: min/max weekly hours, preferred days, preferred shifts (pick from your shift templates, e.g. morning/night)',
+          'Edit or remove any staff member at any time',
+        ],
+      },
+      {
+        title: 'Groups',
+        points: [
+          'Sort staff into groups — a staff member can belong to more than one group',
+          'Pick a group when creating a roster and its members appear in the assignment dropdowns',
+          'Rename or delete groups anytime',
+        ],
+      },
+      {
+        title: 'Shift Templates',
+        points: [
+          'Define a start and end time once, e.g. "Morning 09:00-17:00"',
+          'Select directly from these when creating rosters or setting staff shift preferences',
+          'Make sure no roster is still using a template before deleting it',
+        ],
+      },
+      {
+        title: 'Rosters',
+        points: [
+          'When creating one, pick a date range and group, then click into each day to add the shifts and headcounts needed',
+          '"Generate Roster" uses AI to auto-assign — you can also pick or reassign manually from the dropdowns',
+          'Tag still-open shifts as AGENT / PICKUP or a custom label to track follow-up',
+          'Once published, email staff or export ICS / Excel / PDF',
+        ],
+      },
+      {
+        title: 'Dashboard',
+        points: [
+          'Shows shortcut cards with live counts for staff, groups, shift templates, and rosters',
+          'Click any card to jump straight into that section',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: 'Not happy with what the AI assigned?',
+        a: 'Change it directly in that shift’s dropdown, then remember to click "Save".',
+      },
+      {
+        q: 'How do I flag a shift that’s still unfilled?',
+        a: 'Leave the staff field empty and click AGENT, PICKUP, or type a custom label so you or a colleague knows it still needs someone.',
+      },
+      {
+        q: 'Can I still make changes after publishing?',
+        a: 'Yes — just remember to save again, then re-send the email or re-export the file so staff see the latest version.',
+      },
+      {
+        q: 'What happens to existing rosters if I delete a staff member?',
+        a: 'The roster itself isn’t deleted, but that person is removed from every assignment — past and future — and those shifts become unfilled.',
+      },
+      {
+        q: 'Where do I switch between English and Chinese?',
+        a: 'Use the language toggle in the sidebar — it applies immediately and is remembered next time you sign in.',
+      },
+    ],
   },
   weekdaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
 };

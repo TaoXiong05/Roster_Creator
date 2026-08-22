@@ -4,9 +4,10 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import * as AuthContextModule from '../auth/AuthContext';
+import { wrapWithQueryClient } from '../testUtils';
 
 describe('App routing', () => {
-  it('renders the login page at /login', () => {
+  it('renders the login page at /login', async () => {
     vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
       user: null,
       loading: false,
@@ -17,15 +18,17 @@ describe('App routing', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>
+      wrapWithQueryClient(
+        <MemoryRouter initialEntries={['/login']}>
+          <App />
+        </MemoryRouter>
+      )
     );
 
-    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
-  it('redirects unauthenticated users away from /dashboard', () => {
+  it('redirects unauthenticated users away from /dashboard', async () => {
     vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
       user: null,
       loading: false,
@@ -36,15 +39,17 @@ describe('App routing', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <App />
-      </MemoryRouter>
+      wrapWithQueryClient(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <App />
+        </MemoryRouter>
+      )
     );
 
-    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
-  it('redirects authenticated users away from /login to /dashboard', () => {
+  it('redirects authenticated users away from /login to /dashboard', async () => {
     vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
       user: { id: 'user-1', email: 'a@b.com' },
       loading: false,
@@ -55,15 +60,17 @@ describe('App routing', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>
+      wrapWithQueryClient(
+        <MemoryRouter initialEntries={['/login']}>
+          <App />
+        </MemoryRouter>
+      )
     );
 
-    expect(screen.getByRole('heading', { name: /Hi there/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Hi there/ })).toBeInTheDocument();
   });
 
-  it('redirects authenticated users away from /register to /dashboard', () => {
+  it('redirects authenticated users away from /register to /dashboard', async () => {
     vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
       user: { id: 'user-1', email: 'a@b.com' },
       loading: false,
@@ -74,11 +81,13 @@ describe('App routing', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/register']}>
-        <App />
-      </MemoryRouter>
+      wrapWithQueryClient(
+        <MemoryRouter initialEntries={['/register']}>
+          <App />
+        </MemoryRouter>
+      )
     );
 
-    expect(screen.getByRole('heading', { name: /Hi there/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Hi there/ })).toBeInTheDocument();
   });
 });

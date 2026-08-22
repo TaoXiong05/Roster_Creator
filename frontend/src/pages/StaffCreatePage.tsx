@@ -105,7 +105,7 @@ export function StaffCreatePage() {
       await queryClient.invalidateQueries({ queryKey: ['staff'] });
       navigate('/staff');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create staff');
+      setError(err instanceof Error ? err.message : t('staff.createFailedError'));
     } finally {
       setCreating(false);
     }

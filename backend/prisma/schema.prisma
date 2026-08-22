@@ -35,6 +35,8 @@ model Staff {
   preference   Preference?
   groupMembers GroupMember[]
   assignments  Assignment[]
+
+  @@index([userId])
 }
 
 model Preference {
@@ -59,6 +61,8 @@ model StaffGroup {
 
   members GroupMember[]
   rosters Roster[]
+
+  @@index([userId])
 }
 
 model GroupMember {
@@ -80,6 +84,8 @@ model ShiftTemplate {
   createdAt DateTime @default(now())
 
   rosterShifts RosterShift[]
+
+  @@index([userId])
 }
 
 model ResponsibilityTemplate {
@@ -88,6 +94,8 @@ model ResponsibilityTemplate {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Roster {
@@ -104,6 +112,9 @@ model Roster {
   createdAt      DateTime   @default(now())
 
   rosterShifts RosterShift[]
+
+  @@index([userId])
+  @@index([groupId])
 }
 
 model RosterShift {
@@ -117,6 +128,8 @@ model RosterShift {
   responsibilityId String        @default("")
 
   assignments Assignment[]
+
+  @@index([rosterId])
 }
 
 model Assignment {
@@ -124,8 +137,11 @@ model Assignment {
   rosterShiftId String
   rosterShift   RosterShift @relation(fields: [rosterShiftId], references: [id], onDelete: Cascade)
   staffId       String?
-  staff         Staff?      @relation(fields: [staffId], references: [id])
+  staff         Staff?      @relation(fields: [staffId], references: [id], onDelete: Restrict)
   unfilledTag   String?
+
+  @@index([rosterShiftId])
+  @@index([staffId])
 }
 
 model PasswordResetToken {
@@ -134,4 +150,6 @@ model PasswordResetToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tokenHash String
   expiresAt DateTime
+
+  @@index([userId])
 }

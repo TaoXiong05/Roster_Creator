@@ -25,7 +25,7 @@ export function ResetPasswordPage() {
       await api.confirmPasswordReset(token, password);
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Reset failed');
+      setError(err instanceof Error ? err.message : t('auth.resetPassword.resetFailedError'));
       setLoading(false);
     }
   };

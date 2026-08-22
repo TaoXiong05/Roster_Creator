@@ -5,6 +5,20 @@ import { requireAuth, AuthedRequest } from '../auth/middleware';
 export const staffRouter = Router();
 staffRouter.use(requireAuth);
 
+// Confirms every id in responsibilityIds refers to a ResponsibilityTemplate the current user owns.
+// A stale/arbitrary id would otherwise be stored silently and break downstream matching logic and
+// export fallbacks elsewhere in the app.
+async function validateResponsibilityIds(responsibilityIds: string[], userId: string): Promise<string | null> {
+  const uniqueIds = [...new Set(responsibilityIds)];
+  const found = await prisma.responsibilityTemplate.findMany({
+    where: { id: { in: uniqueIds }, userId },
+  });
+  if (found.length !== uniqueIds.length) {
+    return 'One or more responsibilityIds are invalid';
+  }
+  return null;
+}
+
 staffRouter.get('/', async (req: AuthedRequest, res) => {
   const staff = await prisma.staff.findMany({
     where: { userId: req.userId },
@@ -37,6 +51,10 @@ staffRouter.post('/', async (req: AuthedRequest, res) => {
   if (!responsibilityIds || responsibilityIds.length === 0) {
     return res.status(400).json({ error: 'At least one responsibility is required' });
   }
+  const responsibilityError = await validateResponsibilityIds(responsibilityIds, req.userId!);
+  if (responsibilityError) {
+    return res.status(400).json({ error: responsibilityError });
+  }
   const staff = await prisma.staff.create({
     data: { userId: req.userId!, name, email, responsibilityIds },
   });
@@ -55,6 +73,12 @@ staffRouter.put('/:id', async (req: AuthedRequest, res) => {
   };
   if (responsibilityIds !== undefined && responsibilityIds.length === 0) {
     return res.status(400).json({ error: 'At least one responsibility is required' });
+  }
+  if (responsibilityIds !== undefined) {
+    const responsibilityError = await validateResponsibilityIds(responsibilityIds, req.userId!);
+    if (responsibilityError) {
+      return res.status(400).json({ error: responsibilityError });
+    }
   }
   const staff = await prisma.staff.update({
     where: { id: req.params.id },

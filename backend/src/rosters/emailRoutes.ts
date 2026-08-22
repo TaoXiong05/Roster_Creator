@@ -45,6 +45,19 @@ function weekdayLabel(isoDate: string, language: EmailLanguage): string {
   return WEEKDAYS[language][new Date(`${isoDate}T00:00:00Z`).getUTCDay()];
 }
 
+// The schedule HTML is built by hand-splicing user-controlled strings (roster name, staff name,
+// shift name) into markup, since email clients need inline-styled tables rather than a templating
+// engine. Anything that ends up in the output must be escaped here first so a name containing
+// HTML (e.g. `<a href="...">`) can't inject live markup into a notification email.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Matches the app's own brand palette (frontend/tailwind.config.js) and the PDF/Excel exports —
 // tables with inline styles because email clients (Outlook especially) don't support flex/grid
 // and often strip <style> blocks.
@@ -67,6 +80,8 @@ export function buildScheduleHtml(
 ): string {
   const sortedRows = [...rows].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
   const days = groupRowsByDate(sortedRows);
+  const safeRosterName = escapeHtml(rosterName);
+  const safeStaffName = escapeHtml(staffName);
 
   const dayRows = days
     .map(
@@ -75,7 +90,7 @@ export function buildScheduleHtml(
         ${day.rows
           .map(
             (row) =>
-              `<tr><td style="padding:8px 10px 8px 20px;font-size:13px;color:${COLORS.ink};border-bottom:1px solid ${COLORS.rule};font-family:Arial,sans-serif;">${row.shiftName} · ${row.startTime}–${row.endTime}</td></tr>`
+              `<tr><td style="padding:8px 10px 8px 20px;font-size:13px;color:${COLORS.ink};border-bottom:1px solid ${COLORS.rule};font-family:Arial,sans-serif;">${escapeHtml(row.shiftName)} · ${row.startTime}–${row.endTime}</td></tr>`
           )
           .join('')}`
     )
@@ -86,10 +101,10 @@ export function buildScheduleHtml(
       <tr><td align="center">
         <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-collapse:collapse;">
           <tr><td style="background:${COLORS.headerBg};padding:20px 24px;">
-            <div style="color:#ffffff;font-size:18px;font-weight:bold;font-family:Arial,sans-serif;">${rosterName}</div>
+            <div style="color:#ffffff;font-size:18px;font-weight:bold;font-family:Arial,sans-serif;">${safeRosterName}</div>
             <div style="color:${COLORS.headerSubtitle};font-size:12px;margin-top:4px;font-family:Arial,sans-serif;">${toDisplayDate(dateRangeStart)} – ${toDisplayDate(dateRangeEnd)}</div>
           </td></tr>
-          <tr><td style="padding:20px 24px 6px;font-size:14px;color:${COLORS.ink};font-family:Arial,sans-serif;">${STRINGS[language].greeting(staffName, rosterName)}</td></tr>
+          <tr><td style="padding:20px 24px 6px;font-size:14px;color:${COLORS.ink};font-family:Arial,sans-serif;">${STRINGS[language].greeting(safeStaffName, safeRosterName)}</td></tr>
           <tr><td style="padding:0 24px 20px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${dayRows}</table>
           </td></tr>

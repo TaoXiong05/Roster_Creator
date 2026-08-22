@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface StepStepperProps {
   /** 已翻译好的步骤标题（含当前应用语言）。 */
@@ -21,6 +22,7 @@ interface StepStepperProps {
  * 语言与配色沿用当前暖色主题（coral / tan / ink）。
  */
 export function StepStepper({ steps, current, onStepClick, ariaLabel, freeSwitch = false }: StepStepperProps) {
+  const { t } = useLanguage();
   const connectorBefore = (i: number) =>
     i > 0 && (
       <span
@@ -50,7 +52,7 @@ export function StepStepper({ steps, current, onStepClick, ariaLabel, freeSwitch
                 onClick={() => reachable && onStepClick(i)}
                 disabled={!reachable}
                 aria-current={isCurrent ? 'step' : undefined}
-                aria-label={`${title}${done ? ' · 已完成' : isCurrent ? ' · 当前步骤' : ''}`}
+                aria-label={`${title}${done ? t('stepStepper.doneSuffix') : isCurrent ? t('stepStepper.currentSuffix') : ''}`}
                 className={`${dotClass} transition hover:scale-105 disabled:cursor-not-allowed`}
               >
                 {done ? (

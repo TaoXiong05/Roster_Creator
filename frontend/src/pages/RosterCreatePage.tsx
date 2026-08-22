@@ -58,12 +58,13 @@ export function RosterCreatePage() {
   const [clipboardDate, setClipboardDate] = useState<string | null>(null);
   const [pasteTargets, setPasteTargets] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; date?: string; group?: string }>({});
   const [creating, setCreating] = useState(false);
   const [loadingRoster, setLoadingRoster] = useState(isEdit);
 
-  const dateFieldError = error && /date/i.test(error) ? error : null;
-  const groupFieldError = error && /group/i.test(error) ? error : null;
-  const bannerError = error && !dateFieldError && !groupFieldError ? error : null;
+  const nameFieldError = fieldErrors.name ?? null;
+  const dateFieldError = fieldErrors.date ?? null;
+  const groupFieldError = fieldErrors.group ?? null;
 
   useEffect(() => {
     api.shiftTemplates.list().then(setTemplates);
@@ -237,6 +238,17 @@ export function RosterCreatePage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
+
+    const nextFieldErrors: { name?: string; date?: string; group?: string } = {};
+    if (!name.trim()) nextFieldErrors.name = t('rosters.nameRequiredError');
+    if (!dateRangeStart || !dateRangeEnd) nextFieldErrors.date = t('rosters.dateRangeRequiredError');
+    if (!groupId) nextFieldErrors.group = t('rosters.groupRequiredError');
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      return;
+    }
+
     const hasMissingResponsibility = availableDates.some((date) =>
       (dayShifts[date] || []).some((row) => row.requirements.some((req) => req.headcount > 0 && !req.responsibilityId))
     );
@@ -279,9 +291,9 @@ export function RosterCreatePage() {
         <BackLink to="/rosters" label={t('rosters.backToRosters')} />
         <PageHeader title={isEdit ? t('rosters.createPageTitleEdit') : t('rosters.createPageTitleCreate')} />
         <form onSubmit={handleSubmit} className="space-y-6">
-          {bannerError && (
+          {error && (
             <p role="alert" className={errorText}>
-              {bannerError}
+              {error}
             </p>
           )}
 
@@ -292,9 +304,14 @@ export function RosterCreatePage() {
                 placeholder={t('rosters.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={inputBase}
+                className={nameFieldError ? inputError : inputBase}
                 required
               />
+              {nameFieldError && (
+                <p role="alert" className={fieldErrorText}>
+                  {nameFieldError}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -40,13 +40,14 @@ export function GroupDetailPage() {
   const [bulkAdding, setBulkAdding] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = async (isCancelled: () => boolean = () => false) => {
     if (!id) return;
     const [memberList, staffList, groupList] = await Promise.all([
       api.groups.listMembers(id),
       api.staff.list(),
       api.groups.list(),
     ]);
+    if (isCancelled()) return;
     setMembers(memberList);
     setAllStaff(staffList);
     const current = groupList.find((g) => g.id === id);
@@ -54,7 +55,11 @@ export function GroupDetailPage() {
   };
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    load(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const memberIds = new Set(members.map((m) => m.id));

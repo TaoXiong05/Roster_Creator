@@ -25,6 +25,9 @@ export function GroupListPage() {
   const [creating, setCreating] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<StaffGroup | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,11 +41,22 @@ export function GroupListPage() {
     }
   };
 
-  const handleRename = async (id: string, currentName: string) => {
-    const next = window.prompt(t('groups.renamePrompt'), currentName);
-    if (!next) return;
-    await api.groups.rename(id, next);
-    await queryClient.invalidateQueries({ queryKey: ['groups'] });
+  const startEdit = (g: StaffGroup) => {
+    setEditingId(g.id);
+    setEditName(g.name);
+  };
+
+  const handleSaveEdit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    setSavingEdit(true);
+    try {
+      await api.groups.rename(editingId, editName);
+      setEditingId(null);
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -101,38 +115,68 @@ export function GroupListPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-tan/10">
-                {groups.map((g) => (
-                  <tr key={g.id} className={tableRow}>
-                    <td className={`${tableCell} font-medium text-ink`}>{g.name}</td>
-                    <td className={`${tableCell} text-ink-soft`}>
-                      {g.memberCount} {t('groups.memberCountSuffix')}
-                    </td>
-                    <td className={tableCell}>
-                      <div className="hidden justify-end gap-2 sm:flex">
-                        <Link to={`/groups/${g.id}`} className={btnSecondary}>
-                          {t('groups.manageMembers')}
-                        </Link>
-                        <button onClick={() => handleRename(g.id, g.name)} className={btnSecondary}>
-                          {t('groups.rename')}
-                        </button>
-                        <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
-                          {t('groups.delete')}
-                        </button>
-                      </div>
-                      <div className="flex justify-end sm:hidden">
-                        <ActionsMenu
-                          label={t('groups.actionsHeader')}
-                          ariaLabel={t('groups.actionsForAria', { name: g.name })}
-                          actions={[
-                            { label: t('groups.manageMembers'), onClick: () => navigate(`/groups/${g.id}`) },
-                            { label: t('groups.rename'), onClick: () => handleRename(g.id, g.name) },
-                            { label: t('groups.delete'), onClick: () => setConfirmTarget(g), danger: true },
-                          ]}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {groups.map((g) =>
+                  editingId === g.id ? (
+                    <tr key={g.id} className="bg-sand/60">
+                      <td colSpan={3} className="px-5 py-4">
+                        <form onSubmit={handleSaveEdit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                          <div className="sm:flex-1">
+                            <label htmlFor={`edit-group-name-${g.id}`} className={labelBase}>
+                              {t('groups.groupNameLabel')}
+                            </label>
+                            <input
+                              id={`edit-group-name-${g.id}`}
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className={inputBase}
+                              required
+                            />
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button type="submit" disabled={savingEdit} className={`gap-2 ${btnPrimary}`}>
+                              {savingEdit && <Spinner className="h-4 w-4" />}
+                              {t('common.save')}
+                            </button>
+                            <button type="button" onClick={() => setEditingId(null)} className={btnSecondary}>
+                              {t('common.cancel')}
+                            </button>
+                          </div>
+                        </form>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={g.id} className={tableRow}>
+                      <td className={`${tableCell} font-medium text-ink`}>{g.name}</td>
+                      <td className={`${tableCell} text-ink-soft`}>
+                        {g.memberCount} {t('groups.memberCountSuffix')}
+                      </td>
+                      <td className={tableCell}>
+                        <div className="hidden justify-end gap-2 sm:flex">
+                          <Link to={`/groups/${g.id}`} className={btnSecondary}>
+                            {t('groups.manageMembers')}
+                          </Link>
+                          <button onClick={() => startEdit(g)} className={btnSecondary}>
+                            {t('groups.rename')}
+                          </button>
+                          <button onClick={() => setConfirmTarget(g)} className={btnDanger}>
+                            {t('groups.delete')}
+                          </button>
+                        </div>
+                        <div className="flex justify-end sm:hidden">
+                          <ActionsMenu
+                            label={t('groups.actionsHeader')}
+                            ariaLabel={t('groups.actionsForAria', { name: g.name })}
+                            actions={[
+                              { label: t('groups.manageMembers'), onClick: () => navigate(`/groups/${g.id}`) },
+                              { label: t('groups.rename'), onClick: () => startEdit(g) },
+                              { label: t('groups.delete'), onClick: () => setConfirmTarget(g), danger: true },
+                            ]}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>

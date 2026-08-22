@@ -7,6 +7,17 @@ import { authLimiter } from '../rateLimit';
 
 export const authRouter = Router();
 
+// Must match the JWT's `expiresIn` (see jwt.ts) so the cookie doesn't outlive
+// or expire before the token it carries.
+export const TOKEN_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+const tokenCookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: TOKEN_COOKIE_MAX_AGE_MS,
+};
+
 authRouter.post('/register', authLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password || password.length < 6) {
@@ -19,7 +30,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({ data: { email, passwordHash } });
   const token = signToken({ userId: user.id });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+  res.cookie('token', token, tokenCookieOptions);
   res.status(201).json({ id: user.id, email: user.email });
 });
 
@@ -37,7 +48,7 @@ authRouter.post('/login', authLimiter, async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   const token = signToken({ userId: user.id });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+  res.cookie('token', token, tokenCookieOptions);
   res.json({ id: user.id, email: user.email });
 });
 
@@ -51,7 +62,7 @@ authRouter.post('/demo', authLimiter, async (_req, res) => {
     return res.status(404).json({ error: 'Demo account not found' });
   }
   const token = signToken({ userId: user.id });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax' });
+  res.cookie('token', token, tokenCookieOptions);
   res.json({ id: user.id, email: user.email });
 });
 

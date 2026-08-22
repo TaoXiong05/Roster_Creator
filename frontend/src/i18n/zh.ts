@@ -52,6 +52,8 @@ export const zh = {
       or: '或者',
       googleSubmit: '使用 Google 登录',
       demoSubmit: '体验 Demo',
+      loginFailedError: '登录失败',
+      demoLoginFailedError: 'Demo 登录失败',
     },
     register: {
       headline: '让我陪你把整个团队安排好',
@@ -64,6 +66,7 @@ export const zh = {
       passwordPlaceholder: '密码（至少6位）',
       submit: '注册',
       haveAccount: '已有账号？登录',
+      registrationFailedError: '注册失败',
     },
     forgotPassword: {
       headline: '钥匙丢了没关系，我来帮你找',
@@ -75,6 +78,7 @@ export const zh = {
       emailLabel: '邮箱',
       emailPlaceholder: '邮箱',
       submit: '发送重置链接',
+      sendFailedError: '重置链接发送失败',
     },
     resetPassword: {
       headline: '马上就能拿到新钥匙啦',
@@ -86,6 +90,7 @@ export const zh = {
       newPasswordLabel: '新密码',
       newPasswordPlaceholder: '新密码（至少6位）',
       submit: '重置密码',
+      resetFailedError: '重置失败',
     },
   },
   dashboard: {
@@ -127,6 +132,8 @@ export const zh = {
     responsibilityRequiredError: '请至少选择一个角色',
     nameRequiredError: '请输入姓名',
     emailRequiredError: '请输入邮箱',
+    createFailedError: '创建员工失败',
+    saveFailedError: '保存员工失败',
     step1Title: '基本信息',
     step2Title: '工作时长',
     step3Title: '希望工作时间',
@@ -264,6 +271,9 @@ export const zh = {
     saveSubmit: '保存修改',
     missingResponsibilityError: '请为每个班次的人数需求选择角色',
     noShiftsError: '至少需要为一天设置一个班次的人数',
+    nameRequiredError: '请输入排班名称',
+    dateRangeRequiredError: '请选择开始和结束日期',
+    groupRequiredError: '请选择员工小组',
 
     generateButton: '生成排班',
     generating: '生成中...（{{seconds}}秒）',
@@ -293,6 +303,7 @@ export const zh = {
     assignStaffAria: '分配员工',
     loadFailedError: '加载排班表失败',
     createFailedError: '创建排班表失败',
+    saveAssignmentsFailedError: '保存分配失败',
     noShiftsScheduled: '这天没有安排班次',
     unfilledCountBadge: '⚠ {{count}} 人未分配',
     tabCalendar: '日历视图',
@@ -368,6 +379,116 @@ export const zh = {
   mascot: {
     badgeAria: '小袋鼠 Roo',
     heroAria: '小袋鼠 Roo，育儿袋里装着排班表',
+  },
+  stepStepper: {
+    doneSuffix: ' · 已完成',
+    currentSuffix: ' · 当前步骤',
+  },
+  help: {
+    pageTitle: '使用指南',
+    pageDescription: '从添加员工到发布排班表，跟着下面的步骤走一遍就会用了',
+    quickStartHeading: '快速上手',
+    featuresHeading: '功能详解',
+    faqHeading: '常见问题',
+    steps: [
+      {
+        title: '设置职责模板',
+        description: '先定义好员工可能承担的职责，比如"收银""清洁"，添加员工时至少要选一个。',
+        to: '/responsibilities',
+        linkLabel: '去职责模板',
+      },
+      {
+        title: '设置班次模板',
+        description: '定义好"早班 09:00-17:00""夜班 22:00-06:00"这类班次，之后创建排班和员工填偏好时都直接选用。',
+        to: '/shift-templates',
+        linkLabel: '去班次模板',
+      },
+      {
+        title: '建立小组',
+        description: '把要一起排班的员工分到同一个小组，创建排班表时按组选人。',
+        to: '/groups',
+        linkLabel: '去小组管理',
+      },
+      {
+        title: '添加员工',
+        description: '记录姓名、邮箱，并至少勾选一个职责；工时上下限、偏好班次都可以之后再补。',
+        to: '/staff',
+        linkLabel: '去员工管理',
+      },
+      {
+        title: '创建排班表',
+        description: '选好日期范围和小组，再点开每一天，配置需要哪些班次、各需要几人。',
+        to: '/rosters/new',
+        linkLabel: '创建排班',
+      },
+      {
+        title: 'AI 自动分配，再手动微调',
+        description: '打开排班表详情页，点"生成排班"，AI 会参考每位员工的工时和偏好自动安排；结果不满意可以直接在下拉框里改。',
+        to: '/rosters',
+        linkLabel: '查看排班表',
+      },
+      {
+        title: '发布并通知',
+        description: '确认无误后点"发布"，再"发送邮件给全体"，或对个别人"发送给TA"；也可以导出 ICS / Excel / PDF。',
+      },
+    ],
+    features: [
+      {
+        title: '职责模板',
+        points: ['定义员工可能承担的职责，比如"收银""清洁"', '添加员工时从这里挑选，至少要选一个', '随时可以编辑名称或删除'],
+      },
+      {
+        title: '员工管理',
+        points: [
+          '姓名、邮箱必填，职责至少要选一个（在"职责模板"里先建好）',
+          '排班偏好可选：最小/最大周工时、偏好星期几、偏好班次（勾选已建好的班次模板，比如早班/夜班）',
+          '每位员工都可以随时编辑资料或删除',
+        ],
+      },
+      {
+        title: '小组管理',
+        points: ['把员工分到不同小组，一个员工可以属于多个组', '创建排班表时选一个组，组内成员会出现在分配下拉框里', '随时可以重命名或删除小组'],
+      },
+      {
+        title: '班次模板',
+        points: ['一次定义好上下班时间，比如"早班 09:00-17:00"', '创建排班、员工填偏好班次时都直接从模板里选', '删除前确认没有排班表还在使用这个模板'],
+      },
+      {
+        title: '排班表',
+        points: [
+          '创建时选日期范围、小组，再点开每一天，添加需要的班次和人数',
+          '"生成排班"用 AI 自动分配；也可以在下拉框里手动指定或改派',
+          '还没定的班次可以标 AGENT / PICKUP 或自定义标签，方便后续跟进',
+          '发布后可以发邮件通知，或导出 ICS / Excel / PDF',
+        ],
+      },
+      {
+        title: '仪表盘',
+        points: ['以卡片形式实时展示员工、小组、班次模板、排班表的数量', '点击任意卡片可直接跳转到对应页面'],
+      },
+    ],
+    faqs: [
+      {
+        q: 'AI 分配的结果不满意怎么办？',
+        a: '直接在对应班次的下拉框里改成想要的人，改完记得点"保存"。',
+      },
+      {
+        q: '有的班次暂时没人，怎么标记？',
+        a: '把员工留空，点 AGENT、PICKUP 或输入自定义标签，方便自己或同事知道这里还缺人。',
+      },
+      {
+        q: '发布之后还能改吗？',
+        a: '可以，改完记得再保存一次，之后重新发送邮件或导出文件，员工才会看到最新版本。',
+      },
+      {
+        q: '删除员工后，之前的排班表会怎样？',
+        a: '排班表本身不会被删除，但这个人会从所有排班（包括已发布的历史排班）中移除，对应的班次会变成未分配状态。',
+      },
+      {
+        q: '在哪里切换中英文？',
+        a: '在侧边栏点击语言切换按钮即可，会立即生效，下次登录也会记住你的选择。',
+      },
+    ],
   },
   weekdaysShort: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { KangarooMascot } from '../components/KangarooMascot';
 import { AppShell } from '../components/AppShell';
@@ -84,31 +84,21 @@ export function DashboardPage() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const name = user?.email ? user.email.split('@')[0] : '';
-  const [counts, setCounts] = useState<Record<string, number | null>>({
-    staff: null,
-    groups: null,
-    shiftTemplates: null,
-    rosters: null,
-  });
 
-  useEffect(() => {
-    api.staff
-      .list()
-      .then((list) => setCounts((prev) => ({ ...prev, staff: list.length })))
-      .catch(() => {});
-    api.groups
-      .list()
-      .then((list) => setCounts((prev) => ({ ...prev, groups: list.length })))
-      .catch(() => {});
-    api.shiftTemplates
-      .list()
-      .then((list) => setCounts((prev) => ({ ...prev, shiftTemplates: list.length })))
-      .catch(() => {});
-    api.rosters
-      .list()
-      .then((list) => setCounts((prev) => ({ ...prev, rosters: list.length })))
-      .catch(() => {});
-  }, []);
+  // Same query keys/functions used by StaffListPage, GroupListPage,
+  // ShiftTemplateListPage and RosterListPage, so the cache is shared with
+  // those pages instead of re-fetching every time the dashboard mounts.
+  const staffQuery = useQuery({ queryKey: ['staff'], queryFn: () => api.staff.list() });
+  const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: () => api.groups.list() });
+  const shiftTemplatesQuery = useQuery({ queryKey: ['shift-templates'], queryFn: () => api.shiftTemplates.list() });
+  const rostersQuery = useQuery({ queryKey: ['rosters'], queryFn: () => api.rosters.list() });
+
+  const counts: Record<string, number | null> = {
+    staff: staffQuery.data ? staffQuery.data.length : null,
+    groups: groupsQuery.data ? groupsQuery.data.length : null,
+    shiftTemplates: shiftTemplatesQuery.data ? shiftTemplatesQuery.data.length : null,
+    rosters: rostersQuery.data ? rostersQuery.data.length : null,
+  };
 
   return (
     <AppShell>

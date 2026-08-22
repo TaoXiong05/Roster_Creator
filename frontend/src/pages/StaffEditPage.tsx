@@ -49,7 +49,9 @@ useEffect(() => {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     api.staff.get(id).then((s) => {
+      if (cancelled) return;
       setStaff(s);
       setName(s.name);
       setEmail(s.email);
@@ -69,6 +71,9 @@ useEffect(() => {
         }
       }
     });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const toggleResponsibility = (respId: string) => {
@@ -135,7 +140,7 @@ useEffect(() => {
       await queryClient.invalidateQueries({ queryKey: ['staff'] });
       navigate('/staff');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save staff');
+      setError(err instanceof Error ? err.message : t('staff.saveFailedError'));
       setSaving(false);
     }
   };

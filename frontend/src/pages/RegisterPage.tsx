@@ -28,7 +28,7 @@ export function RegisterPage() {
       await register(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : t('auth.register.registrationFailedError'));
       setLoading(false);
     }
   };

@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from '../DashboardPage';
 import * as AuthContextModule from '../../auth/AuthContext';
 import { api } from '../../api/client';
+import { wrapWithQueryClient } from '../../testUtils';
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -17,9 +18,11 @@ vi.mock('../../api/client', () => ({
 
 function renderPage() {
   return render(
-    <MemoryRouter>
-      <DashboardPage />
-    </MemoryRouter>
+    wrapWithQueryClient(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    )
   );
 }
 

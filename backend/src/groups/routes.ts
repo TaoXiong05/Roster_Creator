@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { requireAuth, AuthedRequest } from '../auth/middleware';
+import { findOwnedOrThrow, withNotFoundHandling } from '../routeHelpers';
 
 export const groupsRouter = Router();
 groupsRouter.use(requireAuth);
@@ -21,22 +22,30 @@ groupsRouter.post('/', async (req: AuthedRequest, res) => {
   res.status(201).json({ id: group.id, name: group.name, memberCount: 0 });
 });
 
-groupsRouter.put('/:id', async (req: AuthedRequest, res) => {
-  const existing = await prisma.staffGroup.findUnique({ where: { id: req.params.id } });
-  if (!existing || existing.userId !== req.userId) {
-    return res.status(404).json({ error: 'Group not found' });
-  }
-  const { name } = req.body as { name?: string };
-  if (!name) return res.status(400).json({ error: 'Name is required' });
-  const group = await prisma.staffGroup.update({ where: { id: req.params.id }, data: { name } });
-  res.json({ id: group.id, name: group.name });
-});
+groupsRouter.put(
+  '/:id',
+  withNotFoundHandling(async (req: AuthedRequest, res) => {
+    await findOwnedOrThrow(
+      () => prisma.staffGroup.findUnique({ where: { id: req.params.id } }),
+      req.userId,
+      'Group not found'
+    );
+    const { name } = req.body as { name?: string };
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+    const group = await prisma.staffGroup.update({ where: { id: req.params.id }, data: { name } });
+    res.json({ id: group.id, name: group.name });
+  })
+);
 
-groupsRouter.delete('/:id', async (req: AuthedRequest, res) => {
-  const existing = await prisma.staffGroup.findUnique({ where: { id: req.params.id } });
-  if (!existing || existing.userId !== req.userId) {
-    return res.status(404).json({ error: 'Group not found' });
-  }
-  await prisma.staffGroup.delete({ where: { id: req.params.id } });
-  res.status(204).send();
-});
+groupsRouter.delete(
+  '/:id',
+  withNotFoundHandling(async (req: AuthedRequest, res) => {
+    await findOwnedOrThrow(
+      () => prisma.staffGroup.findUnique({ where: { id: req.params.id } }),
+      req.userId,
+      'Group not found'
+    );
+    await prisma.staffGroup.delete({ where: { id: req.params.id } });
+    res.status(204).send();
+  })
+);

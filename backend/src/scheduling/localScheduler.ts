@@ -66,6 +66,14 @@ const REST_GAP_PENALTY = 50;
 const REST_GAP_MIN_HOURS = 11;
 const MAX_LOCAL_SEARCH_ITERATIONS = 300;
 
+// How many outer-loop iterations to run before yielding back to the event loop, so the scheduler's
+// synchronous scanning doesn't block other requests (e.g. /health) on large rosters.
+const YIELD_EVERY_N_ITERATIONS = 25;
+
+function yieldToEventLoop(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
 const PERIOD_DAYS: Record<string, number> = {
   weekly: 7,
   fortnightly: 14,
@@ -159,7 +167,7 @@ interface Move {
   delta: number;
 }
 
-function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] {
+async function runLocalScheduler(context: AssignmentContext): Promise<AssignmentResultEntry[]> {
   const { shifts, staff, hoursPerShift } = context;
   const staffById = new Map(staff.map((s) => [s.staffId, s]));
   const shiftById = new Map(shifts.map((s) => [s.rosterShiftId, s]));
@@ -255,7 +263,11 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
     (a, b) => scarcity(a) - scarcity(b) || a.rosterShiftId.localeCompare(b.rosterShiftId)
   );
 
-  for (const shift of shiftFillOrder) {
+  for (let shiftIndex = 0; shiftIndex < shiftFillOrder.length; shiftIndex++) {
+    if (shiftIndex > 0 && shiftIndex % YIELD_EVERY_N_ITERATIONS === 0) {
+      await yieldToEventLoop();
+    }
+    const shift = shiftFillOrder[shiftIndex];
     const slots = assignedByShift.get(shift.rosterShiftId)!;
     while (slots.length < shift.headcount) {
       // "Reach minHours" is a hard priority: as long as any eligible candidate has not yet hit
@@ -296,6 +308,9 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
   // --- Phase 2: deterministic local search (steepest-ascent hill climbing) ---
   const maxIterations = Math.min(MAX_LOCAL_SEARCH_ITERATIONS, shifts.length * staff.length);
   for (let iter = 0; iter < maxIterations; iter++) {
+    if (iter > 0 && iter % YIELD_EVERY_N_ITERATIONS === 0) {
+      await yieldToEventLoop();
+    }
     let bestMove: Move | null = null;
 
     for (const shift of shifts) {
@@ -340,6 +355,6 @@ function runLocalScheduler(context: AssignmentContext): AssignmentResultEntry[] 
 
 export const localScheduler: SchedulingEngine = {
   async assignShifts(context: AssignmentContext): Promise<AssignmentResult> {
-    return { assignments: runLocalScheduler(context) };
+    return { assignments: await runLocalScheduler(context) };
   },
 };

@@ -3,11 +3,8 @@ import { Responsibility, ShiftTemplate } from '../api/client';
 import { useTransitionPresence } from '../hooks/useTransitionPresence';
 import { getDictionary, useLanguage } from '../i18n/LanguageContext';
 import { formatDate } from '../utils/date';
+import { weekdayLabel } from '../utils/calendarGrid';
 import { btnPillInactive, btnSecondary, labelBase } from '../styles/ui';
-
-function weekdayLabel(date: string, weekdays: string[]): string {
-  return weekdays[new Date(`${date}T00:00:00Z`).getUTCDay()];
-}
 
 export interface DayShiftRequirement {
   responsibilityId: string;

@@ -27,7 +27,7 @@ export function LoginPage() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t('auth.login.loginFailedError'));
       setLoading(false);
     }
   };
@@ -39,7 +39,7 @@ export function LoginPage() {
       await demoLogin();
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Demo login failed');
+      setError(err instanceof Error ? err.message : t('auth.login.demoLoginFailedError'));
       setLoading(false);
     }
   };

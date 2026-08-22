@@ -10,6 +10,9 @@ vi.mock('../../db', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    responsibilityTemplate: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -75,6 +78,10 @@ describe('POST /staff', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('creates a staff member with the given responsibilityIds', async () => {
+    (prisma.responsibilityTemplate.findMany as any).mockResolvedValue([
+      { id: 'resp-1' },
+      { id: 'resp-2' },
+    ]);
     (prisma.staff.create as any).mockResolvedValue({
       id: 'staff-1',
       userId: 'user-1',
@@ -125,6 +132,7 @@ describe('PUT /staff/:id', () => {
 
   it('updates a staff member owned by the current user', async () => {
     (prisma.staff.findUnique as any).mockResolvedValue({ id: 'staff-1', userId: 'user-1' });
+    (prisma.responsibilityTemplate.findMany as any).mockResolvedValue([{ id: 'resp-1' }]);
     (prisma.staff.update as any).mockResolvedValue({
       id: 'staff-1',
       userId: 'user-1',

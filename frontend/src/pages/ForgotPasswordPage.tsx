@@ -23,7 +23,7 @@ export function ForgotPasswordPage() {
       await api.requestPasswordReset(email);
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset link');
+      setError(err instanceof Error ? err.message : t('auth.forgotPassword.sendFailedError'));
     } finally {
       setLoading(false);
     }
